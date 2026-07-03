@@ -11,6 +11,7 @@ import { LEVEL as MOSS_1 } from './moss1';
 import { LEVEL as MOSS_2 } from './moss2';
 import { LEVEL as MOSS_3 } from './moss3';
 import { LEVEL as MOSS_4 } from './moss4';
+import { LEVEL as MOSS_5 } from './moss5';
 
 export const LEVELS: LevelDef[] = [
   THORNWOOD_1 as LevelDef,
@@ -25,6 +26,7 @@ export const LEVELS: LevelDef[] = [
   MOSS_2 as LevelDef,
   MOSS_3 as LevelDef,
   MOSS_4 as LevelDef,
+  MOSS_5 as LevelDef,
 ];
 
 const WORLD_LABELS: Record<string, { label: string; num: number }> = {

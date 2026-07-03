@@ -78,8 +78,9 @@ export class ClearScene extends Phaser.Scene {
       this.scene.stop();
       if (hasNext) this.scene.start('Game', { levelIndex: this.data2.levelIndex + 1 });
       else {
+        // final boss down — return to the title for the victory beat (matches the prompt)
         audio.stopSong();
-        this.scene.start('WorldMap');
+        this.scene.start('Title');
       }
     } else if (f.firePressed) {
       audio.sfx('menuSelect');

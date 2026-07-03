@@ -117,3 +117,79 @@ describe('BossSim — Old Rustjaw', () => {
     expect(p1shots).toBe(0);
   });
 });
+
+function makeWarden(): BossSim {
+  return new BossSim(30 * TILE, FLOOR_Y, arena(5, 54, FLOOR_TY), 'warden');
+}
+
+describe('BossSim — The Drowned Warden', () => {
+  it('is the Mossgrave variant with its own name and sprite prefix', () => {
+    const boss = makeWarden();
+    expect(boss.variant).toBe('warden');
+    expect(boss.name).toBe('THE DROWNED WARDEN');
+    expect(boss.animKey()).toContain('warden_');
+  });
+
+  it('telegraphs, then leaps clear of the ground before slamming down', () => {
+    const boss = makeWarden();
+    let leftGround = false;
+    const seen = runUntil(boss, 12 * TILE, () => {
+      if (boss.state === 'charge' && boss.body.y < FLOOR_Y - 8) leftGround = true;
+      return boss.state === 'stun';
+    });
+    expect(seen.has('telegraph')).toBe(true);
+    expect(seen.has('charge')).toBe(true);
+    expect(leftGround).toBe(true); // it actually arcs into the air
+    expect(boss.state).toBe('stun'); // the landing opens the damage window
+  });
+
+  it('cracks a ground shockwave the instant it slams down', () => {
+    const boss = makeWarden();
+    let slamShots = 0;
+    let prev = boss.state;
+    for (let i = 0; i < 2000; i++) {
+      boss.step(12 * TILE, FLOOR_Y);
+      if (boss.state === 'stun' && prev !== 'stun') {
+        slamShots = boss.shots.length; // shots emitted on the slam step
+        expect(boss.slammed).toBe(true);
+        break;
+      }
+      prev = boss.state;
+    }
+    expect(slamShots).toBeGreaterThanOrEqual(2); // a pair skitters out along the ground
+  });
+
+  it('never leaps without telegraphing first', () => {
+    const boss = makeWarden();
+    let prev = boss.state;
+    let lastNonCharge = boss.state;
+    let coldLeap = false;
+    for (let i = 0; i < 2500; i++) {
+      boss.step(12 * TILE, FLOOR_Y);
+      if (boss.state === 'charge' && prev !== 'charge' && lastNonCharge !== 'telegraph') coldLeap = true;
+      if (boss.state !== 'charge') lastNonCharge = boss.state;
+      prev = boss.state;
+    }
+    expect(coldLeap).toBe(false);
+  });
+
+  it('takes core damage only while slumped, and dies after enough hits', () => {
+    const boss = makeWarden();
+    boss.step(12 * TILE, FLOOR_Y);
+    expect(boss.hitCore(1)).toBe(false); // armored while active
+    expect(boss.hp).toBe(boss.maxHp);
+    let guard = 0;
+    const phases: number[] = [];
+    while (boss.alive && guard++ < 120) {
+      runUntil(boss, 12 * TILE, () => boss.state === 'stun');
+      if (boss.state === 'stun') {
+        boss.iframes = 0;
+        boss.hitCore(1);
+        phases.push(boss.phase);
+      }
+    }
+    expect(boss.alive).toBe(false);
+    expect(boss.hp).toBe(0);
+    expect(Math.max(...phases)).toBeGreaterThanOrEqual(2); // escalates as HP falls
+  });
+});

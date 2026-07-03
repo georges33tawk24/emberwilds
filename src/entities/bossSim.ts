@@ -1,9 +1,17 @@
 /**
- * Old Rustjaw — the Ochre Canyon boss AI (spec §7). Arena-based, multi-phase,
- * every attack telegraphed, a clear damage window, no health-sponge tedium.
- * It remixes the world's momentum theme: it CHARGES across the arena, and the
- * only way to hurt it is when it over-commits, rams the wall, and its molten
- * core pops open — stomp or shoot the core during the stun window.
+ * World bosses (spec §7). Arena-based, multi-phase, every attack telegraphed,
+ * a clear damage window, no health-sponge tedium. One class drives both bosses
+ * off a config; the state machine (walk → telegraph → commit → stun → recover)
+ * is shared, the *commit* differs per variant:
+ *
+ *   • Old Rustjaw (Ochre Canyon) — a clockwork crab-tank. CHARGES horizontally
+ *     and can only be hurt when it over-commits, rams a wall, and its molten
+ *     core pops open. Bait it into the wall, then stomp/shoot the core.
+ *
+ *   • The Drowned Warden (Mossgrave Ruins) — a moss-caked stone colossus. It
+ *     LEAPS at the player in a heavy arc and slams down, cracking a ground
+ *     shockwave outward; the landing leaves it winded (core open) — no wall
+ *     needed. Dodge out from under the slam, then punish the recovery.
  *
  * Pure, deterministic, Phaser-free; stepped at 120 Hz.
  */
@@ -12,6 +20,7 @@ import { TILE } from '../data/levelTypes';
 import { moveY, type Body, type SolidityQuery } from '../systems/physics';
 
 export type BossState = 'intro' | 'walk' | 'telegraph' | 'charge' | 'stun' | 'recover' | 'dead';
+export type BossVariant = 'rustjaw' | 'warden';
 
 export interface BossShot {
   x: number;
@@ -20,24 +29,81 @@ export interface BossShot {
   vy: number;
 }
 
-const CFG = {
+interface BossConfig {
+  name: string;
+  /** sprite-sheet / anim-key prefix, e.g. 'rustjaw' → 'rustjaw_walk' */
+  prefix: string;
+  variant: BossVariant;
+  maxHp: number;
+  bodyW: number;
+  bodyH: number;
+  walkSpeed: number;
+  telegraphS: [number, number, number];
+  stunS: [number, number, number];
+  walkS: [number, number, number];
+  recoverS: number;
+  /** projectiles spat during the walk, per phase */
+  volleyCount: [number, number, number];
+  shotSpeed: number;
+  /** Rustjaw: horizontal charge speed per phase */
+  chargeSpeed: [number, number, number];
+  /** Warden: leap horizontal speed per phase */
+  leapVX: [number, number, number];
+  /** Warden: upward launch impulse for the slam leap */
+  leapImpulse: number;
+  /** Warden: ground-shockwave shot speed on landing */
+  shockSpeed: number;
+}
+
+const RUSTJAW: BossConfig = {
+  name: 'OLD RUSTJAW',
+  prefix: 'rustjaw',
+  variant: 'rustjaw',
   maxHp: 9,
   bodyW: 38,
   bodyH: 20,
   walkSpeed: 40,
-  chargeSpeed: [230, 300, 370], // per phase
+  chargeSpeed: [230, 300, 370],
   telegraphS: [0.75, 0.6, 0.45],
   stunS: [2.4, 2.0, 1.7],
   walkS: [1.6, 1.3, 1.0],
   recoverS: 0.5,
-  volleyCount: [0, 3, 5], // projectiles spat during walk, per phase
+  volleyCount: [0, 3, 5],
   shotSpeed: 150,
+  leapVX: [0, 0, 0],
+  leapImpulse: 0,
+  shockSpeed: 0,
+};
+
+const WARDEN: BossConfig = {
+  name: 'THE DROWNED WARDEN',
+  prefix: 'warden',
+  variant: 'warden',
+  maxHp: 9,
+  bodyW: 46,
+  bodyH: 26,
+  walkSpeed: 30,
+  chargeSpeed: [0, 0, 0],
+  telegraphS: [0.85, 0.7, 0.55],
+  stunS: [2.3, 2.0, 1.7],
+  walkS: [1.8, 1.5, 1.2],
+  recoverS: 0.55,
+  volleyCount: [0, 4, 6],
+  shotSpeed: 130,
+  leapVX: [130, 165, 200],
+  leapImpulse: 640,
+  shockSpeed: 165,
+};
+
+export const BOSS_CONFIGS: Record<BossVariant, BossConfig> = {
+  rustjaw: RUSTJAW,
+  warden: WARDEN,
 };
 
 export class BossSim {
   body: Body;
-  hp = CFG.maxHp;
-  readonly maxHp = CFG.maxHp;
+  hp: number;
+  readonly maxHp: number;
   phase: 1 | 2 | 3 = 1;
   state: BossState = 'intro';
   facing: 1 | -1 = -1;
@@ -45,19 +111,36 @@ export class BossSim {
   iframes = 0;
   hurtFlash = 0;
   shots: BossShot[] = [];
-  /** set for one step when the boss slams a wall (for shake/dust) */
+  /** set for one step when the boss slams (wall ram / ground slam) — shake+dust */
   slammed = false;
   animT = 0;
+  private cfg: BossConfig;
   private stateTimer = 0;
   private didVolley = false;
+  /** Warden: seconds airborne during the current leap (guards landing stun) */
+  private airborneT = 0;
+  /** captured each step: did the vertical solver land the body this step? */
+  private landedThisStep = false;
 
   constructor(
     x: number,
     private floorY: number,
     private solidAt: SolidityQuery,
+    variant: BossVariant = 'rustjaw',
   ) {
-    this.body = { x, y: floorY, w: CFG.bodyW, h: CFG.bodyH, vx: 0, vy: 0 };
+    this.cfg = BOSS_CONFIGS[variant];
+    this.hp = this.cfg.maxHp;
+    this.maxHp = this.cfg.maxHp;
+    this.body = { x, y: floorY, w: this.cfg.bodyW, h: this.cfg.bodyH, vx: 0, vy: 0 };
     this.stateTimer = 1.0;
+  }
+
+  get name(): string {
+    return this.cfg.name;
+  }
+
+  get variant(): BossVariant {
+    return this.cfg.variant;
   }
 
   /** Is there a solid wall just past the boss's leading edge on the given side? */
@@ -91,9 +174,10 @@ export class BossSim {
     this.stateTimer -= STEP_S;
     if (this.state === 'dead') return;
 
-    // gravity keeps the boss grounded on the arena floor
+    // gravity keeps the boss grounded on the arena floor (and shapes leaps)
     this.body.vy = Math.min(this.body.vy + TUNING.gravity.fall * STEP_S, TUNING.gravity.max);
     const res = moveY(this.body, this.body.vy * STEP_S, this.solidAt, {});
+    this.landedThisStep = res.landed;
     if (res.landed) this.body.vy = 0;
 
     switch (this.state) {
@@ -105,16 +189,16 @@ export class BossSim {
         this.facing = playerX < this.body.x ? -1 : 1;
         // amble toward the player unless a wall is right there
         if (!this.wallAhead(this.facing)) {
-          this.body.x += this.facing * CFG.walkSpeed * STEP_S;
+          this.body.x += this.facing * this.cfg.walkSpeed * STEP_S;
         }
         // phase 2+ spits a fan of shots partway through the walk
-        if (!this.didVolley && this.stateTimer < CFG.walkS[this.phaseIndex()] * 0.5) {
+        if (!this.didVolley && this.stateTimer < this.cfg.walkS[this.phaseIndex()] * 0.5) {
           this.spitVolley(playerX);
           this.didVolley = true;
         }
         if (this.stateTimer <= 0) {
           this.state = 'telegraph';
-          this.stateTimer = CFG.telegraphS[this.phaseIndex()];
+          this.stateTimer = this.cfg.telegraphS[this.phaseIndex()];
           this.body.vx = 0;
         }
         break;
@@ -122,28 +206,19 @@ export class BossSim {
 
       case 'telegraph':
         this.facing = playerX < this.body.x ? -1 : 1;
-        if (this.stateTimer <= 0) {
-          this.state = 'charge';
-          this.body.vx = this.facing * CFG.chargeSpeed[this.phaseIndex()];
-        }
+        if (this.stateTimer <= 0) this.commit();
         break;
 
-      case 'charge': {
-        const dir = (this.body.vx > 0 ? 1 : -1) as 1 | -1;
-        // ram into a wall → stun (the opening to hit the core)
-        if (this.wallAhead(dir)) {
-          this.enterStun();
-        } else {
-          this.body.x += this.body.vx * STEP_S;
-        }
+      case 'charge':
+        if (this.cfg.variant === 'warden') this.stepLeap();
+        else this.stepCharge();
         break;
-      }
 
       case 'stun':
         this.body.vx = 0;
         if (this.stateTimer <= 0) {
           this.state = 'recover';
-          this.stateTimer = CFG.recoverS;
+          this.stateTimer = this.cfg.recoverS;
         }
         break;
 
@@ -153,21 +228,70 @@ export class BossSim {
     }
   }
 
+  /** telegraph → committed attack (variant-specific). */
+  private commit(): void {
+    this.state = 'charge';
+    if (this.cfg.variant === 'warden') {
+      this.airborneT = 0;
+      this.body.vy = -this.cfg.leapImpulse;
+      this.body.vx = this.facing * this.cfg.leapVX[this.phaseIndex()];
+    } else {
+      this.body.vx = this.facing * this.cfg.chargeSpeed[this.phaseIndex()];
+    }
+  }
+
+  /** Rustjaw: barrel forward until a wall stops it, then stun. */
+  private stepCharge(): void {
+    const dir = (this.body.vx > 0 ? 1 : -1) as 1 | -1;
+    if (this.wallAhead(dir)) {
+      this.enterStun();
+    } else {
+      this.body.x += this.body.vx * STEP_S;
+    }
+  }
+
+  /** Warden: arc through the air; the slam landing is the damage opening. */
+  private stepLeap(): void {
+    this.airborneT += STEP_S;
+    const dir = (this.body.vx >= 0 ? 1 : -1) as 1 | -1;
+    if (!this.wallAhead(dir)) {
+      this.body.x += this.body.vx * STEP_S;
+    }
+    // touched down after actually leaving the ground → slam
+    if (this.airborneT > 0.12 && this.landedThisStep) {
+      this.enterStun();
+      this.spawnShockwave();
+    }
+  }
+
   private enterWalk(): void {
     this.state = 'walk';
-    this.stateTimer = CFG.walkS[this.phaseIndex()];
+    this.stateTimer = this.cfg.walkS[this.phaseIndex()];
     this.didVolley = false;
   }
 
   private enterStun(): void {
     this.state = 'stun';
-    this.stateTimer = CFG.stunS[this.phaseIndex()];
+    this.stateTimer = this.cfg.stunS[this.phaseIndex()];
     this.body.vx = 0;
     this.slammed = true;
   }
 
+  /** A pair of low shots skittering out along the ground from the slam point;
+   *  later phases add a rising splash burst overhead. */
+  private spawnShockwave(): void {
+    const gy = this.body.y - 6;
+    const sp = this.cfg.shockSpeed;
+    this.shots.push({ x: this.body.x - this.body.w / 2, y: gy, vx: -sp, vy: -34 });
+    this.shots.push({ x: this.body.x + this.body.w / 2, y: gy, vx: sp, vy: -34 });
+    if (this.phase >= 2) {
+      this.shots.push({ x: this.body.x, y: this.body.y - this.body.h, vx: -sp * 0.4, vy: -120 });
+      this.shots.push({ x: this.body.x, y: this.body.y - this.body.h, vx: sp * 0.4, vy: -120 });
+    }
+  }
+
   private spitVolley(playerX: number): void {
-    const n = CFG.volleyCount[this.phaseIndex()];
+    const n = this.cfg.volleyCount[this.phaseIndex()];
     if (n <= 0) return;
     const dir = playerX < this.body.x ? -1 : 1;
     const cx = this.body.x + dir * (this.body.w / 2);
@@ -179,8 +303,8 @@ export class BossSim {
       this.shots.push({
         x: cx,
         y: cy,
-        vx: Math.cos(ang) * CFG.shotSpeed * dir,
-        vy: Math.sin(ang) * CFG.shotSpeed,
+        vx: Math.cos(ang) * this.cfg.shotSpeed * dir,
+        vy: Math.sin(ang) * this.cfg.shotSpeed,
       });
     }
   }
@@ -204,7 +328,7 @@ export class BossSim {
       this.phase = newPhase as 1 | 2 | 3;
       // a hit that changes phase ends the stun early and re-engages
       this.state = 'recover';
-      this.stateTimer = CFG.recoverS;
+      this.stateTimer = this.cfg.recoverS;
     }
     return false;
   }
@@ -219,11 +343,12 @@ export class BossSim {
   }
 
   animKey(): string {
+    const p = this.cfg.prefix;
     switch (this.state) {
-      case 'telegraph': return 'rustjaw_telegraph';
-      case 'charge': return 'rustjaw_charge';
-      case 'stun': return 'rustjaw_stun';
-      default: return this.hurtFlash > 0 ? 'rustjaw_hurt' : 'rustjaw_walk';
+      case 'telegraph': return `${p}_telegraph`;
+      case 'charge': return `${p}_charge`;
+      case 'stun': return `${p}_stun`;
+      default: return this.hurtFlash > 0 ? `${p}_hurt` : `${p}_walk`;
     }
   }
 

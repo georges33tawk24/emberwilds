@@ -282,7 +282,7 @@ export class GameScene extends Phaser.Scene {
     const spawnedBoss = this.bossSim as BossSim | null;
     if (spawnedBoss) {
       this.time.delayedCall(70, () =>
-        this.bus.emit('boss:spawn', { name: 'OLD RUSTJAW', hp: spawnedBoss.hp, max: spawnedBoss.maxHp }));
+        this.bus.emit('boss:spawn', { name: spawnedBoss.name, hp: spawnedBoss.hp, max: spawnedBoss.maxHp }));
     }
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -347,8 +347,9 @@ export class GameScene extends Phaser.Scene {
           break;
         }
         case 'Y': {
-          this.bossSim = new BossSim(px, feetY, this.world.solidAt);
-          this.bossSpr = this.add.sprite(px, feetY, 'boss', 'rustjaw_walk.0')
+          const variant = this.level.theme === 'mossgrave' ? 'warden' : 'rustjaw';
+          this.bossSim = new BossSim(px, feetY, this.world.solidAt, variant);
+          this.bossSpr = this.add.sprite(px, feetY, 'boss', `${variant}_walk.0`)
             .setOrigin(0.5, 1)
             .setDepth(9);
           this.bossPrevX = px;
@@ -1213,7 +1214,7 @@ export class GameScene extends Phaser.Scene {
         const by = lerp(this.bossPrevY, boss.body.y);
         this.bossSpr.setPosition(Math.round(bx), Math.round(by));
         const key = boss.animKey();
-        const nFrames = key === 'rustjaw_walk' ? 2 : 1;
+        const nFrames = key.endsWith('_walk') ? 2 : 1;
         this.bossSpr.setFrame(`${key}.${Math.floor(this.t * 4) % nFrames}`);
         this.bossSpr.setFlipX(boss.facing === 1); // art faces left by default silhouette
         // telegraph shudder + hurt flash
