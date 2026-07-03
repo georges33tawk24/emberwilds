@@ -230,9 +230,18 @@ window.addEventListener('pointerdown', unlockAudio, { once: true });
 window.addEventListener('touchstart', unlockAudio, { once: true });
 window.addEventListener('keydown', unlockAudio, { once: true });
 
-// PWA service worker (offline-capable static build)
+// PWA service worker (offline-capable static build). When a NEW build's
+// worker takes control (skipWaiting + clients.claim in sw.js), reload once so
+// the player gets the fresh shell and assets immediately — without this,
+// updates only apply on some later visit. hadController guards the very first
+// install (fresh content is already showing; a reload would just flicker).
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
     void navigator.serviceWorker.register(new URL('sw.js', window.location.href).pathname);
+    let hadController = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (hadController) window.location.reload();
+      hadController = true;
+    });
   });
 }

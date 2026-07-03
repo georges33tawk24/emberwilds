@@ -6,7 +6,7 @@
   "description": "EMBERWILDS — a warm, hand-crafted 2D action-platformer for the web",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && node scripts/stampSw.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"
