@@ -22,6 +22,7 @@ export class ClearScene extends Phaser.Scene {
   private inputSys!: InputSystem;
   private data2!: ClearData;
   private grace = 0;
+  private layoutW = 0;
 
   constructor() {
     super('Clear');
@@ -29,6 +30,7 @@ export class ClearScene extends Phaser.Scene {
 
   create(data: ClearData): void {
     this.data2 = data;
+    this.layoutW = VIEW.w;
     this.inputSys = new InputSystem(this);
     this.grace = 0.6;
 
@@ -67,6 +69,11 @@ export class ClearScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
+    // live width change (rotation, URL-bar collapse) — rebuild the layout
+    if (VIEW.w !== this.layoutW) {
+      this.scene.restart(this.data2);
+      return;
+    }
     this.grace -= delta / 1000;
     if (this.grace > 0) return;
     const f = this.inputSys.sample();

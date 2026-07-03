@@ -224,7 +224,9 @@ Build the back half of the game per the original spec (§6/§7 of
 
 ## PROGRESS
 
-- [ ] Phase 0 — mobile full-screen fill + scrollable menus
+- [x] Phase 0 — mobile full-screen fill + scrollable menus (verified across
+      19.5:9 / 21.5:9 / 21:9 / 4:3 / 16:10 in-browser incl. live resize; iOS
+      notch insets + Android auto-fullscreen wired but need a real-device pass)
 - [ ] Phase 1 — story spine (intro, interstitials, map warmth, true finale)
 - [ ] Phase 2 — full revamp of W1–W3: ≥220×40 multi-route sprawls + visual overhaul (2A layouts, 2B art)
 - [ ] Phase 3 — Worlds 4–6 + three new bosses + Coglar finale fight

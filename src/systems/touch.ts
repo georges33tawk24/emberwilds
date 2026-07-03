@@ -192,7 +192,11 @@ export function initTouchControls(onFullscreen?: () => void): void {
     cvs.height = res;
     cvs.style.width = `${def.size}px`;
     cvs.style.height = `${def.size}px`;
-    for (const [k, v] of Object.entries(def.css)) cvs.style[k as 'left'] = `${v}px`;
+    // offset by the safe-area inset so buttons stay clear of notches and the
+    // home indicator while the canvas paints edge to edge beneath them
+    for (const [k, v] of Object.entries(def.css)) {
+      cvs.style[k as 'left'] = `calc(${v}px + env(safe-area-inset-${k}, 0px))`;
+    }
     drawButton(cvs, def, false);
     root.appendChild(cvs);
     built.push({ def, cvs, pressed: false });

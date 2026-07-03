@@ -45,6 +45,7 @@ export class WorldMapScene extends Phaser.Scene {
   private prompt!: PixelText;
   private prev = { left: false, right: false, up: false };
   private mapWidth = 0;
+  private layoutW = 0;
 
   constructor() {
     super('WorldMap');
@@ -52,6 +53,7 @@ export class WorldMapScene extends Phaser.Scene {
 
   create(): void {
     const W = VIEW.w;
+    this.layoutW = W;
     this.save = this.registry.get('save') as SaveManager;
     this.inputSys = new InputSystem(this);
     this.nodes = [];
@@ -216,6 +218,11 @@ export class WorldMapScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
+    // live width change (rotation, URL-bar collapse) — rebuild the layout
+    if (VIEW.w !== this.layoutW) {
+      this.scene.restart();
+      return;
+    }
     const dt = delta / 1000;
     const W = VIEW.w;
     this.t += dt;

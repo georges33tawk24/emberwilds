@@ -6,8 +6,14 @@ import { SaveManager } from '../systems/save';
 import { audio } from '../audio/engine';
 import { TUNING } from '../data/tuning';
 import { VIEW } from '../gfx/viewport';
+import { attachMenuTouch } from '../systems/menuTouch';
 
 const H = TUNING.view.height;
+/** y of the first menu row and the per-row pitch */
+const MENU_TOP = 92;
+const ROW_H = 16;
+/** rows scrolled under this line stay visible above the screen bottom */
+const BOTTOM_PAD = 28;
 
 type Item =
   | { kind: 'action'; label: string; act: () => void }
@@ -20,6 +26,8 @@ export class PauseScene extends Phaser.Scene {
   private items: Item[] = [];
   private labels: PixelText[] = [];
   private sel = 0;
+  private scroll = 0;
+  private layoutW = 0;
   private prev = { up: false, down: false, left: false, right: false };
   private grace = 0;
 
@@ -29,6 +37,7 @@ export class PauseScene extends Phaser.Scene {
 
   create(): void {
     const W = VIEW.w;
+    this.layoutW = W;
     this.save = this.registry.get('save') as SaveManager;
     this.inputSys = new InputSystem(this);
     this.sel = 0;
@@ -64,10 +73,60 @@ export class PauseScene extends Phaser.Scene {
       { kind: 'action', label: 'QUIT TO MAP', act: () => this.quit() },
     ];
 
+    this.scroll = 0;
     this.labels = this.items.map(
-      (_, i) => new PixelText(this, W / 2, 92 + i * 16, '', { scale: 1, color: 'W', align: 'center', shadow: true }),
+      (_, i) => new PixelText(this, W / 2, MENU_TOP + i * ROW_H, '', { scale: 1, color: 'W', align: 'center', shadow: true }),
     );
     this.redraw();
+
+    // touch phones have no up/down rocker — menus are directly tappable and
+    // drag/wheel-scrollable (scroll only engages once content overflows)
+    attachMenuTouch(this, {
+      rowAt: (_x, y) => {
+        const i = Math.floor((y + this.scroll - (MENU_TOP - ROW_H / 2)) / ROW_H);
+        return i >= 0 && i < this.items.length ? i : null;
+      },
+      onTapRow: (i, x) => this.tapRow(i, x),
+      onScroll: (dy) => {
+        this.scroll = Phaser.Math.Clamp(this.scroll + dy, 0, this.maxScroll());
+        this.redraw();
+      },
+    });
+  }
+
+  private maxScroll(): number {
+    return Math.max(0, MENU_TOP + this.items.length * ROW_H + BOTTOM_PAD - H);
+  }
+
+  /** Keep the keyboard/gamepad selection on-screen when the list overflows. */
+  private ensureVisible(): void {
+    const y = MENU_TOP + this.sel * ROW_H - this.scroll;
+    if (y < MENU_TOP) this.scroll = this.sel * ROW_H;
+    else if (y > H - BOTTOM_PAD) this.scroll = MENU_TOP + this.sel * ROW_H - (H - BOTTOM_PAD);
+    this.scroll = Phaser.Math.Clamp(this.scroll, 0, this.maxScroll());
+  }
+
+  private tapRow(i: number, x: number): void {
+    const item = this.items[i];
+    if (this.sel !== i) {
+      this.sel = i;
+      audio.sfx('menuMove');
+    }
+    if (item.kind === 'action') {
+      audio.sfx('menuSelect');
+      this.redraw();
+      item.act();
+      return;
+    }
+    if (item.kind === 'toggle') {
+      item.set(!item.get());
+      audio.sfx('menuSelect');
+      return; // set() -> apply() redraws
+    }
+    // slider: left half of the row steps down, right half steps up
+    const dir = x >= VIEW.w / 2 ? 0.1 : -0.1;
+    item.set(Phaser.Math.Clamp(Math.round((item.get() + dir) * 10) / 10, 0, 1));
+    audio.sfx('menuMove');
   }
 
   private apply(): void {
@@ -86,8 +145,11 @@ export class PauseScene extends Phaser.Scene {
         text = `${item.label}  ${item.get() ? 'ON' : 'OFF'}`;
       }
       const selected = i === this.sel;
-      this.labels[i].setText(selected ? `> ${text} <` : text);
-      this.labels[i].setColor(selected ? 'O' : 'W');
+      const label = this.labels[i];
+      label.y = MENU_TOP + i * ROW_H - this.scroll;
+      label.setVisible(label.y > MENU_TOP - ROW_H && label.y < H);
+      label.setText(selected ? `> ${text} <` : text);
+      label.setColor(selected ? 'O' : 'W');
     });
   }
 
@@ -112,6 +174,11 @@ export class PauseScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
+    // live width change (rotation, URL-bar collapse) — rebuild the layout
+    if (VIEW.w !== this.layoutW) {
+      this.scene.restart();
+      return;
+    }
     const f = this.inputSys.sample();
     this.grace -= delta / 1000;
     if (this.grace > 0) return;
@@ -127,6 +194,7 @@ export class PauseScene extends Phaser.Scene {
 
     if (up || down) {
       this.sel = (this.sel + (down ? 1 : this.items.length - 1)) % this.items.length;
+      this.ensureVisible();
       audio.sfx('menuMove');
       this.redraw();
     }

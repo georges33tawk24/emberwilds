@@ -146,6 +146,7 @@ export class GameScene extends Phaser.Scene {
   private hostiles: { x: number; y: number; vx: number; vy: number; life: number; prevX: number; prevY: number; img: Phaser.GameObjects.Image }[] = [];
 
   private parallax!: ParallaxLayers;
+  private parallaxW = 0;
   private particles!: ParticleSystem;
   private rng = new Rng(0xa11ce);
 
@@ -186,6 +187,7 @@ export class GameScene extends Phaser.Scene {
     this.inputSys = new InputSystem(this);
     this.particles = new ParticleSystem(this);
     this.parallax = buildParallax(this, this.theme.key as ThemeKey, this.level.daypart, 7 + this.levelIndex);
+    this.parallaxW = VIEW.w;
     bakeTerrain(this, this.level, this.theme.tiles, `lvl${this.levelIndex}`);
 
     // reset per-run state (scene instances are reused on restart)
@@ -1099,6 +1101,13 @@ export class GameScene extends Phaser.Scene {
     // keep the visible view size current if the window/orientation changed
     this.vw = VIEW.w / this.camZoom;
     this.vh = H / this.camZoom;
+    // parallax layers are tileSprites sized to VIEW.w at build time — rebuild
+    // them when a rotation / URL-bar collapse changes the internal width
+    if (VIEW.w !== this.parallaxW) {
+      this.parallaxW = VIEW.w;
+      this.parallax.destroy();
+      this.parallax = buildParallax(this, this.theme.key as ThemeKey, this.level.daypart, 7 + this.levelIndex);
+    }
     const lerp = (a: number, b: number) => a + (b - a) * Math.min(alpha, 1);
 
     // player sprite: interpolate, animate, squash & stretch, i-frame flicker

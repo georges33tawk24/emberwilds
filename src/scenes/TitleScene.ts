@@ -27,6 +27,7 @@ export class TitleScene extends Phaser.Scene {
   private leafTimer = 0;
   private logo!: PixelText;
   private started = false;
+  private layoutW = 0;
 
   constructor() {
     super('Title');
@@ -34,6 +35,7 @@ export class TitleScene extends Phaser.Scene {
 
   create(): void {
     const W = VIEW.w;
+    this.layoutW = W;
     this.save = this.registry.get('save') as SaveManager;
     this.input2 = new InputSystem(this);
     this.parallax = buildParallax(this, 'thornwood', 'dawn', 11);
@@ -76,6 +78,11 @@ export class TitleScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
+    // live width change (rotation, URL-bar collapse) — rebuild the layout
+    if (VIEW.w !== this.layoutW && !this.started) {
+      this.scene.restart();
+      return;
+    }
     const dt = delta / 1000;
     this.t += dt;
     const frame = this.input2.sample();

@@ -143,9 +143,22 @@ export class HudScene extends Phaser.Scene {
 
   update(time: number): void {
     this.gemIcon.setFrame(`gem.${Math.floor(time / 160) % 4}`);
-    // keep right-aligned / centered HUD anchored as the view width changes
+    // keep the HUD anchored inside the live safe-area insets as the view
+    // width / notch geometry changes (the canvas itself paints edge to edge)
     const W = VIEW.w;
-    for (let i = 0; i < this.tokens.length; i++) this.tokens[i].x = W - 14 - i * 15;
-    this.bossBar.x = W / 2;
+    const { insetL, insetR, insetT, insetB } = VIEW;
+    for (let i = 0; i < this.hearts.length; i++) {
+      this.hearts[i].setPosition(insetL + 10 + i * 11, insetT + 10);
+    }
+    this.gemIcon.setPosition(insetL + 12, insetT + 24);
+    this.gemText.setPosition(insetL + 20, insetT + 21);
+    this.powerIcon.setPosition(insetL + 12, insetT + 36);
+    this.powerText.setPosition(insetL + 22, insetT + 33);
+    this.keyIcon.setPosition(insetL + 48, insetT + 24);
+    this.keyText.setPosition(insetL + 55, insetT + 21);
+    for (let i = 0; i < this.tokens.length; i++) {
+      this.tokens[i].setPosition(W - insetR - 14 - i * 15, insetT + 12);
+    }
+    this.bossBar.setPosition(W / 2, H - 18 - insetB);
   }
 }

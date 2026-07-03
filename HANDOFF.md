@@ -238,6 +238,27 @@ Gotcha: carve air pits **after** filling soil, or they get floored over.
 - **Big subagent/Workflow fan-outs can hit account session limits** and fail
   mid-run. Keep parallel agent counts modest, or run when limits have reset.
   Workflows are resumable via `resumeFromRunId`.
+- **`ScaleManager.resize()` never updates the display aspect ratio** — the
+  canvas letterboxes forever after the first internal-width change. Use
+  `setGameSize()` (it calls `displaySize.setAspectRatio`). Related: Phaser's
+  `updateCenter` floors its margins (can expose a 1px unpainted hairline) —
+  `main.ts` `coverCanvas()` re-applies exact fractional cover CSS after every
+  refresh; don't remove it.
+- **Nothing sized from `VIEW.w` at create-time survives a live width change**
+  (rotation, URL-bar collapse). Menu scenes watch `layoutW` in `update()` and
+  `scene.restart()`; GameScene rebuilds only its parallax (width is baked into
+  the parallax texture keys, so rebuilds are collision-safe). Follow one of
+  these two patterns in every new scene.
+- **Menus must be directly tappable** — the touch rocker has no up/down, so
+  d-pad-only menus are unusable on phones. Use `attachMenuTouch`
+  (src/systems/menuTouch.ts): tap rows, drag to scroll, wheel on desktop. It
+  rides Phaser's scene input (native touch inside), which is safe on iOS.
+- **The headless browser preview freezes rAF** (`visibilityState: hidden`) —
+  the game boots but `game.loop` stalls. Drive it manually:
+  `setInterval(() => game.loop.step(t += 16.6), 16)`. Its TouchManager is also
+  absent (no touch support detected): test DOM touch controls by dispatching
+  `TouchEvent`s on `window`, and Phaser scene input by dispatching `MouseEvent`s
+  on the canvas. Synthetic `KeyboardEvent`s never reach Phaser — don't try.
 
 ---
 
