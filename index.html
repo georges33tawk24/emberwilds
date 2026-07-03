@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#2A1F1B" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <title>EMBERWILDS</title>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: #14100d;
+        height: 100%;
+        overflow: hidden;
+      }
+      #app {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+      }
+      canvas {
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
