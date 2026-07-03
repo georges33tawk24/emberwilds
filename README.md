@@ -142,6 +142,21 @@ localization tables — all riding on the systems already in place here.
 
 ## Deploy
 
-`npm run build` emits a static `/dist`. The live slice is published with
-[surge.sh](https://surge.sh): `surge ./dist emberwilds.surge.sh`
-(a `200.html` copy of `index.html` is included so deep links resolve).
+`npm run build` emits a static `/dist` — deploy it to any static host.
+
+**Cloudflare Pages (Git-connected, auto-deploys on push):**
+
+1. Cloudflare dashboard → **Workers & Pages** → **Create** → **Pages** →
+   **Connect to Git**, and pick the `emberwilds` repo.
+2. Build settings:
+   - **Framework preset:** Vite
+   - **Build command:** `npm run build`
+   - **Build output directory:** `dist`
+   - Node version is pinned by [`.node-version`](.node-version) (22.12.0).
+3. Save & Deploy. Every push to `main` rebuilds and publishes automatically to
+   the project's `*.pages.dev` URL (add a custom domain in the Pages project if
+   you like). No SPA `_redirects` rule is needed — the game is a single page.
+
+**surge.sh (the original preview slice):**
+`surge ./dist emberwilds.surge.sh` (a `200.html` copy of `index.html` is
+included so deep links resolve).
