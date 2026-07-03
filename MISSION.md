@@ -91,7 +91,12 @@ the art bible — not a wall of text:
 
 ---
 
-## PHASE 2 — Map scale-up: every level a Super-Mario-sized sprawl or bigger
+## PHASE 2 — Map & visual revamp: every level a Super-Mario-sized sprawl, every screen a painting
+
+This phase is a full revamp of the EXISTING game — layouts AND look — to the
+new bar, so the old worlds are indistinguishable in quality from the new ones.
+
+### 2A — Map scale-up
 
 Current levels are ~100–250 tiles wide and mostly linear. That is below the
 bar. New standard, enforced going forward (update `tests/levelLint.test.ts`
@@ -116,6 +121,39 @@ minimums as levels are upgraded):
 - **Authoring workflow stays:** Node generator script whose `validate()`
   mirrors the lint; iterate to OK; then write the `.ts`. Carve air pits AFTER
   filling soil.
+
+### 2B — Visual overhaul: "retro, but lavish"
+
+Owner directive: keep the warm 16-bit language but push the execution to the
+level of the best modern pixel-art games (Celeste / Owlboy / Blasphemous —
+retro resolution, lavish craft). Same palette law, far richer screens:
+
+- **Tilesets deepened:** interior texture variation (no flat fill regions),
+  edge details (grass tufts, hanging roots, moss drips, erosion), decorative
+  prop sets per world (mushrooms, stones, ruins fragments, signposts), and
+  **animated tiles** — swaying grass/vines, flickering torches, dripping
+  water, shimmering waterfalls.
+- **Animation budgets raised to spec (ART_BIBLE §budgets are the FLOOR):**
+  Sorrel idle with breathing + scarf/ear secondary motion, 8f run, distinct
+  jump/apex/fall poses, land squash, victory pose; every enemy gets a clear
+  telegraph pose and death animation. Nothing pops in/out without a frame.
+- **Light & atmosphere:** day-part tinting per level (dawn/day/dusk/night
+  sub-palettes), soft light shafts in forests/ruins, fireflies at dusk, dust
+  motes in light, a **contact shadow under every actor**, subtle vignette.
+  All warm/natural — the No-Neon law stands.
+- **Parallax to 4–6 layers** per world with aerial perspective (far = lighter
+  + cooler, near = darker + warmer) plus a foreground occluder layer (grass
+  blades, branches, hanging chains in the Foundry) drifting past the camera.
+- **Weather & ambient life per world:** drifting leaves (Thornwood), heat
+  shimmer + dust devils (Canyon), mist + drips (Mossgrave), fog banks (Fen),
+  falling snow + wind streaks (Rimefell), sparks + smoke (Foundry). Every
+  screen has motion that says the world is alive.
+- **UI as part of the storybook:** animated level-intro title cards, iris/wipe
+  transitions everywhere, HUD values that pulse/pop on change, gem pickups
+  arcing into the counter.
+- **Apply it retroactively:** Thornwood, Canyon, and Mossgrave assets get the
+  same overhaul as the new worlds — the first screen of the game must look as
+  good as the last.
 
 ---
 
@@ -188,6 +226,6 @@ Build the back half of the game per the original spec (§6/§7 of
 
 - [ ] Phase 0 — mobile full-screen fill + scrollable menus
 - [ ] Phase 1 — story spine (intro, interstitials, map warmth, true finale)
-- [ ] Phase 2 — level scale-up to ≥220×40 multi-route sprawls (rework W1–W3)
+- [ ] Phase 2 — full revamp of W1–W3: ≥220×40 multi-route sprawls + visual overhaul (2A layouts, 2B art)
 - [ ] Phase 3 — Worlds 4–6 + three new bosses + Coglar finale fight
 - [ ] Phase 4 — mechanics/power-ups/music/juice depth pass
