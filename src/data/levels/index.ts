@@ -9,6 +9,8 @@ import { LEVEL as CANYON_4 } from './canyon4';
 import { LEVEL as CANYON_5 } from './canyon5';
 import { LEVEL as MOSS_1 } from './moss1';
 import { LEVEL as MOSS_2 } from './moss2';
+import { LEVEL as MOSS_3 } from './moss3';
+import { LEVEL as MOSS_4 } from './moss4';
 
 export const LEVELS: LevelDef[] = [
   THORNWOOD_1 as LevelDef,
@@ -21,6 +23,8 @@ export const LEVELS: LevelDef[] = [
   CANYON_5 as LevelDef,
   MOSS_1 as LevelDef,
   MOSS_2 as LevelDef,
+  MOSS_3 as LevelDef,
+  MOSS_4 as LevelDef,
 ];
 
 const WORLD_LABELS: Record<string, { label: string; num: number }> = {
