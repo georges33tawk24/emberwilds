@@ -9,10 +9,10 @@ import { audio } from '../audio/engine';
 import { TITLE_SONG as TITLE_SONG_RAW } from '../audio/songs';
 import type { Song } from '../audio/songTypes';
 import { TUNING } from '../data/tuning';
+import { VIEW } from '../gfx/viewport';
 
 const TITLE_SONG = TITLE_SONG_RAW as Song;
 
-const W = TUNING.view.width;
 const H = TUNING.view.height;
 
 export class TitleScene extends Phaser.Scene {
@@ -33,6 +33,7 @@ export class TitleScene extends Phaser.Scene {
   }
 
   create(): void {
+    const W = VIEW.w;
     this.save = this.registry.get('save') as SaveManager;
     this.input2 = new InputSystem(this);
     this.parallax = buildParallax(this, 'thornwood', 'dawn', 11);
@@ -96,7 +97,7 @@ export class TitleScene extends Phaser.Scene {
     this.parallax.update(this.t * 6, 0);
     this.leafTimer -= dt;
     if (this.leafTimer <= 0) {
-      this.particles.ambientLeaf(0, 0, W, H);
+      this.particles.ambientLeaf(0, 0, VIEW.w, H);
       this.leafTimer = 0.5;
     }
     this.particles.update(dt);

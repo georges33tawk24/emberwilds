@@ -27,10 +27,15 @@ const FLAT = world([
 ]);
 const FLOOR_Y = 7 * TILE; // 112
 
-function makePlayer(w = FLAT, x = 64, y = FLOOR_Y) {
+function makePlayer(w = FLAT, x = 64, y = FLOOR_Y, waterAt?: (tx: number, ty: number) => boolean) {
   const bus = new EventBus();
-  const p = new PlayerSim(x, y, w, bus);
+  const p = new PlayerSim(x, y, w, bus, undefined, waterAt);
   return { p, bus };
+}
+
+/** A water lookup from ASCII rows where 'w' marks water. */
+function waterFrom(rows: string[]): (tx: number, ty: number) => boolean {
+  return (tx, ty) => rows[ty]?.[tx] === 'w';
 }
 
 function press(over: Partial<InputFrame>): InputFrame {
@@ -231,8 +236,8 @@ describe('upgrades (shop)', () => {
 });
 
 describe('swimming (water)', () => {
-  // a deep water column with a floor
-  const POOL = world([
+  // a deep water column with a floor (water is a region, queried separately)
+  const POOL_ROWS = [
     '................',
     '.....wwww.......',
     '.....wwww.......',
@@ -241,10 +246,12 @@ describe('swimming (water)', () => {
     '.....####.......',
     '................',
     '################',
-  ]);
+  ];
+  const POOL = world(POOL_ROWS);
+  const POOL_WATER = waterFrom(POOL_ROWS);
 
   it('is buoyant — sinks slowly in water, not full gravity', () => {
-    const { p } = makePlayer(POOL, 6 * TILE, 3 * TILE); // inside the water
+    const { p } = makePlayer(POOL, 6 * TILE, 3 * TILE, POOL_WATER); // inside the water
     for (let i = 0; i < 20; i++) p.step(EMPTY_INPUT);
     expect(p.submerged).toBe(true);
     // sink speed is capped far below normal fall (gravity.max 900)
@@ -252,7 +259,7 @@ describe('swimming (water)', () => {
   });
 
   it('a stroke (jump press) pushes upward, repeatably', () => {
-    const { p } = makePlayer(POOL, 6 * TILE, 4 * TILE);
+    const { p } = makePlayer(POOL, 6 * TILE, 4 * TILE, POOL_WATER);
     for (let i = 0; i < 6; i++) p.step(EMPTY_INPUT);
     p.step(press({ jumpPressed: true, jumpHeld: true }));
     expect(p.vy).toBeLessThan(0); // moving up
@@ -264,7 +271,7 @@ describe('swimming (water)', () => {
   });
 
   it('leaves swim mode when out of the water', () => {
-    const { p } = makePlayer(POOL, 6 * TILE, 4 * TILE);
+    const { p } = makePlayer(POOL, 6 * TILE, 4 * TILE, POOL_WATER);
     p.step(EMPTY_INPUT);
     expect(p.submerged).toBe(true);
     // stroke up out of the pool

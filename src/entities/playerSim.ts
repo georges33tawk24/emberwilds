@@ -11,7 +11,6 @@ import { STEP_S, TUNING } from '../data/tuning';
 import type { EventBus } from '../core/events';
 import {
   groundBelow,
-  inWater,
   moveX,
   moveY,
   touchesSpikes,
@@ -19,6 +18,9 @@ import {
   type Body,
   type SolidityQuery,
 } from '../systems/physics';
+
+/** True if the tile (tx, ty) is inside a water body. */
+export type WaterQuery = (tx: number, ty: number) => boolean;
 
 export interface InputFrame {
   left: boolean;
@@ -130,11 +132,19 @@ export class PlayerSim {
     private solidAt: SolidityQuery,
     private bus: EventBus,
     config: PlayerConfig = DEFAULT_PLAYER_CONFIG,
+    private waterAt: WaterQuery = () => false,
   ) {
     this.config = config;
     this.body = { x, y, w: T.player.bodyW, h: T.player.bodyH, vx: 0, vy: 0 };
     this.maxHearts = config.maxHearts;
     this.hearts = config.maxHearts;
+  }
+
+  /** submerged if the body's mid-section is in a water tile */
+  private checkSubmerged(): boolean {
+    const tx = Math.floor(this.body.x / 16);
+    const ty = Math.floor((this.body.y - this.body.h / 2) / 16);
+    return this.waterAt(tx, ty);
   }
 
   get x(): number { return this.body.x; }
@@ -166,7 +176,7 @@ export class PlayerSim {
     this.landedImpact = 0;
     this.airJumped = false;
     this.stroked = false;
-    this.submerged = inWater(this.body, this.solidAt);
+    this.submerged = this.checkSubmerged();
 
     this.coyote = Math.max(0, this.coyote - dt);
     this.jumpBuffer = Math.max(0, this.jumpBuffer - dt);
@@ -313,11 +323,11 @@ export class PlayerSim {
           this.facing = input.left ? -1 : 1;
         }
 
-        // drop through one-way platforms: down + jump press while standing on one
+        // drop through one-way platforms: down+jump, or POUND while standing on
+        // one (the latter keeps mobile working without a down button)
         if (
           this.onGround &&
-          input.down &&
-          input.jumpPressed &&
+          ((input.down && input.jumpPressed) || input.poundPressed) &&
           groundBelow(this.body, this.solidAt) === 'oneway'
         ) {
           this.droppingThrough = 0.18;
@@ -382,9 +392,10 @@ export class PlayerSim {
       if (Math.abs(this.body.vx) < 2) this.body.vx = 0;
     }
     this.applyGravity(dt, false);
-    // vertical nudge from up/down held, and a strong stroke on jump press
+    // vertical nudge from up/down held; a dive on pound (mobile has no down key)
     if (input.up) this.body.vy -= T.water.horizAccel * 0.35 * dt;
-    if (input.down) this.body.vy += T.water.horizAccel * 0.3 * dt;
+    if (input.down || input.poundPressed) this.body.vy += T.water.horizAccel * 0.4 * dt;
+    if (input.poundPressed) this.body.vy = Math.max(this.body.vy, T.water.sinkCap);
     if (this.body.vy < -T.water.riseCap) this.body.vy = -T.water.riseCap;
     if (this.body.vy > T.water.sinkCap) this.body.vy = T.water.sinkCap;
     if (input.jumpPressed) {

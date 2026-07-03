@@ -5,8 +5,8 @@ import { InputSystem } from '../systems/input';
 import { audio } from '../audio/engine';
 import { LEVELS, worldOf } from '../data/levels';
 import { TUNING } from '../data/tuning';
+import { VIEW } from '../gfx/viewport';
 
-const W = TUNING.view.width;
 const H = TUNING.view.height;
 
 interface ClearData {
@@ -32,6 +32,7 @@ export class ClearScene extends Phaser.Scene {
     this.inputSys = new InputSystem(this);
     this.grace = 0.6;
 
+    const W = VIEW.w;
     this.add.rectangle(W / 2, H / 2, W, H, 0x14100d, 0.66);
     this.add.rectangle(W / 2, H / 2, 260, 150, 0x2a1f1b, 0.95).setStrokeStyle(1, 0x7a5a3e);
 

@@ -10,8 +10,8 @@ import { SaveManager, SHOP_ITEMS, type Upgrades } from '../systems/save';
 import { ParticleSystem } from '../gfx/particles';
 import { audio } from '../audio/engine';
 import { TUNING } from '../data/tuning';
+import { VIEW } from '../gfx/viewport';
 
-const W = TUNING.view.width;
 const H = TUNING.view.height;
 
 interface Row {
@@ -38,6 +38,7 @@ export class ShopScene extends Phaser.Scene {
   }
 
   create(data: { returnTo?: string }): void {
+    const W = VIEW.w;
     this.returnTo = data.returnTo ?? 'WorldMap';
     this.save = this.registry.get('save') as SaveManager;
     this.inputSys = new InputSystem(this);
@@ -75,6 +76,7 @@ export class ShopScene extends Phaser.Scene {
   }
 
   private redraw(): void {
+    const W = VIEW.w;
     this.gemText.setText(`${this.save.data.gems}`);
     SHOP_ITEMS.forEach((item, i) => {
       const row = this.rows[i];
@@ -115,7 +117,7 @@ export class ShopScene extends Phaser.Scene {
     if (this.save.buyUpgrade(item.key)) {
       audio.sfx('token');
       const y = 128 + this.sel * 42;
-      this.particles.sparks(W / 2 + 90, y, 8);
+      this.particles.sparks(VIEW.w / 2 + 90, y, 8);
       this.cameras.main.flash(120, 90, 60, 20);
       this.redraw();
     } else {

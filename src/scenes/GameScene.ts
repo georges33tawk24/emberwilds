@@ -26,8 +26,8 @@ import { PixelText } from '../gfx/text';
 import { themeOf, type WorldTheme } from '../gfx/themes';
 import { levelLabel } from '../data/levels';
 import { audio } from '../audio/engine';
+import { VIEW } from '../gfx/viewport';
 
-const W = TUNING.view.width;
 const H = TUNING.view.height;
 const T = TUNING;
 
@@ -130,8 +130,13 @@ export class GameScene extends Phaser.Scene {
   private switches: { tx: number; ty: number; spr: Phaser.GameObjects.Image; hit: boolean }[] = [];
   private gatesOpen = false;
   private waterGfx: Phaser.GameObjects.Graphics | null = null;
+  private waterOverGfx: Phaser.GameObjects.Graphics | null = null;
   private waterTiles: { tx: number; ty: number; surface: boolean }[] = [];
   private wasSubmerged = false;
+  private bubbleTimer = 0;
+  /** true if the tile is inside a water body (region-based, not a grid tile). */
+  private waterAt = (tx: number, ty: number): boolean =>
+    this.level.waterSet.has(ty * this.level.width + tx);
 
   private bossSim: BossSim | null = null;
   private bossSpr: Phaser.GameObjects.Sprite | null = null;
@@ -151,7 +156,7 @@ export class GameScene extends Phaser.Scene {
   private camY = 0;
   /** per-platform camera zoom (FOV) and the resulting visible view size. */
   private camZoom = 1;
-  private vw: number = W;
+  private vw: number = 640;
   private vh: number = H;
   private lookAhead = 0;
   private t = 0;
@@ -203,6 +208,7 @@ export class GameScene extends Phaser.Scene {
     this.switches = [];
     this.gatesOpen = false;
     this.waterGfx = null;
+    this.waterOverGfx = null;
     this.waterTiles = [];
     this.wasSubmerged = false;
     this.acc = 0;
@@ -226,7 +232,7 @@ export class GameScene extends Phaser.Scene {
       // each charge rank shaves 130 ms off the windup
       chargeMs: Math.max(180, TUNING.weapons.charge.chargeMs - up.charge * 130),
     };
-    this.player = new PlayerSim(start.x, start.y, this.world.solidAt, this.bus, playerConfig);
+    this.player = new PlayerSim(start.x, start.y, this.world.solidAt, this.bus, playerConfig, this.waterAt);
     this.pPrevX = start.x;
     this.pPrevY = start.y;
     this.playerSpr = this.add.sprite(start.x, start.y, 'player', 'idle.0')
@@ -252,7 +258,7 @@ export class GameScene extends Phaser.Scene {
 
     // per-platform camera FOV: mobile pulls in closer for a comfortable read
     this.camZoom = isMobile() ? T.camera.zoomMobile : T.camera.zoomDesktop;
-    this.vw = W / this.camZoom;
+    this.vw = VIEW.w / this.camZoom;
     this.vh = H / this.camZoom;
     this.cameras.main.setZoom(this.camZoom);
 
@@ -368,15 +374,23 @@ export class GameScene extends Phaser.Scene {
           const img = this.add.image(tx * TILE, ty * TILE, 'pickups', 'gate.0')
             .setOrigin(0).setDepth(-8);
           this.gateSprites.set(`${tx},${ty}`, img);
-        } else if (ch === 'w') {
-          // water is passable; render a translucent layer + note surface tiles
-          const above = ty > 0 ? this.level.grid[ty - 1][tx] : '.';
-          this.waterTiles.push({ tx, ty, surface: above !== 'w' });
         }
       }
     }
+
+    // water bodies (region-based) — objects sit inside, so build from waterSet
+    const wset = this.level.waterSet;
+    const wd = this.level.width;
+    for (const key of wset) {
+      const tx = key % wd;
+      const ty = Math.floor(key / wd);
+      this.waterTiles.push({ tx, ty, surface: !wset.has((ty - 1) * wd + tx) });
+    }
     if (this.waterTiles.length > 0) {
+      // body sits behind actors (depth 4); a faint "over" film sits in front
+      // of submerged actors (depth 11.5) for real depth — see renderPass.
       this.waterGfx = this.add.graphics().setDepth(4);
+      this.waterOverGfx = this.add.graphics().setDepth(11.5);
       this.drawWater(0);
     }
   }
@@ -386,20 +400,29 @@ export class GameScene extends Phaser.Scene {
     const g = this.waterGfx;
     if (!g) return;
     g.clear();
+    const over = this.waterOverGfx;
+    if (over) over.clear();
     for (const wt of this.waterTiles) {
       const x = wt.tx * TILE;
       const y = wt.ty * TILE;
+      // a faint film over submerged actors for depth
+      if (over) over.fillStyle(0x3c5068, 0.16).fillRect(x, y, TILE, TILE);
       // deeper, clearly-blue body so it reads against the grey stone
       g.fillStyle(0x3c5068, 0.62).fillRect(x, y, TILE, TILE);
-      g.fillStyle(0x243049, 0.3).fillRect(x, y + TILE - 5, TILE, 5);
-      // caustic shimmer flecks
-      const fl = (Math.sin(t * 3 + wt.tx * 0.9 + wt.ty) + 1) * 0.5;
-      if (fl > 0.75) g.fillStyle(0xa9c6d6, 0.22).fillRect(x + 4, y + 6, 3, 2);
+      g.fillStyle(0x243049, 0.28).fillRect(x, y + TILE - 5, TILE, 5);
+      // drifting caustic light bands — a soft diagonal flow that reads as depth
+      const flow = (x * 0.12 + y * 0.2 - t * 22) % 24;
+      if (flow >= 0 && flow < 6) g.fillStyle(0x5a7088, 0.2).fillRect(x, y + 2, TILE, TILE - 4);
+      const fl = Math.sin(t * 2.4 + wt.tx * 0.8 + wt.ty * 1.3);
+      if (fl > 0.6) g.fillStyle(0xa9c6d6, 0.18).fillRect(x + 4, y + 5, 3, 2);
+      if (fl < -0.7) g.fillStyle(0xa9c6d6, 0.14).fillRect(x + 9, y + 9, 2, 2);
       if (wt.surface) {
-        const wob = Math.round(Math.sin(t * 2.2 + wt.tx * 0.6) * 1.5);
-        g.fillStyle(0x243049, 0.5).fillRect(x, y + wob, TILE, 2);
-        g.fillStyle(0xa9c6d6, 0.75).fillRect(x, y + 1 + wob, TILE, 1);
-        g.fillStyle(0xdceaf0, 0.5).fillRect(x + 2, y + wob, TILE - 6, 1);
+        // a rolling two-wave surface with a bright glint crest
+        const wob = Math.sin(t * 2.4 + wt.tx * 0.7) * 1.4 + Math.sin(t * 3.7 + wt.tx * 1.9) * 0.8;
+        const sy = Math.round(wob);
+        g.fillStyle(0x243049, 0.55).fillRect(x, y + sy, TILE, 2);
+        g.fillStyle(0xa9c6d6, 0.8).fillRect(x, y + 1 + sy, TILE, 1);
+        g.fillStyle(0xdceaf0, 0.55).fillRect(x + 2 + ((Math.floor(t * 8) + wt.tx) % 6), y + sy, 4, 1);
       }
     }
   }
@@ -470,6 +493,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private showIntroCard(): void {
+    const W = VIEW.w;
     const card = this.add.container(0, 0).setScrollFactor(0).setDepth(100);
     const bg = this.add.rectangle(W / 2, H / 2 - 40, W, 34, 0x2a1f1b, 0.85);
     const name = new PixelText(this, W / 2, H / 2 - 48, this.level.name.toUpperCase(), {
@@ -500,6 +524,7 @@ export class GameScene extends Phaser.Scene {
 
   private flashVignette(): void {
     if (this.save.data.settings.flashReduction) return;
+    const W = VIEW.w;
     const r = this.add.rectangle(W / 2, H / 2, W, H, 0xc7402b, 0.22).setScrollFactor(0).setDepth(90);
     this.tweens.add({ targets: r, alpha: 0, duration: 220, onComplete: () => r.destroy() });
   }
@@ -777,8 +802,8 @@ export class GameScene extends Phaser.Scene {
     const margin = 340;
     for (const e of this.enemies) {
       if (!e.sim.alive) continue;
-      const dx = Math.abs(e.sim.body.x - (this.camX + W / 2));
-      if (dx > W / 2 + margin) continue; // culled: off-screen + margin
+      const dx = Math.abs(e.sim.body.x - (this.camX + this.vw / 2));
+      if (dx > this.vw / 2 + margin) continue; // culled: off-screen + margin
       e.sim.step(this.player.x, this.player.y, this.world.solidAt);
     }
   }
@@ -888,7 +913,7 @@ export class GameScene extends Phaser.Scene {
           audio.sfx('token');
           this.particles.sparks(p.x, p.y, 12);
           const label = POWER_TOAST[p.type];
-          const toast = new PixelText(this, W / 2, H / 2 - 60, label, {
+          const toast = new PixelText(this, VIEW.w / 2, H / 2 - 60, label, {
             scale: 1, color: POWER_COLOR[power], align: 'center', shadow: true,
           }).setScrollFactor(0).setDepth(95);
           this.tweens.add({
@@ -983,14 +1008,24 @@ export class GameScene extends Phaser.Scene {
   private handleWater(): void {
     const sub = this.player.submerged;
     if (sub !== this.wasSubmerged) {
-      const surfaceY = Math.floor((this.player.y - this.player.body.h / 2) / TILE) * TILE;
-      this.particles.dust(this.player.x, surfaceY, 6, 50);
-      this.particles.sparks(this.player.x, surfaceY, 3);
-      audio.sfx('land');
+      // splash at the actual water surface above the player's column
+      const tx = Math.floor(this.player.x / TILE);
+      let topTy = Math.floor(this.player.y / TILE);
+      while (this.waterAt(tx, topTy - 1)) topTy--;
+      const surfaceY = topTy * TILE;
+      this.particles.dust(this.player.x, surfaceY, sub ? 9 : 6, 70);
+      this.particles.sparks(this.player.x, surfaceY, 5);
+      audio.sfx(sub ? 'land' : 'spring');
       this.wasSubmerged = sub;
     }
-    if (sub && this.player.stroked) {
-      this.particles.dust(this.player.x, this.player.y - 4, 2, 18);
+    if (sub) {
+      // stroke kicks + a slow trickle of rising bubbles
+      if (this.player.stroked) this.particles.dust(this.player.x, this.player.y - 4, 3, 22);
+      this.bubbleTimer -= STEP_MS / 1000;
+      if (this.bubbleTimer <= 0) {
+        this.bubbleTimer = 0.32;
+        this.particles.bubble(this.player.x + this.rng.range(-4, 4), this.player.y - this.player.body.h * 0.5);
+      }
     }
   }
 
@@ -1060,6 +1095,9 @@ export class GameScene extends Phaser.Scene {
 
   private renderPass(dt: number, alpha: number): void {
     this.t += dt;
+    // keep the visible view size current if the window/orientation changed
+    this.vw = VIEW.w / this.camZoom;
+    this.vh = H / this.camZoom;
     const lerp = (a: number, b: number) => a + (b - a) * Math.min(alpha, 1);
 
     // player sprite: interpolate, animate, squash & stretch, i-frame flicker
@@ -1102,7 +1140,11 @@ export class GameScene extends Phaser.Scene {
     } else {
       this.playerSpr.setAlpha(1);
     }
-    if (this.player.charging) {
+    if (this.player.submerged) {
+      // underwater: cool blue tint + slight transparency so it reads as sunk
+      this.playerSpr.setTint(0x8fb4cc);
+      this.playerSpr.setAlpha(this.playerSpr.alpha * 0.9);
+    } else if (this.player.charging) {
       this.playerSpr.setTint(Math.floor(this.t * 10) % 2 === 0 ? 0xf2a03d : 0xffffff);
     } else if (this.player.power !== 'sling') {
       // steady power glow, gently pulsing so the transformation always reads
@@ -1130,6 +1172,8 @@ export class GameScene extends Phaser.Scene {
       const efi = c > 1 ? Math.floor(e.sim.animT * 8) % c : 0;
       e.spr.setFrame(`${group}.${efi}`);
       e.spr.setFlipX(e.sim.facing === -1);
+      const submerged = this.waterTiles.length > 0 &&
+        this.waterAt(Math.floor(e.sim.body.x / TILE), Math.floor((e.sim.body.y - e.sim.body.h / 2) / TILE));
       if (e.sim.frozen > 0) {
         // encased in ice: pale-blue tint, motionless
         e.spr.setTint(0xa9c6d6);
@@ -1137,6 +1181,9 @@ export class GameScene extends Phaser.Scene {
       } else if (e.sim.stun > 0) {
         e.spr.clearTint();
         e.spr.setAngle(Math.sin(this.t * 40) * 8);
+      } else if (submerged) {
+        e.spr.setTint(0x8fb4cc); // underwater tint
+        e.spr.setAngle(0);
       } else {
         e.spr.clearTint();
         e.spr.setAngle(0);
@@ -1233,7 +1280,7 @@ export class GameScene extends Phaser.Scene {
     // ambient leaves
     this.leafTimer -= dt;
     if (this.leafTimer <= 0) {
-      this.particles.ambientLeaf(this.camX, this.camY, W, H);
+      this.particles.ambientLeaf(this.camX, this.camY, this.vw, this.vh);
       this.leafTimer = 0.55;
     }
     this.particles.update(dt);

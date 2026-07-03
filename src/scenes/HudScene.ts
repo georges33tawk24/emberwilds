@@ -3,8 +3,8 @@ import Phaser from 'phaser';
 import type { EventBus } from '../core/events';
 import { PixelText } from '../gfx/text';
 import { TUNING } from '../data/tuning';
+import { VIEW } from '../gfx/viewport';
 
-const W = TUNING.view.width;
 const H = TUNING.view.height;
 
 interface HudData {
@@ -33,6 +33,7 @@ export class HudScene extends Phaser.Scene {
   }
 
   create(data: HudData): void {
+    const W = VIEW.w;
     this.hearts = [];
     this.tokens = [];
     this.unsub.forEach((u) => u());
@@ -142,5 +143,9 @@ export class HudScene extends Phaser.Scene {
 
   update(time: number): void {
     this.gemIcon.setFrame(`gem.${Math.floor(time / 160) % 4}`);
+    // keep right-aligned / centered HUD anchored as the view width changes
+    const W = VIEW.w;
+    for (let i = 0; i < this.tokens.length; i++) this.tokens[i].x = W - 14 - i * 15;
+    this.bossBar.x = W / 2;
   }
 }

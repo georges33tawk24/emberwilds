@@ -13,24 +13,28 @@ import { PauseScene } from './scenes/PauseScene';
 import { ClearScene } from './scenes/ClearScene';
 import { SaveManager } from './systems/save';
 import { audio } from './audio/engine';
-import { TUNING } from './data/tuning';
 import { initTouchControls } from './systems/touch';
+import { VIEW, VIEW_H, widthForAspect } from './gfx/viewport';
 
 const save = new SaveManager();
 audio.applySettings(save.data.settings);
 
+// pick the starting internal width from the device aspect (height fixed at 360)
+VIEW.w = widthForAspect(window.innerWidth, window.innerHeight);
+
 const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'app',
-  width: TUNING.view.width,
-  height: TUNING.view.height,
+  width: VIEW.w,
+  height: VIEW_H,
   backgroundColor: '#14100d',
   pixelArt: true,
   roundPixels: true,
   antialias: false,
   scale: {
-    // FIT scales the internal canvas up to fill the window (letterboxed to
-    // 16:9), so the game is as big as the screen on desktop and mobile alike.
+    // The game's internal size matches the screen aspect (flexible width,
+    // fixed 360 height), so FIT scales it to fill the whole screen with no
+    // letterbox bars on any device.
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
@@ -41,6 +45,28 @@ const game = new Phaser.Game({
 });
 
 game.registry.set('save', save);
+
+// re-fit the internal width to the aspect ratio on window/orientation change
+function refit(): void {
+  const w = widthForAspect(window.innerWidth, window.innerHeight);
+  if (w !== VIEW.w) {
+    VIEW.w = w;
+    game.scale.resize(w, VIEW_H);
+    game.scale.refresh();
+  }
+}
+window.addEventListener('resize', refit);
+window.addEventListener('orientationchange', () => setTimeout(refit, 100));
+
+// While a touch device is held in portrait the #rotate prompt (index.html)
+// covers the screen; sleep the game loop so no gameplay runs behind it and the
+// battery isn't spent rendering a hidden frame. Resumes the instant it's turned
+// back to landscape.
+const portraitMq = window.matchMedia('(orientation: portrait) and (pointer: coarse)');
+portraitMq.addEventListener('change', (e) => {
+  if (e.matches) game.loop.sleep();
+  else game.loop.wake();
+});
 
 if (import.meta.env.DEV) {
   (window as unknown as { __game: Phaser.Game }).__game = game;

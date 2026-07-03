@@ -21,6 +21,9 @@ export interface ParsedLevel {
   playerStart: { x: number; y: number };
   gemTotal: number;
   tokenTotal: number;
+  /** water bodies (inclusive tile rects) + a fast per-tile lookup */
+  water: [number, number, number, number][];
+  waterSet: Set<number>;
 }
 
 export function parseLevel(def: LevelDef): ParsedLevel {
@@ -61,6 +64,19 @@ export function parseLevel(def: LevelDef): ParsedLevel {
 
   if (!playerStart) throw new Error(`Level "${def.name}": no player start 'P'`);
 
+  // water regions (rects) + any legacy 'w' tiles → a fast per-tile lookup
+  const water: [number, number, number, number][] = (def.water ?? []).map((r) => [...r]);
+  const waterSet = new Set<number>();
+  const mark = (tx: number, ty: number): void => {
+    if (tx >= 0 && tx < width && ty >= 0 && ty < height) waterSet.add(ty * width + tx);
+  };
+  for (const [x0, y0, x1, y1] of water) {
+    for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) mark(tx, ty);
+  }
+  for (let ty = 0; ty < height; ty++) {
+    for (let tx = 0; tx < width; tx++) if (grid[ty][tx] === 'w') mark(tx, ty);
+  }
+
   return {
     name: def.name,
     theme: def.theme,
@@ -73,6 +89,8 @@ export function parseLevel(def: LevelDef): ParsedLevel {
     playerStart,
     gemTotal,
     tokenTotal,
+    water,
+    waterSet,
   };
 }
 

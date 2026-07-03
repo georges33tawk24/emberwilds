@@ -54,6 +54,12 @@ export interface LevelDef {
   daypart: 'day' | 'dawn' | 'dusk';
   /** Boss arena: 'Y' spawns the boss; clear triggers on its defeat. */
   boss?: boolean;
+  /**
+   * Water bodies as inclusive tile rects [x0, y0, x1, y1]. Water is a rendered
+   * + physics REGION layered behind gameplay, not a tile — so gems, enemies,
+   * and the player sit naturally *inside* it rather than replacing tiles.
+   */
+  water?: [number, number, number, number][];
 }
 
 export const TILE = 16;

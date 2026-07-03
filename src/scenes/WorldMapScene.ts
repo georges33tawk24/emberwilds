@@ -14,8 +14,8 @@ import { audio } from '../audio/engine';
 import { LEVELS, worldOf, levelLabel } from '../data/levels';
 import { themeOf } from '../gfx/themes';
 import { TUNING } from '../data/tuning';
+import { VIEW } from '../gfx/viewport';
 
-const W = TUNING.view.width;
 const H = TUNING.view.height;
 
 interface Node {
@@ -51,6 +51,7 @@ export class WorldMapScene extends Phaser.Scene {
   }
 
   create(): void {
+    const W = VIEW.w;
     this.save = this.registry.get('save') as SaveManager;
     this.inputSys = new InputSystem(this);
     this.nodes = [];
@@ -77,7 +78,7 @@ export class WorldMapScene extends Phaser.Scene {
     this.gemText = new PixelText(this, W - 70, 11, '', { scale: 1, color: 'W', shadow: true }).setScrollFactor(0).setDepth(31);
 
     this.add.rectangle(W / 2, H - 12, W, 24, 0x2a1f1b, 0.55).setScrollFactor(0).setDepth(30);
-    this.prompt = new PixelText(this, W / 2, H - 17, 'Z  ENTER      up  THE GROVE      ESC  TITLE', {
+    this.prompt = new PixelText(this, W / 2, H - 17, 'Z  ENTER      FIRE  THE GROVE      ESC  BACK', {
       scale: 1, color: 'W', align: 'center', shadow: true,
     }).setScrollFactor(0).setDepth(31);
 
@@ -216,13 +217,15 @@ export class WorldMapScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     const dt = delta / 1000;
+    const W = VIEW.w;
     this.t += dt;
     const f = this.inputSys.sample();
 
     if (!this.moving) {
       if (f.right && !this.prev.right) this.moveSel(1);
       else if (f.left && !this.prev.left) this.moveSel(-1);
-      else if (f.up && !this.prev.up) {
+      else if ((f.up && !this.prev.up) || f.firePressed) {
+        // up (keyboard/pad) or FIRE (mobile) opens the Grove
         audio.sfx('menuSelect');
         this.scene.launch('Shop', { returnTo: 'WorldMap' });
         this.scene.pause();

@@ -5,8 +5,8 @@ import { InputSystem } from '../systems/input';
 import { SaveManager } from '../systems/save';
 import { audio } from '../audio/engine';
 import { TUNING } from '../data/tuning';
+import { VIEW } from '../gfx/viewport';
 
-const W = TUNING.view.width;
 const H = TUNING.view.height;
 
 type Item =
@@ -28,6 +28,7 @@ export class PauseScene extends Phaser.Scene {
   }
 
   create(): void {
+    const W = VIEW.w;
     this.save = this.registry.get('save') as SaveManager;
     this.inputSys = new InputSystem(this);
     this.sel = 0;

@@ -74,16 +74,16 @@ interface BtnDef {
   faceHi: string;
 }
 
+// Left thumb: a wide LEFT/RIGHT rocker (no up/down — vertical actions live on
+// the right cluster). Right thumb: JUMP (big), FIRE, POUND. POUND is
+// contextual (ground-pound in air, drop-through on a one-way, dive in water).
 const BUTTONS: BtnDef[] = [
-  // d-pad (carved wood, cream chevrons)
-  { key: 'left', icon: 'left', shape: 'pad', size: 62, css: { left: 24, bottom: 100 }, face: C.b, faceDark: C.B, faceHi: C.t },
-  { key: 'right', icon: 'right', shape: 'pad', size: 62, css: { left: 122, bottom: 100 }, face: C.b, faceDark: C.B, faceHi: C.t },
-  { key: 'up', icon: 'up', shape: 'pad', size: 60, css: { left: 74, bottom: 162 }, face: C.b, faceDark: C.B, faceHi: C.t },
-  { key: 'down', icon: 'down', shape: 'pad', size: 60, css: { left: 74, bottom: 34 }, face: C.b, faceDark: C.B, faceHi: C.t },
+  { key: 'left', icon: 'left', shape: 'pad', size: 82, css: { left: 22, bottom: 42 }, face: C.b, faceDark: C.B, faceHi: C.t },
+  { key: 'right', icon: 'right', shape: 'pad', size: 82, css: { left: 112, bottom: 42 }, face: C.b, faceDark: C.B, faceHi: C.t },
   // actions (gemstone faces)
-  { key: 'jump', icon: 'jump', shape: 'round', size: 88, css: { right: 28, bottom: 40 }, face: C.O, faceDark: C.o, faceHi: C.W },
-  { key: 'fire', icon: 'fire', shape: 'round', size: 74, css: { right: 122, bottom: 100 }, face: C.g, faceDark: C.G, faceHi: C.l },
-  { key: 'pound', icon: 'pound', shape: 'round', size: 66, css: { right: 42, bottom: 142 }, face: C.R, faceDark: C.d, faceHi: C.o },
+  { key: 'jump', icon: 'jump', shape: 'round', size: 92, css: { right: 26, bottom: 38 }, face: C.O, faceDark: C.o, faceHi: C.W },
+  { key: 'fire', icon: 'fire', shape: 'round', size: 78, css: { right: 128, bottom: 54 }, face: C.g, faceDark: C.G, faceHi: C.l },
+  { key: 'pound', icon: 'pound', shape: 'round', size: 70, css: { right: 40, bottom: 146 }, face: C.R, faceDark: C.d, faceHi: C.o },
   // pause (small carved tablet)
   { key: 'pause', icon: 'pause', shape: 'tab', size: 46, css: { right: 16, top: 14 }, face: C.b, faceDark: C.B, faceHi: C.t },
   // fullscreen (small carved tablet, top-left)

@@ -9,8 +9,8 @@ import Phaser from 'phaser';
 import { PALETTE } from './palette';
 import { Rng } from '../core/rng';
 import { TUNING } from '../data/tuning';
+import { VIEW } from './viewport';
 
-const W = TUNING.view.width;
 const H = TUNING.view.height;
 
 type Daypart = 'day' | 'dawn' | 'dusk';
@@ -64,6 +64,7 @@ function makeCanvas(w: number, h: number): [HTMLCanvasElement, CanvasRenderingCo
 
 /** Soft rounded hill silhouette strip that tiles horizontally. */
 function hillStrip(color: string, baseY: number, amp: number, rng: Rng, bumps: number): HTMLCanvasElement {
+  const W = VIEW.w;
   const [c, ctx] = makeCanvas(W, H);
   ctx.fillStyle = color;
   const pts: number[] = [];
@@ -87,6 +88,7 @@ function hillStrip(color: string, baseY: number, amp: number, rng: Rng, bumps: n
 
 /** Flat-topped mesa/butte silhouette strip that tiles horizontally. */
 function mesaStrip(color: string, baseY: number, rng: Rng, count: number, maxH: number): HTMLCanvasElement {
+  const W = VIEW.w;
   const [c, ctx] = makeCanvas(W, H);
   ctx.fillStyle = color;
   ctx.fillRect(0, baseY, W, H - baseY);
@@ -107,6 +109,7 @@ function mesaStrip(color: string, baseY: number, rng: Rng, count: number, maxH: 
 
 /** Stylized tree line that tiles horizontally. */
 function treeStrip(color: string, baseY: number, rng: Rng, count: number, trunk: boolean): HTMLCanvasElement {
+  const W = VIEW.w;
   const [c, ctx] = makeCanvas(W, H);
   ctx.fillStyle = color;
   ctx.fillRect(0, baseY, W, H - baseY);
@@ -128,6 +131,7 @@ function treeStrip(color: string, baseY: number, rng: Rng, count: number, trunk:
 
 /** Low desert scrub + rock spires for the canyon near layer. */
 function scrubStrip(color: string, baseY: number, rng: Rng, count: number): HTMLCanvasElement {
+  const W = VIEW.w;
   const [c, ctx] = makeCanvas(W, H);
   ctx.fillStyle = color;
   ctx.fillRect(0, baseY, W, H - baseY);
@@ -170,10 +174,12 @@ export function buildParallax(
   daypart: Daypart,
   seed = 7,
 ): ParallaxLayers {
+  const W = VIEW.w;
   const sky = SKIES[daypart];
   const tints = (THEME_TINTS[theme] ?? THEME_TINTS.thornwood)[daypart];
   const rng = new Rng(seed);
-  const keyBase = `bg-${theme}-${daypart}-${seed}`;
+  // width is baked into the key so a different aspect ratio regenerates cleanly
+  const keyBase = `bg-${theme}-${daypart}-${seed}-${W}`;
 
   if (!scene.textures.exists(`${keyBase}-sky`)) {
     const [c, ctx] = makeCanvas(W, H);

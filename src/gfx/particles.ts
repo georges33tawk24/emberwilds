@@ -87,6 +87,13 @@ export class ParticleSystem {
       this.rng.range(-18, -6), this.rng.range(14, 26), this.rng.range(6, 10), 0, 8);
   }
 
+  /** A small air bubble that wobbles upward (used underwater). */
+  bubble(x: number, y: number): void {
+    // negative gravity so it rises; a little horizontal flutter
+    this.spawn('pickups', 'dust', 3, x, y,
+      this.rng.range(-8, 8), this.rng.range(-26, -16), this.rng.range(0.5, 0.8), -30, 4);
+  }
+
   update(dt: number): void {
     for (const p of this.pool.active) {
       p.life -= dt;
