@@ -266,7 +266,12 @@ export class GameScene extends Phaser.Scene {
 
     this.camX = Phaser.Math.Clamp(start.x - this.vw / 2, 0, Math.max(0, this.level.width * TILE - this.vw));
     this.camY = Phaser.Math.Clamp(start.y - this.vh * 0.62, 0, Math.max(0, this.level.height * TILE - this.vh));
-    this.cameras.main.setScroll(Math.round(this.camX), Math.round(this.camY));
+    // pull scroll back by half the zoom delta — Phaser zooms around the
+    // viewport center while camX/camY track the visible top-left (see renderPass)
+    this.cameras.main.setScroll(
+      Math.round(this.camX - (VIEW.w - this.vw) / 2),
+      Math.round(this.camY - (H - this.vh) / 2),
+    );
 
     this.wireEvents();
     this.scene.launch('Hud', { bus: this.bus, tokenTotal: 4, hearts: this.player.hearts, max: this.player.maxHearts });
@@ -1283,7 +1288,13 @@ export class GameScene extends Phaser.Scene {
     const shake = this.trauma * this.trauma * T.camera.shakeMax;
     const shX = shake * this.rng.range(-1, 1);
     const shY = shake * this.rng.range(-1, 1);
-    this.cameras.main.setScroll(Math.round(this.camX + shX), Math.round(this.camY + shY));
+    // camX/camY are the visible world top-left, but Phaser zooms around the
+    // viewport CENTER — at zoom > 1 scroll must be pulled back by half the
+    // zoom delta or the view drifts down-right past the level bounds (the
+    // "world below the map edge" strip on mobile)
+    const zoomOffX = (VIEW.w - this.vw) / 2;
+    const zoomOffY = (H - this.vh) / 2;
+    this.cameras.main.setScroll(Math.round(this.camX + shX - zoomOffX), Math.round(this.camY + shY - zoomOffY));
 
     this.parallax.update(this.camX, this.camY);
 

@@ -55,8 +55,11 @@ export class HudScene extends Phaser.Scene {
     this.keyIcon = this.add.image(48, 24, 'pickups', 'key.0').setVisible(false);
     this.keyText = new PixelText(this, 55, 21, '', { scale: 1, color: 'O', shadow: true });
 
+    // ember tokens: top-center — the top corners belong to the touch buttons
     for (let i = 0; i < data.tokenTotal; i++) {
-      const img = this.add.image(W - 14 - i * 15, 12, 'pickups', 'token.0').setAlpha(0.28);
+      const img = this.add
+        .image(W / 2 + (i - (data.tokenTotal - 1) / 2) * 15, 12, 'pickups', 'token.0')
+        .setAlpha(0.28);
       this.tokens.push(img);
     }
 
@@ -146,7 +149,7 @@ export class HudScene extends Phaser.Scene {
     // keep the HUD anchored inside the live safe-area insets as the view
     // width / notch geometry changes (the canvas itself paints edge to edge)
     const W = VIEW.w;
-    const { insetL, insetR, insetT, insetB } = VIEW;
+    const { insetL, insetT, insetB } = VIEW;
     for (let i = 0; i < this.hearts.length; i++) {
       this.hearts[i].setPosition(insetL + 10 + i * 11, insetT + 10);
     }
@@ -156,8 +159,9 @@ export class HudScene extends Phaser.Scene {
     this.powerText.setPosition(insetL + 22, insetT + 33);
     this.keyIcon.setPosition(insetL + 48, insetT + 24);
     this.keyText.setPosition(insetL + 55, insetT + 21);
-    for (let i = 0; i < this.tokens.length; i++) {
-      this.tokens[i].setPosition(W - insetR - 14 - i * 15, insetT + 12);
+    const n = this.tokens.length;
+    for (let i = 0; i < n; i++) {
+      this.tokens[i].setPosition(W / 2 + (i - (n - 1) / 2) * 15, insetT + 12);
     }
     this.bossBar.setPosition(W / 2, H - 18 - insetB);
   }

@@ -84,10 +84,10 @@ const BUTTONS: BtnDef[] = [
   { key: 'jump', icon: 'jump', shape: 'round', size: 92, css: { right: 26, bottom: 38 }, face: C.O, faceDark: C.o, faceHi: C.W },
   { key: 'fire', icon: 'fire', shape: 'round', size: 78, css: { right: 128, bottom: 54 }, face: C.g, faceDark: C.G, faceHi: C.l },
   { key: 'pound', icon: 'pound', shape: 'round', size: 70, css: { right: 40, bottom: 146 }, face: C.R, faceDark: C.d, faceHi: C.o },
-  // pause (small carved tablet)
+  // pause + fullscreen (small carved tablets, top-right corner cluster — the
+  // top-left corner belongs to the HUD hearts, never cover it)
   { key: 'pause', icon: 'pause', shape: 'tab', size: 46, css: { right: 16, top: 14 }, face: C.b, faceDark: C.B, faceHi: C.t },
-  // fullscreen (small carved tablet, top-left)
-  { key: 'used', icon: 'fullscreen', shape: 'tab', size: 40, css: { left: 16, top: 14 }, face: C.b, faceDark: C.B, faceHi: C.t },
+  { key: 'used', icon: 'fullscreen', shape: 'tab', size: 46, css: { right: 74, top: 14 }, face: C.b, faceDark: C.B, faceHi: C.t },
 ];
 
 // 9×9 cream icon glyphs ('#' = ink)
@@ -182,7 +182,13 @@ export function initTouchControls(onFullscreen?: () => void): void {
   interface Built { def: BtnDef; cvs: HTMLCanvasElement; pressed: boolean }
   const built: Built[] = [];
 
-  for (const def of BUTTONS) {
+  // installed PWAs already run edge to edge — the fullscreen button is noise
+  const standalone =
+    window.matchMedia?.('(display-mode: standalone)').matches ||
+    (navigator as Navigator & { standalone?: boolean }).standalone === true;
+  const buttons = standalone ? BUTTONS.filter((b) => b.icon !== 'fullscreen') : BUTTONS;
+
+  for (const def of buttons) {
     const cvs = document.createElement('canvas');
     cvs.id = `tc-${def.key}-${def.icon}`;
     const dpr = Math.min(3, Math.max(1, Math.round(window.devicePixelRatio || 1)));
@@ -258,16 +264,20 @@ function installInput(built: { def: BtnDef; cvs: HTMLCanvasElement; pressed: boo
     return false;
   };
 
+  // Fullscreen must fire on touchEND: WebKit only grants user activation when
+  // the gesture completes and silently rejects requests made during
+  // touchstart. Track which touches began on the button so a finger sliding
+  // in from elsewhere doesn't trigger it.
+  const fsTouches = new Set<number>();
+
   window.addEventListener('touchstart', (e) => {
     document.body.classList.add('touch');
-    // fullscreen fires as a tap, inside this gesture handler
     if (fullscreenBtn) {
       for (let i = 0; i < e.changedTouches.length; i++) {
         const t = e.changedTouches[i];
         if (hits(fullscreenBtn, t.clientX, t.clientY)) {
+          fsTouches.add(t.identifier);
           drawButton(fullscreenBtn.cvs, fullscreenBtn.def, true);
-          setTimeout(() => drawButton(fullscreenBtn.cvs, fullscreenBtn.def, false), 120);
-          onFullscreen();
         }
       }
     }
@@ -281,7 +291,18 @@ function installInput(built: { def: BtnDef; cvs: HTMLCanvasElement; pressed: boo
     if (document.body.classList.contains('touch')) e.preventDefault();
   }, { passive: false });
 
-  const endHandler = (e: TouchEvent): void => { recompute(e.touches); };
+  const endHandler = (e: TouchEvent): void => {
+    if (fullscreenBtn) {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
+        if (!fsTouches.delete(t.identifier)) continue;
+        drawButton(fullscreenBtn.cvs, fullscreenBtn.def, false);
+        // completed tap on the button (touchend only — not touchcancel)
+        if (e.type === 'touchend' && hits(fullscreenBtn, t.clientX, t.clientY)) onFullscreen();
+      }
+    }
+    recompute(e.touches);
+  };
   window.addEventListener('touchend', endHandler, { passive: false });
   window.addEventListener('touchcancel', endHandler, { passive: false });
 
@@ -291,7 +312,8 @@ function installInput(built: { def: BtnDef; cvs: HTMLCanvasElement; pressed: boo
   }
   window.addEventListener('mouseup', () => { for (const b of holdKeys) setPressed(b, false); });
   if (fullscreenBtn) {
-    fullscreenBtn.cvs.addEventListener('mousedown', (e) => {
+    // click, not mousedown — fullscreen needs the completed-gesture activation
+    fullscreenBtn.cvs.addEventListener('click', (e) => {
       e.preventDefault();
       drawButton(fullscreenBtn.cvs, fullscreenBtn.def, true);
       setTimeout(() => drawButton(fullscreenBtn.cvs, fullscreenBtn.def, false), 120);

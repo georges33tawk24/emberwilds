@@ -136,16 +136,62 @@ if (import.meta.env.DEV) {
   (window as unknown as { __game: Phaser.Game }).__game = game;
 }
 
-// fullscreen — must be toggled from within a real user-gesture handler
+// ---- fullscreen -----------------------------------------------------------
+// We fullscreen document.documentElement OURSELVES (not via Phaser): Phaser
+// targets the game parent #app, and fullscreening #app hides everything
+// outside its subtree — including the DOM touch controls. WebKit prefixes
+// cover iPad Safari < 16.4. iPhone Safari has no fullscreen API at all — the
+// honest path there is Add to Home Screen (the PWA runs edge to edge), so the
+// button says exactly that.
+type FsDoc = Document & {
+  webkitFullscreenElement?: Element | null;
+  webkitFullscreenEnabled?: boolean;
+  webkitExitFullscreen?: () => void;
+};
+type FsEl = HTMLElement & { webkitRequestFullscreen?: () => void };
+const fsDoc = document as FsDoc;
+const fsAvailable = (): boolean => document.fullscreenEnabled || !!fsDoc.webkitFullscreenEnabled;
+const fsElement = (): Element | null => document.fullscreenElement ?? fsDoc.webkitFullscreenElement ?? null;
+const isStandalone = (): boolean =>
+  window.matchMedia?.('(display-mode: standalone)').matches ||
+  (navigator as Navigator & { standalone?: boolean }).standalone === true;
+
+let toastTimer: ReturnType<typeof setTimeout> | undefined;
+function showToast(msg: string): void {
+  let t = document.getElementById('game-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'game-toast';
+    t.style.cssText =
+      'position:fixed;left:50%;top:14%;transform:translateX(-50%);z-index:70;' +
+      'background:rgba(42,31,27,.96);color:#F7E6C4;border:1px solid #7A5A3E;' +
+      'border-radius:8px;padding:10px 16px;font:600 14px system-ui,sans-serif;' +
+      'transition:opacity .3s;pointer-events:none;max-width:82vw;text-align:center;opacity:0';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.style.opacity = '0'; }, 2800);
+}
+
 function toggleFullscreen(): void {
   try {
-    if (game.scale.isFullscreen) game.scale.stopFullscreen();
-    else {
-      game.scale.startFullscreen();
-      // in fullscreen Android honors landscape lock — absent on iOS/desktop
-      const so = screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> };
-      so?.lock?.('landscape').catch(() => {});
+    if (fsElement()) {
+      if (document.exitFullscreen) void document.exitFullscreen().catch(() => {});
+      else fsDoc.webkitExitFullscreen?.();
+      return;
     }
+    if (!fsAvailable()) {
+      if (!isStandalone()) showToast('For fullscreen: Share ▸ Add to Home Screen');
+      return;
+    }
+    const el = document.documentElement as FsEl;
+    if (el.requestFullscreen) void el.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
+    else el.webkitRequestFullscreen?.();
+    // in fullscreen Android honors landscape lock — absent on iOS/desktop
+    const so = screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> };
+    so?.lock?.('landscape').catch(() => {});
   } catch {
     // some browsers block fullscreen; the ENVELOP scaling already fills the window
   }
@@ -156,16 +202,17 @@ window.addEventListener('keydown', (e) => {
 
 // On Android the browser letterboxes the page around the camera cutout and the
 // gesture bar unless the document is fullscreen — so on touch devices, enter
-// fullscreen on the first gesture. If the player backs out of fullscreen we
-// respect that and never force it again. (iPhone Safari has no element
-// fullscreen; there the viewport-fit=cover meta already paints edge to edge.)
+// fullscreen on the first completed tap. touchEND, not touchstart: WebKit only
+// grants user activation when the gesture ends, and silently rejects
+// fullscreen requests made during touchstart. If the player backs out of
+// fullscreen we respect that and never force it again.
 let autoFsDone = false;
 window.addEventListener(
-  'touchstart',
+  'touchend',
   () => {
-    if (autoFsDone || game.scale.isFullscreen) return;
+    if (autoFsDone || fsElement()) return;
     autoFsDone = true;
-    if (document.fullscreenEnabled) toggleFullscreen();
+    if (fsAvailable() && !isStandalone()) toggleFullscreen();
   },
   { once: true, passive: true },
 );
