@@ -1,0 +1,70 @@
+You are taking over EMBERWILDS — a production-grade 2D web action-platformer
+(Phaser 4 + TypeScript strict + Vite). Continue development at COMMERCIAL / AAA
+quality. This is a real shipping game, not a prototype.
+
+STEP 1 — GET THE CODE & READ THE BRIEF
+- Clone: git clone https://github.com/georges33tawk24/emberwilds.git
+- Read HANDOFF.md IN FULL before touching anything. It is the source of truth:
+  architecture, non-obvious patterns, current state, level-lint rules, hard-won
+  lessons, deploy wiring, and the prioritized next-work list.
+- Also read README.md and, if present, the design spec
+  ~/Downloads/EMBERWILDS-BUILD-PROMPT.md (worlds/mechanics/bosses roadmap, §17).
+- Baseline: npm install && npm test (stay green — 144 pass) && npm run build.
+  Then `npm run dev` and actually PLAY a level and a boss.
+
+THE QUALITY BAR (non-negotiable — apply to your own work before showing it)
+Judge everything by: "Would this feel complete if it shipped in a commercial
+game? Does it look polished? Does it behave naturally? Are there any missing
+animations, VFX, interactions, transitions, or feedback?" Concretely:
+- Handcrafted, not generated-looking: intentional pacing, no flat repetitive
+  corridors.
+- Consistent art language: obey the "No-Neon Bible" palette in src/gfx/palette.ts
+  (warm/desaturated; banned: electric cyan, hot magenta, acid green, LED glow).
+- Juice on every action: screenshake, hitstop, squash/stretch, particles, sound,
+  camera work, transitions. A static response to any action is a bug.
+- Mobile is first-class: full-screen fill on every aspect ratio, no black bars,
+  thumb-friendly controls, every on-screen element useful and consistent.
+- Water/environment must feel physical: animated surfaces, objects INSIDE water,
+  splashes/ripples on entry, submerged tinting, believable depth & render order.
+- Proactively find and fix rough edges; continuously improve earlier work; ship
+  every feature production-ready. Cost/effort is not the constraint — quality is.
+
+DEFINITION OF DONE (every change):
+1) npm test green  2) npx tsc --noEmit clean  3) npm run build succeeds
+4) VERIFIED in the browser (run it, screenshot it — never claim an unobserved
+   result)  5) self-reviewed against the quality bar  6) committed with a clear
+   message and pushed (Co-Authored-By: Claude <noreply@anthropic.com>).
+
+KEY PATTERNS YOU MUST RESPECT (full detail in HANDOFF.md):
+- Deterministic 120 Hz sim + render interpolation; sim classes (src/entities/*)
+  are PURE and Phaser-free — no Date.now()/Math.random() in sim logic.
+- Pixel art is authored AS CODE: string arrays of palette codes baked at boot;
+  every row in a frame-group must be equal width (validate before baking).
+- Levels are ASCII grids (src/data/levels/*.ts). tests/levelLint.test.ts
+  auto-tests every level for reachability — only GOAL and CHECKPOINT must be
+  reachable, so tokens/secrets can be skill-gated. Author with a Node script whose
+  validate() mirrors the lint, iterate to OK, then write the .ts.
+- Water is REGIONS (LevelDef.water rects -> waterSet), decoupled from tiles.
+- Bosses are config-driven (BOSS_CONFIGS in src/entities/bossSim.ts).
+- Responsive: VIEW.w = 360 x aspect (src/gfx/viewport.ts), read at RUNTIME by
+  every scene; Scale.FIT fills any landscape aspect; portrait -> rotate overlay.
+- NEVER use pointer events for touch controls over the Phaser canvas (iOS Safari
+  suppresses them -> dead taps). Use real touch events + global hit-test.
+
+WHAT TO BUILD NEXT (pick one, finish it completely, then the next — HANDOFF.md §9):
+1) Widen levels into handcrafted MULTI-ROUTE sprawls with bonus/secret rooms and
+   optional skill-gated token routes (top tracked task; Worlds 1-2 especially).
+2) A real VICTORY/CREDITS finale after the final boss.
+3) Warden slam should kick up water geysers/splashes in its flooded arena.
+4) Worlds 4-6 + new telegraphed multi-phase bosses (mechanics distinct from
+   charge and leap-slam).
+
+DEPLOY / ENVIRONMENT:
+- GitHub: git@github.com:georges33tawk24/emberwilds.git (public), branch main.
+- Cloudflare Pages is Git-connected (custom domain emberwilds.fun) and
+  auto-deploys on every push to main. Build: npm run build, output dist.
+- Deploy/push credentials (SSH key, surge auth) are environment-specific; on a new
+  machine add your own GitHub SSH key. HANDOFF.md §6 documents the current setup.
+
+Hold the bar. Ship complete, polished, verified work — and keep HANDOFF.md and
+README.md accurate as the project grows.
