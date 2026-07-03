@@ -73,10 +73,24 @@ the art bible — not a wall of text:
   commanded by **Baron Coglar**, is draining the Emberwilds of warmth. Sorrel
   relights the Warmth Beacons world by world and carries the fight to Coglar's
   Foundry.
+- **Personal stakes (the Mario–Peach lesson):** players bond to characters,
+  not concepts. Give the fight a face and a victim: **Baron Coglar** appears
+  ON SCREEN in the intro doing something unforgivable — seizing the **Ember
+  Heart** (the source of the wilds' warmth) and taking its keeper (a warm
+  companion character — design them: small, expressive, instantly lovable).
+  Each boss defeated recovers a shard of the Heart and a glimpse of the
+  captive; the finale is a rescue AND a relighting. Coglar taunts at world
+  gates so the antagonist stays present, not abstract.
+- **First 10 seconds (critical):** cut every tap between load and play. The
+  title is a live attract scene; one tap/keypress starts the first unfinished
+  level directly (world map reachable via a MAP option, not forced). Time from
+  page-load to controlling Sorrel must be under ~5s on repeat visits; death →
+  back in control at checkpoint under ~1.5s with an instant-restart feel.
 - **Deliverables:**
   1. **Opening sequence** on New Game — a short, skippable, fully art-directed
      intro (parallax vignettes + bitmap-font narration beats) that sets the
-     stakes: the wilds dimming, the first beacon dying, Sorrel setting out.
+     stakes: Coglar takes the Ember Heart and its keeper, the wilds dim,
+     Sorrel sets out.
   2. **World interstitials** — a narrative beat when entering each new world
      (one screen, one strong image, a few lines) and after each boss falls
      (the world's warmth visibly returns — palette-shift payoff on the map).
@@ -203,6 +217,47 @@ Build the back half of the game per the original spec (§6/§7 of
 
 ---
 
+## PHASE 5 — Compete & share (the healthy-addiction layer)
+
+The replayability/virality layer, designed for what EMBERWILDS is (a
+handcrafted level platformer), not bolted on from arcade games. Ordered by
+impact-per-effort:
+
+1. **Per-level mastery medals** (local, no backend): clear time / all 4 tokens
+   / no-damage per level, shown on the world map (Celeste-berry psychology —
+   visible near-misses drive "one more try"). Level-clear tally shows exactly
+   what you missed. Optional speedrun timer overlay in settings.
+2. **Achievements + cosmetic scarves** (local): skill-based unlocks (beat a
+   boss untouched, clear a world 100%, chain 5 stomps) that award scarf
+   colors/patterns for Sorrel — visible progression, zero pay-anything.
+3. **Leaderboards** (first backend piece — Cloudflare Workers + KV/D1, same
+   stack as hosting): per-level best times + daily board. **Killer
+   differentiator: replay-validated scores.** The sim is deterministic and
+   Phaser-free — submit the input recording, the Worker re-simulates the run
+   server-side and rejects impossible times. Cheat-proof boards almost no
+   browser game has.
+4. **Daily challenge**: one seeded remix level per day (generator exists),
+   same board for everyone, streak counter. Auto-generated = live-ops value
+   with zero ongoing authoring cost.
+5. **Ghost racing**: input recordings double as ghosts — race your PB, the
+   world record, or a friend's ghost from a share link (`?ghost=...`). This is
+   the shareable "beat this" loop, async, no netcode.
+6. **(Post-campaign, optional) "Ember Rush"** — a run-based endless/daily mode
+   remixing existing enemies/tiles for the arcade "one-more-run" crowd,
+   kept OUT of the campaign so the handcrafted adventure stays pure.
+
+**Decisions from the growth-review (recorded so we don't relitigate):**
+- **No ads, no monetization work now.** Interstitials/banners would poison a
+  handcrafted premium-feel game that isn't content-complete. If ever: cosmetic
+  supporter pack / donations, after the game is finished and loved.
+- **No real-time PvP for now.** Netcode/matchmaking/anti-cheat is months of
+  work orthogonal to finishing the game, and the genre fit is weak. Async
+  competition (3–5 above) delivers the "play against others" feeling at ~5%
+  of the cost. Revisit only after Worlds 4–6 ship and there's an audience.
+- **No live-ops calendar** (weekly events/seasons). The daily challenge gives
+  recurring freshness automatically; content drops happen when phases ship.
+- **Landscape-only stays.** A momentum platformer needs the horizontal view.
+
 ## STANDING RULES (apply to every phase)
 
 - **Quality bar:** HANDOFF.md §0 verbatim — "would this feel complete if it
@@ -231,3 +286,5 @@ Build the back half of the game per the original spec (§6/§7 of
 - [ ] Phase 2 — full revamp of W1–W3: ≥220×40 multi-route sprawls + visual overhaul (2A layouts, 2B art)
 - [ ] Phase 3 — Worlds 4–6 + three new bosses + Coglar finale fight
 - [ ] Phase 4 — mechanics/power-ups/music/juice depth pass
+- [ ] Phase 5 — compete & share: medals, achievements+scarves, leaderboards
+      (replay-validated), daily challenge, ghost racing; Ember Rush optional
