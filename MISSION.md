@@ -130,6 +130,18 @@ minimums as levels are upgraded):
   mid-level checkpoint placed after the halfway climax; distinct setpieces per
   level so no two maps feel alike (different silhouettes, different verticality,
   different mechanic emphasis — never copy-paste corridors).
+- **EVERY LEVEL IS A CONCEPT (owner directive, binding):** each level gets ONE
+  clear identity stated at the top of its design script (speed / climb / weave /
+  invasion / …), a NAMED SETPIECE players will remember it by, and where the
+  story allows, environmental storytelling (e.g. the Rust visibly encroaching
+  as you near a boss). Design principles applied from the greats — teach,
+  practice, combine, reward (Mario Wonder); one idea escalated three times,
+  then a coda (Tropical Freeze); risk/reward side paths that whisper, never
+  shout (Celeste); silhouette-first landmarks for navigation (Hollow Knight).
+  Never copy content — apply the philosophy. If a section is not memorable,
+  fun, or surprising, redesign it before shipping. Decorative/animated scenery
+  systems (props, waterfalls, crystals, ambient critters) land with Phase 2B
+  and get threaded back through every world.
 - **Rework the existing 13 levels to this bar** (Worlds 1–2 first — they are
   the most linear), then hold every new level to it.
 - **Authoring workflow stays:** Node generator script whose `validate()`

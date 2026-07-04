@@ -207,7 +207,7 @@ export function writeLevel(path, { name, theme, daypart, boss, rows, water, head
   const lines = [];
   if (header) lines.push(...header.split('\n').map((l) => `// ${l}`.trimEnd()));
   lines.push('export const LEVEL = {');
-  lines.push(`  name: '${name}',`);
+  lines.push(`  name: '${name.replace(/'/g, "\\'")}',`);
   lines.push(`  theme: '${theme}',`);
   lines.push(`  daypart: '${daypart}',`);
   if (boss) lines.push('  boss: true,');
