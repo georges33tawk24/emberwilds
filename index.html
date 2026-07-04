@@ -33,15 +33,14 @@
       }
       #app {
         /* Phaser's autoCenter margins own the centering — flex here would
-           double-center the margined canvas and skew it off-axis */
+           double-center the margined canvas and skew it off-axis.
+           Sized ONLY by inset: 0 — pinning all four edges tracks the live
+           viewport in every mode (Safari's collapsing chrome, installed PWA,
+           AND element fullscreen). Explicit 100dvh here left a dead strip at
+           the bottom in iPad fullscreen, where dvh doesn't track the
+           fullscreen viewport. */
         position: fixed;
         inset: 0;
-        /* dynamic viewport units track iOS Safari's collapsing chrome so the
-           canvas never leaves a gap where the URL bar was */
-        width: 100vw;
-        width: 100dvw;
-        height: 100vh;
-        height: 100dvh;
         overflow: hidden;
       }
       /* invisible probe measuring env(safe-area-inset-*) so the game can keep

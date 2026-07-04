@@ -96,13 +96,15 @@ interface BtnDef {
 // Left thumb: a wide LEFT/RIGHT rocker (no up/down — vertical actions live on
 // the right cluster). Right thumb: JUMP (big), FIRE, POUND. POUND is
 // contextual (ground-pound in air, drop-through on a one-way, dive in water).
+// The whole cluster hugs the bottom edge — on short-wide tablets anything
+// higher parks the buttons over the middle of the playfield.
 const BUTTONS: BtnDef[] = [
-  { key: 'left', icon: 'left', shape: 'pad', size: 82, css: { left: 22, bottom: 42 }, face: C.b, faceDark: C.B, faceHi: C.t },
-  { key: 'right', icon: 'right', shape: 'pad', size: 82, css: { left: 112, bottom: 42 }, face: C.b, faceDark: C.B, faceHi: C.t },
+  { key: 'left', icon: 'left', shape: 'pad', size: 82, css: { left: 22, bottom: 16 }, face: C.b, faceDark: C.B, faceHi: C.t },
+  { key: 'right', icon: 'right', shape: 'pad', size: 82, css: { left: 112, bottom: 16 }, face: C.b, faceDark: C.B, faceHi: C.t },
   // actions (gemstone faces)
-  { key: 'jump', icon: 'jump', shape: 'round', size: 92, css: { right: 26, bottom: 38 }, face: C.O, faceDark: C.o, faceHi: C.W },
-  { key: 'fire', icon: 'fire', shape: 'round', size: 78, css: { right: 128, bottom: 54 }, face: C.g, faceDark: C.G, faceHi: C.l },
-  { key: 'pound', icon: 'pound', shape: 'round', size: 70, css: { right: 40, bottom: 146 }, face: C.R, faceDark: C.d, faceHi: C.o },
+  { key: 'jump', icon: 'jump', shape: 'round', size: 92, css: { right: 26, bottom: 14 }, face: C.O, faceDark: C.o, faceHi: C.W },
+  { key: 'fire', icon: 'fire', shape: 'round', size: 78, css: { right: 128, bottom: 24 }, face: C.g, faceDark: C.G, faceHi: C.l },
+  { key: 'pound', icon: 'pound', shape: 'round', size: 70, css: { right: 40, bottom: 112 }, face: C.R, faceDark: C.d, faceHi: C.o },
   // pause + fullscreen (small carved tablets, top-right corner cluster — the
   // top-left corner belongs to the HUD hearts, never cover it)
   { key: 'pause', icon: 'pause', shape: 'tab', size: 46, css: { right: 16, top: 14 }, face: C.b, faceDark: C.B, faceHi: C.t },

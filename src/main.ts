@@ -128,7 +128,13 @@ window.visualViewport?.addEventListener('resize', refit);
 window.addEventListener('orientationchange', () => {
   [100, 350, 700].forEach((ms) => setTimeout(refit, ms));
 });
-document.addEventListener('fullscreenchange', () => setTimeout(refit, 50));
+// fullscreen transitions animate on iPad — settle in waves like orientation
+document.addEventListener('fullscreenchange', () => {
+  [80, 300, 800].forEach((ms) => setTimeout(refit, ms));
+});
+document.addEventListener('webkitfullscreenchange', () => {
+  [80, 300, 800].forEach((ms) => setTimeout(refit, ms));
+});
 game.events.once(Phaser.Core.Events.READY, refit);
 
 // While a touch device is held in portrait the #rotate prompt (index.html)
