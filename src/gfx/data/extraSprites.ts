@@ -4,6 +4,16 @@
  * warm-biased (frost stays muted pale blue, never neon cyan).
  */
 export const EXTRA_PICKUP_FRAMES: Record<string, string[][]> = {
+  // ---- Contact shadow, 12×3 — rendered at low alpha under every actor so
+  // nothing floats (art bible: "a single soft drop shadow beneath every actor")
+  shadow: [
+    [
+      '..KKKKKKKK..',
+      'KKKKKKKKKKKK',
+      '..KKKKKKKK..',
+    ],
+  ],
+
   // ---- Key pickup (opens a locked door), 12×12, 2-frame glint
   key: [
     [

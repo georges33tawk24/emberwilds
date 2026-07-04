@@ -87,6 +87,13 @@ export class ParticleSystem {
       this.rng.range(-18, -6), this.rng.range(14, 26), this.rng.range(6, 10), 0, 8);
   }
 
+  /** Ambient dust mote drifting through the air (canyon heat, ruin gloom). */
+  ambientMote(camX: number, camY: number, w: number, h: number): void {
+    this.spawn('pickups', 'dust', 3,
+      camX + this.rng.range(0, w), camY + this.rng.range(10, h - 30),
+      this.rng.range(-10, 10), this.rng.range(-4, 4), this.rng.range(4, 7), 0, 2);
+  }
+
   /** A small air bubble that wobbles upward (used underwater). */
   bubble(x: number, y: number): void {
     // negative gravity so it rises; a little horizontal flutter

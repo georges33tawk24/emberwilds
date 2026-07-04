@@ -22,6 +22,7 @@ import { isMobile, uiScale } from '../systems/platform';
 import { setTouchContext } from '../systems/touch';
 import { bakeTerrain } from '../gfx/terrain';
 import { buildParallax, type ParallaxLayers, type ThemeKey } from '../gfx/parallax';
+import { buildAtmosphere, type Atmosphere } from '../gfx/atmosphere';
 import { ParticleSystem } from '../gfx/particles';
 import { PixelText } from '../gfx/text';
 import { themeOf, type WorldTheme } from '../gfx/themes';
@@ -36,6 +37,7 @@ const T = TUNING;
 interface EnemyView {
   sim: EnemySim;
   spr: Phaser.GameObjects.Sprite;
+  shadow: Phaser.GameObjects.Image;
   prevX: number;
   prevY: number;
 }
@@ -149,6 +151,9 @@ export class GameScene extends Phaser.Scene {
 
   private parallax!: ParallaxLayers;
   private parallaxW = 0;
+  private atmosphere: Atmosphere | null = null;
+  private playerShadow!: Phaser.GameObjects.Image;
+  private bossShadow: Phaser.GameObjects.Image | null = null;
   private particles!: ParticleSystem;
   private rng = new Rng(0xa11ce);
 
@@ -191,6 +196,7 @@ export class GameScene extends Phaser.Scene {
     this.particles = new ParticleSystem(this);
     this.parallax = buildParallax(this, this.theme.key as ThemeKey, this.level.daypart, 7 + this.levelIndex);
     this.parallaxW = VIEW.w;
+    this.atmosphere = buildAtmosphere(this, this.theme.key, this.level.daypart, 5 + this.levelIndex);
     bakeTerrain(this, this.level, this.theme.tiles, `lvl${this.levelIndex}`);
 
     // reset per-run state (scene instances are reused on restart)
@@ -243,6 +249,7 @@ export class GameScene extends Phaser.Scene {
     this.playerSpr = this.add.sprite(start.x, start.y, 'player', 'idle.0')
       .setOrigin(0.5, 1)
       .setDepth(10);
+    this.playerShadow = this.add.image(start.x, start.y, 'pickups', 'shadow.0').setDepth(3).setAlpha(0.26);
 
     this.projectiles = new Pool<Projectile>(
       () => ({
@@ -316,7 +323,8 @@ export class GameScene extends Phaser.Scene {
           const spr = this.add.sprite(px, feetY, this.theme.enemySheet, `${sim.kind}_${sim.anim}.0`)
             .setOrigin(0.5, 1)
             .setDepth(8);
-          this.enemies.push({ sim, spr, prevX: px, prevY: feetY });
+          const shadow = this.add.image(px, feetY, 'pickups', 'shadow.0').setDepth(3).setAlpha(0.26);
+          this.enemies.push({ sim, spr, shadow, prevX: px, prevY: feetY });
           break;
         }
         case '*': case 'B': case 'M': case 'W': case 'e': case 'z': case 'h': case 'j': {
@@ -365,6 +373,7 @@ export class GameScene extends Phaser.Scene {
           this.bossSpr = this.add.sprite(px, feetY, 'boss', `${variant}_walk.0`)
             .setOrigin(0.5, 1)
             .setDepth(9);
+          this.bossShadow = this.add.image(px, feetY, 'pickups', 'shadow.0').setDepth(3).setAlpha(0.3).setScale(2.4, 1.3);
           this.bossPrevX = px;
           this.bossPrevY = feetY;
           break;
@@ -739,6 +748,7 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.flash(600, 242, 160, 61); // warmth floods back (golden)
     this.time.delayedCall(900, () => {
       this.bossSpr?.setVisible(false);
+      this.bossShadow?.setVisible(false);
       this.triggerClear();
     });
   }
@@ -1152,6 +1162,33 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  /** Contact shadow: pin it to the first floor under the actor's feet,
+   *  fading and narrowing with height so nothing ever floats (art bible). */
+  private updateShadow(img: Phaser.GameObjects.Image, x: number, feetY: number, baseScaleX = 1, baseAlpha = 0.26): void {
+    const tx = Math.floor(x / TILE);
+    const feetTy = Math.floor((feetY - 1) / TILE);
+    if (this.waterAt(tx, feetTy)) {
+      img.setVisible(false); // swimmers cast no contact shadow
+      return;
+    }
+    for (let d = 0; d <= 5; d++) {
+      const sol = this.world.solidAt(tx, feetTy + 1 + d);
+      if (sol === 'water' || this.waterAt(tx, feetTy + 1 + d)) break;
+      if (sol !== 'empty') {
+        const top = (feetTy + 1 + d) * TILE;
+        const dist = Math.max(0, (top - feetY) / TILE);
+        if (dist > 4.5) break;
+        img
+          .setVisible(true)
+          .setPosition(Math.round(x), top + 1)
+          .setAlpha(baseAlpha * (1 - dist / 5.5))
+          .setScale(baseScaleX * (1 - dist * 0.11), 1);
+        return;
+      }
+    }
+    img.setVisible(false);
+  }
+
   // -------------------------------------------------------------- render
 
   private renderPass(dt: number, alpha: number): void {
@@ -1165,6 +1202,8 @@ export class GameScene extends Phaser.Scene {
       this.parallaxW = VIEW.w;
       this.parallax.destroy();
       this.parallax = buildParallax(this, this.theme.key as ThemeKey, this.level.daypart, 7 + this.levelIndex);
+      this.atmosphere?.destroy();
+      this.atmosphere = buildAtmosphere(this, this.theme.key, this.level.daypart, 5 + this.levelIndex);
     }
     const lerp = (a: number, b: number) => a + (b - a) * Math.min(alpha, 1);
 
@@ -1172,6 +1211,7 @@ export class GameScene extends Phaser.Scene {
     const px = lerp(this.pPrevX, this.player.x);
     const py = lerp(this.pPrevY, this.player.y);
     this.playerSpr.setPosition(Math.round(px), Math.round(py));
+    this.updateShadow(this.playerShadow, px, py, 1.1);
 
     const key = this.player.animKey();
     if (key !== this.animKey) {
@@ -1240,6 +1280,7 @@ export class GameScene extends Phaser.Scene {
       const efi = c > 1 ? Math.floor(e.sim.animT * 8) % c : 0;
       e.spr.setFrame(`${group}.${efi}`);
       e.spr.setFlipX(e.sim.facing === -1);
+      this.updateShadow(e.shadow, ex, ey);
       const submerged = this.waterTiles.length > 0 &&
         this.waterAt(Math.floor(e.sim.body.x / TILE), Math.floor((e.sim.body.y - e.sim.body.h / 2) / TILE));
       if (e.sim.frozen > 0) {
@@ -1280,6 +1321,7 @@ export class GameScene extends Phaser.Scene {
         const bx = lerp(this.bossPrevX, boss.body.x);
         const by = lerp(this.bossPrevY, boss.body.y);
         this.bossSpr.setPosition(Math.round(bx), Math.round(by));
+        if (this.bossShadow) this.updateShadow(this.bossShadow, bx, by, 2.4, 0.3);
         const key = boss.animKey();
         const nFrames = key.endsWith('_walk') ? 2 : 1;
         this.bossSpr.setFrame(`${key}.${Math.floor(this.t * 4) % nFrames}`);
@@ -1350,12 +1392,22 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setScroll(Math.round(this.camX + shX - zoomOffX), Math.round(this.camY + shY - zoomOffY));
 
     this.parallax.update(this.camX, this.camY);
+    this.atmosphere?.update(this.t, this.camX);
 
-    // ambient leaves
+    // ambient life, in each world's own voice: drifting leaves in the
+    // forest, sun-warmed dust over the canyon, slow gloom-motes in the ruins
     this.leafTimer -= dt;
     if (this.leafTimer <= 0) {
-      this.particles.ambientLeaf(this.camX, this.camY, this.vw, this.vh);
-      this.leafTimer = 0.55;
+      if (this.theme.key === 'thornwood') {
+        this.particles.ambientLeaf(this.camX, this.camY, this.vw, this.vh);
+        this.leafTimer = 0.55;
+      } else if (this.theme.key === 'canyon') {
+        this.particles.ambientMote(this.camX, this.camY, this.vw, this.vh);
+        this.leafTimer = 0.4;
+      } else {
+        this.particles.ambientMote(this.camX, this.camY, this.vw, this.vh);
+        this.leafTimer = 0.9;
+      }
     }
     this.particles.update(dt);
   }
