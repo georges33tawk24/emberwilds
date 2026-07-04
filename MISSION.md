@@ -247,9 +247,13 @@ impact-per-effort:
    kept OUT of the campaign so the handcrafted adventure stays pure.
 
 **Decisions from the growth-review (recorded so we don't relitigate):**
-- **No ads, no monetization work now.** Interstitials/banners would poison a
-  handcrafted premium-feel game that isn't content-complete. If ever: cosmetic
-  supporter pack / donations, after the game is finished and loved.
+- **Ads (owner decision, 2026-07-04):** the AdSense loader script is in
+  index.html at the owner's request. Hard rules for any future ad UNITS:
+  never over live gameplay or the touch controls; natural pause points only
+  (menus / between levels), and Auto-Ads anchors/vignettes should stay OFF in
+  the AdSense dashboard — an anchor ad would sit exactly on the touch cluster.
+  No pay-to-win, ever. Cosmetic supporter pack / donations remain the
+  preferred long-term model.
 - **No real-time PvP for now.** Netcode/matchmaking/anti-cheat is months of
   work orthogonal to finishing the game, and the genre fit is weak. Async
   competition (3–5 above) delivers the "play against others" feeling at ~5%
