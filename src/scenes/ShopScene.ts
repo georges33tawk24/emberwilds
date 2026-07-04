@@ -8,6 +8,7 @@ import { PixelText } from '../gfx/text';
 import { InputSystem } from '../systems/input';
 import { setTouchContext } from '../systems/touch';
 import { SaveManager, SHOP_ITEMS, type Upgrades } from '../systems/save';
+import { LEVELS } from '../data/levels';
 import { ParticleSystem } from '../gfx/particles';
 import { audio } from '../audio/engine';
 import { TUNING } from '../data/tuning';
@@ -40,6 +41,10 @@ export class ShopScene extends Phaser.Scene {
   // ui-scaled layout, set in create (×2 text on touch devices)
   private rowTop = 128;
   private rowH = 42;
+  // the CONTINUE action under the wares — straight to the next level
+  private continueY = 0;
+  private continueBand: Phaser.GameObjects.Rectangle | null = null;
+  private continueLabel: PixelText | null = null;
 
   constructor() {
     super('Shop');
@@ -60,7 +65,7 @@ export class ShopScene extends Phaser.Scene {
     this.sel = 0;
     this.grace = 0.2;
 
-    this.add.rectangle(W / 2, H / 2, W, H, 0x14100d, 0.72);
+    this.add.rectangle(W / 2, H / 2, W, H, 0x14100d, 0.85);
     const panel = this.add
       .rectangle(W / 2, H / 2 + (ui > 1 ? 8 : 0), ui > 1 ? Math.min(W - 16, 470) : 380, ui > 1 ? 296 : 250, 0x2a1f1b, 0.96)
       .setStrokeStyle(2, 0x7a5a3e);
@@ -82,6 +87,19 @@ export class ShopScene extends Phaser.Scene {
       this.rows.push({ name, desc, pips, cost, cursor });
     });
 
+    // CONTINUE — leave the Grove straight into the next unfinished level
+    this.continueBand = null;
+    this.continueLabel = null;
+    if (this.save.data.levelUnlocked < LEVELS.length) {
+      this.continueY = ui > 1 ? 314 : 276;
+      this.continueBand = this.add
+        .rectangle(W / 2, this.continueY, ui > 1 ? 310 : 220, ui > 1 ? 28 : 20, 0x7a5a3e, 1)
+        .setStrokeStyle(2, 0x2a1f1b);
+      this.continueLabel = new PixelText(this, W / 2, this.continueY - 3 * ui, 'CONTINUE  >', {
+        scale: ui, color: 'W', align: 'center', shadow: true,
+      });
+    }
+
     new PixelText(this, W / 2, H - (ui > 1 ? 22 : 30), ui > 1 ? 'TAP  CHOOSE / BUY     II  BACK' : 'up/down  CHOOSE     Z  BUY     ESC  BACK', {
       scale: ui > 1 ? 2 : 1, color: 'W', align: 'center', shadow: true,
     });
@@ -90,10 +108,15 @@ export class ShopScene extends Phaser.Scene {
     // once the list outgrows the screen (touch phones have no up/down rocker)
     attachMenuTouch(this, {
       rowAt: (_x, y) => {
+        if (this.continueBand && Math.abs(y - this.continueY) < (this.rowH > 42 ? 20 : 14)) return SHOP_ITEMS.length;
         const i = Math.floor((y + this.scroll - (this.rowTop - this.rowH / 2)) / this.rowH);
         return i >= 0 && i < SHOP_ITEMS.length ? i : null;
       },
       onTapRow: (i) => {
+        if (i === SHOP_ITEMS.length) {
+          this.goContinue(); // actions fire on a single tap
+          return;
+        }
         if (this.sel !== i) {
           this.sel = i;
           audio.sfx('menuMove');
@@ -152,6 +175,23 @@ export class ShopScene extends Phaser.Scene {
         row.cost.setText(`${cost}`).setColor(afford ? 'y' : 'd');
       }
     });
+
+    // the CONTINUE band lights up when selected
+    if (this.continueBand && this.continueLabel) {
+      const on = this.sel === SHOP_ITEMS.length;
+      this.continueBand.setStrokeStyle(2, on ? 0xf2a03d : 0x2a1f1b);
+      this.continueBand.setFillStyle(on ? 0x8a6a48 : 0x7a5a3e, 1);
+      this.continueLabel.setColor(on ? 'O' : 'W');
+    }
+  }
+
+  /** Straight from the Grove into the next unfinished level. */
+  private goContinue(): void {
+    audio.sfx('menuSelect');
+    setTouchContext('game');
+    this.scene.stop('WorldMap');
+    const idx = Math.min(this.save.data.levelUnlocked, LEVELS.length - 1);
+    this.scene.start('Game', { levelIndex: idx });
   }
 
   private buy(): void {
@@ -189,12 +229,14 @@ export class ShopScene extends Phaser.Scene {
     const down = f.down && !this.prev.down;
     this.prev = { up: f.up, down: f.down };
 
+    const selCount = SHOP_ITEMS.length + (this.continueBand ? 1 : 0);
     if (up || down) {
-      this.sel = (this.sel + (down ? 1 : SHOP_ITEMS.length - 1)) % SHOP_ITEMS.length;
+      this.sel = (this.sel + (down ? 1 : selCount - 1)) % selCount;
       audio.sfx('menuMove');
       this.redraw();
     } else if (f.jumpPressed) {
-      this.buy();
+      if (this.sel === SHOP_ITEMS.length) this.goContinue();
+      else this.buy();
     } else if (f.pause) {
       audio.sfx('menuSelect');
       setTouchContext(this.returnTo === 'WorldMap' ? 'map' : 'game');

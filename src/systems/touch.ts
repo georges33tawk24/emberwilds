@@ -49,7 +49,10 @@ const STYLE = `
 body.touch #touch-controls { display: block; }
 #touch-controls canvas { position: absolute; pointer-events: auto; touch-action: none;
   image-rendering: pixelated; -webkit-tap-highlight-color: transparent;
-  filter: drop-shadow(0 2px 3px rgba(20,16,13,0.45)); transition: transform 60ms ease; }
+  filter: drop-shadow(0 2px 3px rgba(20,16,13,0.45));
+  /* translucent at rest so the world reads through them; solid while held */
+  opacity: 0.62;
+  transition: transform 60ms ease, opacity 80ms ease; }
 /* contextual controls — screens only show the buttons they actually use, so
    gameplay buttons never float over menus (display:none also zeroes their
    hit-test rects, so hidden buttons can't swallow touches) */
@@ -187,6 +190,8 @@ function drawButton(cvs: HTMLCanvasElement, def: BtnDef, pressed: boolean): void
   }
 
   cvs.style.transform = pressed ? 'translateY(2px) scale(0.96)' : 'none';
+  // solid under the thumb, translucent (CSS default) at rest
+  cvs.style.opacity = pressed ? '1' : '';
 }
 
 export function initTouchControls(onFullscreen?: () => void): void {
@@ -210,20 +215,27 @@ export function initTouchControls(onFullscreen?: () => void): void {
     (navigator as Navigator & { standalone?: boolean }).standalone === true;
   const buttons = standalone ? BUTTONS.filter((b) => b.icon !== 'fullscreen') : BUTTONS;
 
+  // tablets get bigger thumb targets — hands sit wider on a big slab, and
+  // phone-sized buttons look lost on an iPad. Offsets scale with the size so
+  // the cluster keeps its geometry. (Phones: min screen dimension < 600.)
+  const minScreen = Math.min(window.screen?.width ?? 9999, window.screen?.height ?? 9999);
+  const mult = minScreen >= 600 ? 1.3 : 1;
+
   for (const def of buttons) {
     const cvs = document.createElement('canvas');
     cvs.id = `tc-${def.key}-${def.icon}`;
+    const size = Math.round(def.size * mult);
     const dpr = Math.min(3, Math.max(1, Math.round(window.devicePixelRatio || 1)));
     // internal resolution: an integer multiple of BASE for crisp cells
-    const res = BASE * Math.max(2, Math.round((def.size * dpr) / BASE));
+    const res = BASE * Math.max(2, Math.round((size * dpr) / BASE));
     cvs.width = res;
     cvs.height = res;
-    cvs.style.width = `${def.size}px`;
-    cvs.style.height = `${def.size}px`;
+    cvs.style.width = `${size}px`;
+    cvs.style.height = `${size}px`;
     // offset by the safe-area inset so buttons stay clear of notches and the
     // home indicator while the canvas paints edge to edge beneath them
     for (const [k, v] of Object.entries(def.css)) {
-      cvs.style[k as 'left'] = `calc(${v}px + env(safe-area-inset-${k}, 0px))`;
+      cvs.style[k as 'left'] = `calc(${Math.round(v * mult)}px + env(safe-area-inset-${k}, 0px))`;
     }
     drawButton(cvs, def, false);
     root.appendChild(cvs);
