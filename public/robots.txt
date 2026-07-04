@@ -1,0 +1,5 @@
+# EMBERWILDS — free browser platformer
+User-agent: *
+Allow: /
+
+Sitemap: https://emberwilds.fun/sitemap.xml

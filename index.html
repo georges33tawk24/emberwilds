@@ -12,7 +12,104 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="apple-touch-icon" href="./icon-192.png" />
-    <title>EMBERWILDS</title>
+
+    <!-- ===== SEO ===== -->
+    <title>EMBERWILDS — a free warm-pixel action platformer you play in your browser</title>
+    <meta
+      name="description"
+      content="EMBERWILDS is a free browser platformer: play Sorrel the fox and relight the Warmth Beacons across sunlit forests, autumn canyons, and drowned ruins. Run, jump, glide, stomp, and ground-pound through hand-crafted levels. No download — plays on desktop and mobile."
+    />
+    <meta
+      name="keywords"
+      content="EMBERWILDS, free browser game, online platformer, pixel art platformer, fox game, action platformer, play in browser, no download game, HTML5 game, indie platformer, mobile browser game"
+    />
+    <link rel="canonical" href="https://emberwilds.fun/" />
+    <meta name="author" content="EMBERWILDS" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+
+    <!-- Open Graph (Facebook / Discord / iMessage link previews) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="EMBERWILDS" />
+    <meta property="og:title" content="EMBERWILDS — a free warm-pixel action platformer" />
+    <meta
+      property="og:description"
+      content="Play Sorrel the fox and relight the Warmth Beacons across a hand-crafted world. Free, no download, on desktop and mobile."
+    />
+    <meta property="og:url" content="https://emberwilds.fun/" />
+    <meta property="og:image" content="https://emberwilds.fun/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="EMBERWILDS — Sorrel the fox in a sunlit pixel-art forest" />
+
+    <!-- Twitter / X card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="EMBERWILDS — a free warm-pixel action platformer" />
+    <meta
+      name="twitter:description"
+      content="Play Sorrel the fox and relight the Warmth Beacons. Free, no download, on desktop and mobile."
+    />
+    <meta name="twitter:image" content="https://emberwilds.fun/og-image.png" />
+
+    <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossorigin />
+
+    <!-- Structured data: helps search engines render a rich game result -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "VideoGame",
+            "name": "EMBERWILDS",
+            "url": "https://emberwilds.fun/",
+            "image": "https://emberwilds.fun/og-image.png",
+            "description": "A free, hand-crafted warm-pixel action platformer for the browser. Play Sorrel, a quick red fox, and relight the Warmth Beacons across sunlit forests, autumn canyons, and drowned ruins — running, jumping, gliding, stomping, and ground-pounding through big multi-route levels with hidden secrets and multi-phase bosses.",
+            "genre": ["Platformer", "Action", "Adventure"],
+            "gamePlatform": ["Web Browser", "PC", "Mobile"],
+            "applicationCategory": "Game",
+            "operatingSystem": "Any (web browser)",
+            "playMode": "SinglePlayer",
+            "inLanguage": "en",
+            "author": { "@type": "Organization", "name": "EMBERWILDS" },
+            "publisher": { "@type": "Organization", "name": "EMBERWILDS" },
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD",
+              "availability": "https://schema.org/InStock"
+            }
+          },
+          {
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Is EMBERWILDS free to play?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. EMBERWILDS is completely free and plays right in your browser — no download, no sign-up, on desktop and mobile."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "How do you play EMBERWILDS?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Move with the arrow keys or WASD, jump with Z or Space, shoot with X, and ground-pound with C. On mobile, on-screen touch controls appear automatically. Hold jump while falling to glide."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Can I play EMBERWILDS on my phone?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. EMBERWILDS is built mobile-first with thumb-friendly touch controls and full-screen support. Turn your phone to landscape and tap to play."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
     <!-- Google AdSense (async — never blocks the game boot; the service
          worker passes cross-origin requests straight through, uncached) -->
     <script
@@ -66,6 +163,39 @@
         image-rendering: pixelated;
         image-rendering: crisp-edges;
         display: block;
+      }
+
+      /* Crawlable/no-JS content — a readable warm-themed page underneath the
+         game canvas. main.ts hides it once the game boots. */
+      #seo-content {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        overflow-y: auto;
+        box-sizing: border-box;
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 40px 24px 64px;
+        color: #e6c79a;
+        background: #14100d;
+        font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+        line-height: 1.6;
+      }
+      #seo-content h1 {
+        color: #f2a03d;
+        font-size: 28px;
+        letter-spacing: 0.04em;
+      }
+      #seo-content h2 {
+        color: #e8846b;
+        font-size: 20px;
+        margin-top: 28px;
+      }
+      #seo-content strong {
+        color: #f7e6c4;
+      }
+      #seo-content a {
+        color: #f2a03d;
       }
 
       /* Rotate-to-landscape prompt — this is a side-scrolling platformer, so on
@@ -143,6 +273,52 @@
   <body>
     <div id="app"></div>
     <div id="safe-probe" aria-hidden="true"></div>
+
+    <!-- Crawlable / no-JS content. Real, human-readable description of the game;
+         hidden by main.ts once the canvas boots (progressive enhancement). This
+         is what search engines and link-preview bots read, since the game
+         itself is a <canvas> with no crawlable text. -->
+    <main id="seo-content">
+      <h1>EMBERWILDS — a free warm-pixel action platformer</h1>
+      <p>
+        <strong>EMBERWILDS</strong> is a free, hand-crafted action platformer you play right in your
+        browser — no download, no sign-up, on desktop and mobile. Play <strong>Sorrel</strong>, a
+        quick red fox with a spring-loaded slingblaster, and relight the Warmth Beacons across a world
+        being drained of its warmth by the industrial <strong>Rust</strong> and its master, Baron Coglar.
+      </p>
+      <h2>Explore three hand-crafted worlds</h2>
+      <ul>
+        <li><strong>Thornwood</strong> — sunlit forests that teach you to run, jump, stomp, and glide.</li>
+        <li><strong>Ochre Canyon</strong> — autumn desert mesas built for speed, springs, and momentum.</li>
+        <li><strong>Mossgrave Ruins</strong> — a drowned temple of swimming, keys, and switch-gate puzzles.</li>
+      </ul>
+      <p>
+        Every level is a Super-Mario-sized sprawl with a safe low road, a fast high road, and hidden
+        secret rooms — plus four hidden Ember Tokens to find and multi-phase bosses to outsmart.
+      </p>
+      <h2>How to play</h2>
+      <p>
+        Move with the <strong>arrow keys or WASD</strong>, jump with <strong>Z or Space</strong>
+        (hold to jump higher, or hold while falling to glide), shoot with <strong>X</strong>, and
+        ground-pound with <strong>C</strong>. On phones and tablets, thumb-friendly touch controls
+        appear automatically — just turn to landscape and tap to play.
+      </p>
+      <h2>Features</h2>
+      <ul>
+        <li>Free to play in any modern browser — installable as an offline app (PWA).</li>
+        <li>Tight, momentum-driven controls: coyote time, jump buffering, glide, wall-jump, ground-pound.</li>
+        <li>Mario-style power-up transformations: spread shots, piercing fire, freeze-platforms, and a hover glide.</li>
+        <li>Hand-authored pixel art, original chiptune music, and a warm, no-neon art style.</li>
+        <li>Mobile-first: full-screen support and controls sized for thumbs.</li>
+      </ul>
+      <p><a href="https://emberwilds.fun/">Play EMBERWILDS free at emberwilds.fun</a></p>
+    </main>
+
+    <noscript>
+      <p style="color: #f4e6cf; text-align: center; padding: 24px; font-family: system-ui, sans-serif">
+        EMBERWILDS needs JavaScript to play. Please enable JavaScript in your browser and reload.
+      </p>
+    </noscript>
     <div id="rotate" aria-hidden="true">
       <div class="phone"></div>
       <div class="title">Rotate your device</div>
