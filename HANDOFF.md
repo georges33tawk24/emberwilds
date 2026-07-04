@@ -254,11 +254,29 @@ Gotcha: carve air pits **after** filling soil, or they get floored over.
   (src/systems/menuTouch.ts): tap rows, drag to scroll, wheel on desktop. It
   rides Phaser's scene input (native touch inside), which is safe on iOS.
 - **The headless browser preview freezes rAF** (`visibilityState: hidden`) —
-  the game boots but `game.loop` stalls. Drive it manually:
-  `setInterval(() => game.loop.step(t += 16.6), 16)`. Its TouchManager is also
-  absent (no touch support detected): test DOM touch controls by dispatching
-  `TouchEvent`s on `window`, and Phaser scene input by dispatching `MouseEvent`s
-  on the canvas. Synthetic `KeyboardEvent`s never reach Phaser — don't try.
+  the game boots but `game.loop` stalls. Page timers also get throttled to
+  ~1Hz, so drive the loop from a **Web Worker** (worker timers are never
+  throttled): `new Worker(blobURL('setInterval(() => postMessage(0), 16)'))`
+  with `onmessage = () => { t += 16.6; if (game.loop.time > t) t =
+  game.loop.time + 16.6; game.loop.step(t); }` — the anchor absorbs stray rAF
+  ticks that fire during screenshots (without it the loop freezes on
+  zero-deltas). **Halt the worker before taking a screenshot** or the capture
+  races the WebGL clear and reads a black buffer. TouchManager is absent
+  (no touch support detected): test DOM touch controls by dispatching
+  `TouchEvent`s on `window`, and Phaser scene input by dispatching
+  `MouseEvent`s on the canvas. Synthetic `KeyboardEvent`s never reach Phaser.
+  `?mobile=1` forces the mobile experience (camera FOV + UI ×2) on desktop.
+- **Scene instances are REUSED across scene.start()** — class-field
+  initializers run ONCE. Every per-run accumulator must re-init in create()
+  (a NaN that sneaks into one is otherwise permanent — the camera lookAhead
+  bug). GameScene.update also sanitizes non-finite deltas before they touch
+  the sim or camera; keep that guard.
+- **UI scale is a contract:** the world zooms 1.22× on mobile but UI scenes
+  don't — every HUD/menu/overlay multiplies its layout by
+  `uiScale()` (2 on touch, keeps the 4×6 font on whole pixels). New UI must
+  do the same or it ships unreadably small on phones. Touch buttons are
+  contextual via `setTouchContext('game'|'map'|'clear'|'ui')` — call it in
+  every new scene's create() and on any resume path.
 
 ---
 

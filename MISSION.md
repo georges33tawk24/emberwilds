@@ -282,7 +282,9 @@ impact-per-effort:
 - [x] Phase 0 — mobile full-screen fill + scrollable menus (verified across
       19.5:9 / 21.5:9 / 21:9 / 4:3 / 16:10 in-browser incl. live resize; iOS
       notch insets + Android auto-fullscreen wired but need a real-device pass)
-- [ ] Phase 1 — story spine (intro, interstitials, map warmth, true finale)
+- [x] Phase 1 — story spine: intro (Coglar takes the Heart + Pip), world-entry
+      cards, boss shard beats, map warmth states, finale (flood/stats/credits),
+      one-tap title flow; mobile UI ×2 + contextual touch buttons shipped with it
 - [ ] Phase 2 — full revamp of W1–W3: ≥220×40 multi-route sprawls + visual overhaul (2A layouts, 2B art)
 - [ ] Phase 3 — Worlds 4–6 + three new bosses + Coglar finale fight
 - [ ] Phase 4 — mechanics/power-ups/music/juice depth pass

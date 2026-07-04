@@ -9,6 +9,7 @@ import { PixelText } from '../gfx/text';
 import { buildParallax, type ParallaxLayers, type ThemeKey } from '../gfx/parallax';
 import { ParticleSystem } from '../gfx/particles';
 import { InputSystem } from '../systems/input';
+import { setTouchContext } from '../systems/touch';
 import { SaveManager } from '../systems/save';
 import { audio } from '../audio/engine';
 import { LEVELS, worldOf, levelLabel } from '../data/levels';
@@ -52,6 +53,7 @@ export class WorldMapScene extends Phaser.Scene {
   }
 
   create(): void {
+    setTouchContext('map');
     const W = VIEW.w;
     this.layoutW = W;
     this.save = this.registry.get('save') as SaveManager;
@@ -101,10 +103,14 @@ export class WorldMapScene extends Phaser.Scene {
 
   private buildPath(): void {
     const g = this.add.graphics().setDepth(4);
+    const unlocked = this.save.data.levelUnlocked;
     for (let i = 0; i < LEVELS.length - 1; i++) {
       const a = this.nodePos(i);
       const b = this.nodePos(i + 1);
       const steps = 7;
+      // the road behind you is warm; the road ahead is dead rusted iron —
+      // the map itself tells the story of the warmth returning
+      const cleared = i < unlocked;
       for (let s = 1; s < steps; s++) {
         const tt = s / steps;
         const x = a.x + (b.x - a.x) * tt;
@@ -112,7 +118,8 @@ export class WorldMapScene extends Phaser.Scene {
         const worldA = worldOf(i);
         g.fillStyle(0x2a1f1b, 0.5);
         g.fillCircle(Math.round(x) + 1, Math.round(y) + 1, 2.2);
-        g.fillStyle(worldA.num % 2 === 0 ? 0xb0663f : 0xb58b5e, 0.9);
+        if (cleared) g.fillStyle(worldA.num % 2 === 0 ? 0xb0663f : 0xb58b5e, 0.9);
+        else g.fillStyle(0x5a5450, 0.7);
         g.fillCircle(Math.round(x), Math.round(y), 2.2);
       }
     }
@@ -130,6 +137,14 @@ export class WorldMapScene extends Phaser.Scene {
 
       const disc = this.add.graphics().setDepth(6);
       const r = isBoss ? 15 : 12;
+      const cleared = i < unlocked;
+      // cleared beacons burn: a warm halo and a small flame above the node
+      if (cleared) {
+        disc.fillStyle(0xf2a03d, 0.16).fillCircle(p.x, p.y, r + 7);
+        const fy = p.y - r - 6;
+        disc.fillStyle(0xe8622c, 1).fillCircle(p.x, fy + 1, isBoss ? 3 : 2.4);
+        disc.fillStyle(0xf2a03d, 1).fillCircle(p.x, fy - 1, isBoss ? 2 : 1.6);
+      }
       // shadow
       disc.fillStyle(0x2a1f1b, 0.4).fillCircle(p.x + 2, p.y + 3, r);
       // base ring
@@ -137,7 +152,7 @@ export class WorldMapScene extends Phaser.Scene {
       disc.fillStyle(available ? accent : 0x3c3530, 1).fillCircle(p.x, p.y, r - 2);
       disc.fillStyle(available ? 0xe6c79a : 0x5a5450, 0.9).fillCircle(p.x - r * 0.28, p.y - r * 0.32, r * 0.42);
       if (isBoss && available) {
-        disc.lineStyle(2, 0xc7402b, 1).strokeCircle(p.x, p.y, r + 2);
+        disc.lineStyle(2, cleared ? 0xf2a03d : 0xc7402b, 1).strokeCircle(p.x, p.y, r + 2);
       }
 
       const label = new PixelText(this, p.x, p.y - 3, '', { scale: 1, color: available ? 'K' : 's', align: 'center' }).setDepth(7);

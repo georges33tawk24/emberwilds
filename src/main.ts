@@ -5,12 +5,14 @@
 import Phaser from 'phaser';
 import { BootScene } from './scenes/BootScene';
 import { TitleScene } from './scenes/TitleScene';
+import { IntroScene } from './scenes/IntroScene';
 import { WorldMapScene } from './scenes/WorldMapScene';
 import { ShopScene } from './scenes/ShopScene';
 import { GameScene } from './scenes/GameScene';
 import { HudScene } from './scenes/HudScene';
 import { PauseScene } from './scenes/PauseScene';
 import { ClearScene } from './scenes/ClearScene';
+import { FinaleScene } from './scenes/FinaleScene';
 import { SaveManager } from './systems/save';
 import { audio } from './audio/engine';
 import { initTouchControls } from './systems/touch';
@@ -19,10 +21,17 @@ import { VIEW, VIEW_H, widthForAspect, setSafeInsets } from './gfx/viewport';
 const save = new SaveManager();
 audio.applySettings(save.data.settings);
 
-/** Live screen size — visualViewport tracks iOS Safari's collapsing chrome
- *  more faithfully than window.inner*, which can report stale values around
- *  orientation changes and URL-bar transitions. */
+/** Live screen size — measured from #app (the fixed, 100dvw/100dvh container
+ *  the canvas must cover). visualViewport can be SHORTER than the page on
+ *  iPads (home-indicator zone, collapsing chrome), which left the canvas
+ *  hanging above a black strip at the bottom; #app's rect is the ground
+ *  truth for what needs painting. visualViewport/inner* stay as fallbacks. */
 function screenSize(): { w: number; h: number } {
+  const app = document.getElementById('app');
+  if (app) {
+    const r = app.getBoundingClientRect();
+    if (r.width > 0 && r.height > 0) return { w: Math.round(r.width), h: Math.round(r.height) };
+  }
   const vv = window.visualViewport;
   return {
     w: Math.round(vv?.width ?? window.innerWidth),
@@ -57,7 +66,7 @@ const game = new Phaser.Game({
   input: {
     gamepad: true,
   },
-  scene: [BootScene, TitleScene, WorldMapScene, ShopScene, GameScene, HudScene, PauseScene, ClearScene],
+  scene: [BootScene, TitleScene, IntroScene, WorldMapScene, ShopScene, GameScene, HudScene, PauseScene, ClearScene, FinaleScene],
 });
 
 game.registry.set('save', save);

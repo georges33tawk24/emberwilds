@@ -12,6 +12,7 @@ import { TILE_FRAMES_MOSS } from '../gfx/data/tileSpritesMoss';
 import { PICKUP_FRAMES } from '../gfx/data/pickupSprites';
 import { EXTRA_PICKUP_FRAMES } from '../gfx/data/extraSprites';
 import { BOSS_FRAMES } from '../gfx/data/bossSprites';
+import { STORY_FRAMES } from '../gfx/data/storySprites';
 import { FONT_4x6 } from '../gfx/data/fontData';
 
 export class BootScene extends Phaser.Scene {
@@ -29,6 +30,7 @@ export class BootScene extends Phaser.Scene {
     registerSheet(this, 'tiles-moss', TILE_FRAMES_MOSS);
     registerSheet(this, 'pickups', { ...PICKUP_FRAMES, ...EXTRA_PICKUP_FRAMES });
     registerSheet(this, 'boss', BOSS_FRAMES);
+    registerSheet(this, 'story', STORY_FRAMES);
     registerFont(this, FONT_4x6);
     this.scene.start('Title');
   }

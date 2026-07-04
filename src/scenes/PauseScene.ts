@@ -2,18 +2,15 @@
 import Phaser from 'phaser';
 import { PixelText } from '../gfx/text';
 import { InputSystem } from '../systems/input';
+import { setTouchContext } from '../systems/touch';
 import { SaveManager } from '../systems/save';
 import { audio } from '../audio/engine';
 import { TUNING } from '../data/tuning';
 import { VIEW } from '../gfx/viewport';
+import { uiScale } from '../systems/platform';
 import { attachMenuTouch } from '../systems/menuTouch';
 
 const H = TUNING.view.height;
-/** y of the first menu row and the per-row pitch */
-const MENU_TOP = 92;
-const ROW_H = 16;
-/** rows scrolled under this line stay visible above the screen bottom */
-const BOTTOM_PAD = 28;
 
 type Item =
   | { kind: 'action'; label: string; act: () => void }
@@ -30,21 +27,30 @@ export class PauseScene extends Phaser.Scene {
   private layoutW = 0;
   private prev = { up: false, down: false, left: false, right: false };
   private grace = 0;
+  // ui-scaled layout, set in create (×2 on touch devices for readability)
+  private menuTop = 92;
+  private rowH = 16;
+  private bottomPad = 28;
 
   constructor() {
     super('Pause');
   }
 
   create(): void {
+    setTouchContext('ui');
     const W = VIEW.w;
+    const ui = uiScale();
     this.layoutW = W;
+    this.menuTop = ui > 1 ? 74 : 92;
+    this.rowH = ui > 1 ? 26 : 16;
+    this.bottomPad = ui > 1 ? 34 : 28;
     this.save = this.registry.get('save') as SaveManager;
     this.inputSys = new InputSystem(this);
     this.sel = 0;
     this.grace = 0.25;
 
     this.add.rectangle(W / 2, H / 2, W, H, 0x14100d, 0.72);
-    new PixelText(this, W / 2, 46, 'PAUSED', { scale: 3, color: 'O', align: 'center', shadow: true });
+    new PixelText(this, W / 2, ui > 1 ? 34 : 46, 'PAUSED', { scale: ui > 1 ? 4 : 3, color: 'O', align: 'center', shadow: true });
 
     const s = this.save.data.settings;
     this.items = [
@@ -75,7 +81,7 @@ export class PauseScene extends Phaser.Scene {
 
     this.scroll = 0;
     this.labels = this.items.map(
-      (_, i) => new PixelText(this, W / 2, MENU_TOP + i * ROW_H, '', { scale: 1, color: 'W', align: 'center', shadow: true }),
+      (_, i) => new PixelText(this, W / 2, this.menuTop + i * this.rowH, '', { scale: ui, color: 'W', align: 'center', shadow: true }),
     );
     this.redraw();
 
@@ -83,7 +89,7 @@ export class PauseScene extends Phaser.Scene {
     // drag/wheel-scrollable (scroll only engages once content overflows)
     attachMenuTouch(this, {
       rowAt: (_x, y) => {
-        const i = Math.floor((y + this.scroll - (MENU_TOP - ROW_H / 2)) / ROW_H);
+        const i = Math.floor((y + this.scroll - (this.menuTop - this.rowH / 2)) / this.rowH);
         return i >= 0 && i < this.items.length ? i : null;
       },
       onTapRow: (i, x) => this.tapRow(i, x),
@@ -95,14 +101,14 @@ export class PauseScene extends Phaser.Scene {
   }
 
   private maxScroll(): number {
-    return Math.max(0, MENU_TOP + this.items.length * ROW_H + BOTTOM_PAD - H);
+    return Math.max(0, this.menuTop + this.items.length * this.rowH + this.bottomPad - H);
   }
 
   /** Keep the keyboard/gamepad selection on-screen when the list overflows. */
   private ensureVisible(): void {
-    const y = MENU_TOP + this.sel * ROW_H - this.scroll;
-    if (y < MENU_TOP) this.scroll = this.sel * ROW_H;
-    else if (y > H - BOTTOM_PAD) this.scroll = MENU_TOP + this.sel * ROW_H - (H - BOTTOM_PAD);
+    const y = this.menuTop + this.sel * this.rowH - this.scroll;
+    if (y < this.menuTop) this.scroll = this.sel * this.rowH;
+    else if (y > H - this.bottomPad) this.scroll = this.menuTop + this.sel * this.rowH - (H - this.bottomPad);
     this.scroll = Phaser.Math.Clamp(this.scroll, 0, this.maxScroll());
   }
 
@@ -146,14 +152,15 @@ export class PauseScene extends Phaser.Scene {
       }
       const selected = i === this.sel;
       const label = this.labels[i];
-      label.y = MENU_TOP + i * ROW_H - this.scroll;
-      label.setVisible(label.y > MENU_TOP - ROW_H && label.y < H);
+      label.y = this.menuTop + i * this.rowH - this.scroll;
+      label.setVisible(label.y > this.menuTop - this.rowH && label.y < H);
       label.setText(selected ? `> ${text} <` : text);
       label.setColor(selected ? 'O' : 'W');
     });
   }
 
   private resume(): void {
+    setTouchContext('game');
     this.scene.stop();
     this.scene.resume('Game');
   }

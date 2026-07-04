@@ -18,13 +18,15 @@ import { BossSim } from '../entities/bossSim';
 import { bodiesOverlap } from '../systems/physics';
 import { InputSystem } from '../systems/input';
 import { SaveManager } from '../systems/save';
-import { isMobile } from '../systems/platform';
+import { isMobile, uiScale } from '../systems/platform';
+import { setTouchContext } from '../systems/touch';
 import { bakeTerrain } from '../gfx/terrain';
 import { buildParallax, type ParallaxLayers, type ThemeKey } from '../gfx/parallax';
 import { ParticleSystem } from '../gfx/particles';
 import { PixelText } from '../gfx/text';
 import { themeOf, type WorldTheme } from '../gfx/themes';
-import { levelLabel } from '../data/levels';
+import { levelLabel, worldOf } from '../data/levels';
+import { STORY } from '../data/story';
 import { audio } from '../audio/engine';
 import { VIEW } from '../gfx/viewport';
 
@@ -179,6 +181,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(): void {
+    setTouchContext('game');
     this.save = this.registry.get('save') as SaveManager;
     this.bus = new EventBus();
     this.level = parseLevel(LEVELS[this.levelIndex]);
@@ -264,6 +267,9 @@ export class GameScene extends Phaser.Scene {
     this.vh = H / this.camZoom;
     this.cameras.main.setZoom(this.camZoom);
 
+    // scene instances are REUSED on restart — every camera accumulator must
+    // re-init here or garbage (incl. NaN) survives into the next run
+    this.lookAhead = 0;
     this.camX = Phaser.Math.Clamp(start.x - this.vw / 2, 0, Math.max(0, this.level.width * TILE - this.vw));
     this.camY = Phaser.Math.Clamp(start.y - this.vh * 0.62, 0, Math.max(0, this.level.height * TILE - this.vh));
     // pull scroll back by half the zoom delta — Phaser zooms around the
@@ -501,14 +507,23 @@ export class GameScene extends Phaser.Scene {
   }
 
   private showIntroCard(): void {
+    // first steps into a new world get the full storybook interstitial
+    const w = worldOf(this.levelIndex);
+    if (!this.save.data.worldsSeen.includes(w.num)) {
+      this.save.data.worldsSeen.push(w.num);
+      this.save.save();
+      this.showWorldCard(w.label, w.num);
+      return;
+    }
     const W = VIEW.w;
+    const ui = uiScale();
     const card = this.add.container(0, 0).setScrollFactor(0).setDepth(100);
-    const bg = this.add.rectangle(W / 2, H / 2 - 40, W, 34, 0x2a1f1b, 0.85);
-    const name = new PixelText(this, W / 2, H / 2 - 48, this.level.name.toUpperCase(), {
-      scale: 2, color: 'O', align: 'center', shadow: true,
+    const bg = this.add.rectangle(W / 2, H / 2 - 40, W, ui > 1 ? 52 : 34, 0x2a1f1b, 0.85);
+    const name = new PixelText(this, W / 2, H / 2 - (ui > 1 ? 56 : 48), this.level.name.toUpperCase(), {
+      scale: ui > 1 ? 3 : 2, color: 'O', align: 'center', shadow: true,
     });
-    const sub = new PixelText(this, W / 2, H / 2 - 30, levelLabel(this.levelIndex), {
-      scale: 1, color: 'c', align: 'center',
+    const sub = new PixelText(this, W / 2, H / 2 - (ui > 1 ? 32 : 30), levelLabel(this.levelIndex), {
+      scale: ui, color: 'c', align: 'center',
     });
     card.add([bg, name, sub]);
     this.tweens.add({
@@ -516,6 +531,42 @@ export class GameScene extends Phaser.Scene {
       alpha: { from: 1, to: 0 },
       delay: 1400,
       duration: 400,
+      onComplete: () => card.destroy(),
+    });
+  }
+
+  /** One-shot world-entry interstitial: WORLD N, its name, its story lines. */
+  private showWorldCard(label: string, num: number): void {
+    const W = VIEW.w;
+    const ui = uiScale();
+    const lines = STORY.worldEntry[this.level.theme] ?? [];
+    const card = this.add.container(0, 0).setScrollFactor(0).setDepth(100);
+    const dim = this.add.rectangle(W / 2, H / 2, W + 4, H + 4, 0x14100d, 0.5);
+    const bgH = ui > 1 ? 132 : 92;
+    const bg = this.add.rectangle(W / 2, H / 2 - 30, W, bgH, 0x2a1f1b, 0.94);
+    const rule = this.add.rectangle(W / 2, H / 2 - 30, W, bgH).setStrokeStyle(1, 0x7a5a3e);
+    const kicker = new PixelText(this, W / 2, H / 2 - (ui > 1 ? 86 : 68), `WORLD ${num}`, {
+      scale: ui, color: 'y', align: 'center', shadow: true,
+    });
+    const name = new PixelText(this, W / 2, H / 2 - (ui > 1 ? 72 : 56), label, {
+      scale: ui > 1 ? 4 : 3, color: 'O', align: 'center', shadow: true,
+    });
+    const parts: Phaser.GameObjects.GameObject[] = [dim, bg, rule, kicker, name];
+    lines.forEach((text, i) => {
+      parts.push(new PixelText(this, W / 2, H / 2 - (ui > 1 ? 30 : 24) + i * 12 * ui, text, { scale: ui, color: 'c', align: 'center' }));
+    });
+    const sub = new PixelText(this, W / 2, H / 2 + (ui > 1 ? 22 : 4), this.level.name.toUpperCase(), {
+      scale: ui, color: 't', align: 'center',
+    });
+    parts.push(sub);
+    card.add(parts);
+    card.setAlpha(0);
+    this.tweens.add({ targets: card, alpha: 1, duration: 350 });
+    this.tweens.add({
+      targets: card,
+      alpha: 0,
+      delay: 3000,
+      duration: 500,
       onComplete: () => card.destroy(),
     });
   }
@@ -540,7 +591,9 @@ export class GameScene extends Phaser.Scene {
   // ------------------------------------------------------------ main loop
 
   update(_time: number, delta: number): void {
-    const dt = Math.min(delta, 100);
+    // a NaN/∞ delta (browser hiccup, tab wake) must never enter the sim or the
+    // camera accumulators — one bad frame would poison them permanently
+    const dt = Number.isFinite(delta) ? Math.min(delta, 100) : STEP_MS;
 
     if (this.hitstop > 0) {
       this.hitstop -= delta;

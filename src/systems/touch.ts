@@ -50,6 +50,17 @@ body.touch #touch-controls { display: block; }
 #touch-controls canvas { position: absolute; pointer-events: auto; touch-action: none;
   image-rendering: pixelated; -webkit-tap-highlight-color: transparent;
   filter: drop-shadow(0 2px 3px rgba(20,16,13,0.45)); transition: transform 60ms ease; }
+/* contextual controls — screens only show the buttons they actually use, so
+   gameplay buttons never float over menus (display:none also zeroes their
+   hit-test rects, so hidden buttons can't swallow touches) */
+#touch-controls[data-ctx='ui'] canvas { display: none; }
+#touch-controls[data-ctx='ui'] #tc-pause-pause,
+#touch-controls[data-ctx='ui'] #tc-used-fullscreen { display: block; }
+#touch-controls[data-ctx='map'] #tc-fire-fire,
+#touch-controls[data-ctx='map'] #tc-pound-pound { display: none; }
+#touch-controls[data-ctx='clear'] #tc-left-left,
+#touch-controls[data-ctx='clear'] #tc-right-right,
+#touch-controls[data-ctx='clear'] #tc-pound-pound { display: none; }
 #rotate-hint { position: fixed; inset: 0; z-index: 60; display: none;
   align-items: center; justify-content: center; text-align: center;
   background: #14100d; color: #E6C79A; font: 600 20px system-ui, sans-serif; padding: 24px; }
@@ -57,6 +68,14 @@ body.touch #touch-controls { display: block; }
   body.touch #rotate-hint { display: flex; }
 }
 `;
+
+/** Which button set a screen needs. 'game' = everything; 'map' = rocker+jump;
+ *  'clear' = jump+fire (Z/X prompts); 'ui' = pause+fullscreen only. */
+export type TouchContext = 'game' | 'map' | 'clear' | 'ui';
+
+export function setTouchContext(ctx: TouchContext): void {
+  document.getElementById('touch-controls')?.setAttribute('data-ctx', ctx);
+}
 
 type IconType = 'left' | 'right' | 'up' | 'down' | 'jump' | 'fire' | 'pound' | 'pause' | 'fullscreen';
 type Shape = 'round' | 'pad' | 'tab';
@@ -178,6 +197,7 @@ export function initTouchControls(onFullscreen?: () => void): void {
 
   const root = document.createElement('div');
   root.id = 'touch-controls';
+  root.setAttribute('data-ctx', 'ui'); // boot/title until a scene claims its set
 
   interface Built { def: BtnDef; cvs: HTMLCanvasElement; pressed: boolean }
   const built: Built[] = [];

@@ -2,8 +2,12 @@
 import Phaser from 'phaser';
 import { PixelText } from '../gfx/text';
 import { InputSystem } from '../systems/input';
+import { setTouchContext } from '../systems/touch';
+import { SaveManager } from '../systems/save';
 import { audio } from '../audio/engine';
 import { LEVELS, worldOf } from '../data/levels';
+import { STORY } from '../data/story';
+import { uiScale } from '../systems/platform';
 import { TUNING } from '../data/tuning';
 import { VIEW } from '../gfx/viewport';
 
@@ -29,17 +33,44 @@ export class ClearScene extends Phaser.Scene {
   }
 
   create(data: ClearData): void {
+    setTouchContext('clear');
     this.data2 = data;
     this.layoutW = VIEW.w;
     this.inputSys = new InputSystem(this);
     this.grace = 0.6;
 
     const W = VIEW.w;
+    const ui = uiScale();
+    const isBoss = LEVELS[data.levelIndex]?.boss === true;
+    const save = this.registry.get('save') as SaveManager;
     this.add.rectangle(W / 2, H / 2, W, H, 0x14100d, 0.66);
-    this.add.rectangle(W / 2, H / 2, 260, 150, 0x2a1f1b, 0.95).setStrokeStyle(1, 0x7a5a3e);
+    this.add.rectangle(W / 2, H / 2, ui > 1 ? 430 : 280, ui > 1 ? 232 : 160, 0x2a1f1b, 0.95).setStrokeStyle(1, 0x7a5a3e);
 
-    new PixelText(this, W / 2, H / 2 - 60, 'BEACON RELIT!', { scale: 2, color: 'O', align: 'center', shadow: true });
-    new PixelText(this, W / 2, H / 2 - 40, data.name.toUpperCase(), { scale: 1, color: 'c', align: 'center' });
+    new PixelText(this, W / 2, H / 2 - (ui > 1 ? 92 : 62), isBoss ? STORY.bossFall.title : 'BEACON RELIT!', {
+      scale: ui > 1 ? 3 : 2, color: 'O', align: 'center', shadow: true,
+    });
+    new PixelText(this, W / 2, H / 2 - (ui > 1 ? 64 : 42), data.name.toUpperCase(), { scale: ui, color: 'c', align: 'center' });
+
+    if (isBoss) {
+      // a shard of the Ember Heart, reclaimed — golden beat + glinting shard
+      if (!save.data.settings.flashReduction) this.cameras.main.flash(220, 242, 176, 80);
+      audio.sfx('token');
+      const shardScale = ui > 1 ? 3 : 2;
+      const shard = this.add.image(W / 2, H / 2 - (ui > 1 ? 126 : 84), 'story', 'shard.0').setScale(shardScale);
+      this.tweens.add({ targets: shard, scale: { from: shardScale * 1.6, to: shardScale }, duration: 320, ease: 'Back.easeOut' });
+      this.tweens.add({
+        targets: shard, angle: { from: -6, to: 6 }, yoyo: true, repeat: -1, duration: 900, ease: 'Sine.easeInOut',
+      });
+      this.time.addEvent({
+        delay: 450, loop: true,
+        callback: () => shard.setFrame(shard.frame.name === 'shard.0' ? 'shard.1' : 'shard.0'),
+      });
+      const line = new PixelText(this, W / 2, H / 2 + (ui > 1 ? 52 : 30), STORY.bossFall.lines[1], {
+        scale: ui, color: 'y', align: 'center', shadow: true,
+      });
+      line.setAlpha(0);
+      this.tweens.add({ targets: line, alpha: 1, delay: 1100, duration: 300 });
+    }
 
     const secs = (data.timeMs / 1000).toFixed(1);
     const rows: [string, string][] = [
@@ -48,23 +79,24 @@ export class ClearScene extends Phaser.Scene {
       ['EMBER TOKENS', `${data.tokens}/4`],
     ];
     rows.forEach(([label, value], i) => {
-      const y = H / 2 - 14 + i * 14;
-      const l = new PixelText(this, W / 2 - 100, y, label, { scale: 1, color: 'W' });
-      const v = new PixelText(this, W / 2 + 100, y, value, { scale: 1, color: 'y', align: 'right' });
+      const y = H / 2 - (ui > 1 ? 24 : 14) + i * (ui > 1 ? 24 : 14);
+      const l = new PixelText(this, W / 2 - (ui > 1 ? 180 : 100), y, label, { scale: ui, color: 'W' });
+      const v = new PixelText(this, W / 2 + (ui > 1 ? 180 : 100), y, value, { scale: ui, color: 'y', align: 'right' });
       l.setAlpha(0);
       v.setAlpha(0);
       this.tweens.add({ targets: [l, v], alpha: 1, delay: 250 + i * 260, duration: 200 });
       this.time.delayedCall(250 + i * 260, () => audio.sfx('menuMove'));
     });
 
+    // no colons — the 4x6 font has no ':' glyph (renders as '?')
     const hasNext = data.levelIndex + 1 < LEVELS.length;
     const nextIsNewWorld = hasNext && worldOf(data.levelIndex + 1).num !== worldOf(data.levelIndex).num;
     const prompt = !hasNext
-      ? 'ALL WORLDS CLEARED! Z: TITLE'
+      ? 'Z - ONWARD'
       : nextIsNewWorld
-        ? `${worldOf(data.levelIndex + 1).label} AHEAD!  Z: ONWARD   X: MAP`
-        : 'Z: NEXT LEVEL   X: MAP';
-    const p = new PixelText(this, W / 2, H / 2 + 52, prompt, { scale: 1, color: 'W', align: 'center', shadow: true });
+        ? `${worldOf(data.levelIndex + 1).label} AHEAD!  Z - ONWARD   X - MAP`
+        : 'Z - NEXT LEVEL   X - MAP';
+    const p = new PixelText(this, W / 2, H / 2 + (ui > 1 ? 96 : 52), prompt, { scale: ui, color: 'W', align: 'center', shadow: true });
     this.tweens.add({ targets: p, alpha: { from: 0.4, to: 1 }, yoyo: true, repeat: -1, duration: 500 });
   }
 
@@ -85,9 +117,8 @@ export class ClearScene extends Phaser.Scene {
       this.scene.stop();
       if (hasNext) this.scene.start('Game', { levelIndex: this.data2.levelIndex + 1 });
       else {
-        // final boss down — return to the title for the victory beat (matches the prompt)
-        audio.stopSong();
-        this.scene.start('Title');
+        // last existing boss down — the full victory sequence
+        this.scene.start('Finale');
       }
     } else if (f.firePressed) {
       audio.sfx('menuSelect');

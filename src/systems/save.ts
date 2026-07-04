@@ -57,11 +57,15 @@ export interface SaveData {
   bestTimes: Record<number, number>;
   upgrades: Upgrades;
   settings: Settings;
+  /** the story intro has been watched (or skipped) once */
+  introSeen: boolean;
+  /** world numbers whose entry interstitial has been shown */
+  worldsSeen: number[];
 }
 
 const KEY = 'emberwilds.save';
 const BACKUP_KEY = 'emberwilds.save.bak';
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 export const DEFAULT_SETTINGS: Settings = {
   musicVol: 0.8,
@@ -80,6 +84,8 @@ export function defaultSave(): SaveData {
     bestTimes: {},
     upgrades: { ...DEFAULT_UPGRADES },
     settings: { ...DEFAULT_SETTINGS },
+    introSeen: false,
+    worldsSeen: [],
   };
 }
 
@@ -98,6 +104,10 @@ function isValid(d: unknown): d is SaveData {
 /** Migrations run in order from the blob's version up to SAVE_VERSION. */
 const MIGRATIONS: Record<number, (d: SaveData) => SaveData> = {
   1: (d) => ({ ...d, version: 2, upgrades: { ...DEFAULT_UPGRADES } }),
+  // v3: story fields. Both start empty even for mid-campaign players — the
+  // intro and the world cards are new content they have never seen, and both
+  // are skippable one-shots.
+  2: (d) => ({ ...d, version: 3, introSeen: false, worldsSeen: [] }),
 };
 
 export function migrate(d: SaveData): SaveData {
@@ -111,6 +121,8 @@ export function migrate(d: SaveData): SaveData {
   cur.settings = { ...DEFAULT_SETTINGS, ...cur.settings };
   cur.upgrades = { ...DEFAULT_UPGRADES, ...cur.upgrades };
   cur.bestTimes = cur.bestTimes ?? {};
+  cur.introSeen = cur.introSeen ?? false;
+  cur.worldsSeen = cur.worldsSeen ?? [];
   return cur;
 }
 

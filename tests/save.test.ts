@@ -55,7 +55,7 @@ describe('SaveManager', () => {
     expect(b.data.version).toBe(SAVE_VERSION);
   });
 
-  it('migrates a v1 save to v2 with default upgrades', () => {
+  it('migrates a v1 save through the full chain to the current version', () => {
     const store = memStorage();
     const v1 = {
       version: 1, levelUnlocked: 3, gems: 50, tokens: { 0: 3 }, bestTimes: {},
@@ -63,10 +63,29 @@ describe('SaveManager', () => {
     };
     store.map.set('emberwilds.save', JSON.stringify(v1));
     const s = new SaveManager(store);
-    expect(s.data.version).toBe(2);
+    expect(s.data.version).toBe(SAVE_VERSION);
     expect(s.data.levelUnlocked).toBe(3); // preserved
     expect(s.data.gems).toBe(50);
     expect(s.data.upgrades).toEqual({ maxHearts: 0, doubleJump: 0, glide: 0, charge: 0 });
+    // v3 story fields arrive unset — the intro and world cards are new content
+    expect(s.data.introSeen).toBe(false);
+    expect(s.data.worldsSeen).toEqual([]);
+  });
+
+  it('migrates a v2 save to v3 with story fields', () => {
+    const store = memStorage();
+    const v2 = {
+      version: 2, levelUnlocked: 7, gems: 120, tokens: { 3: 15 }, bestTimes: { 0: 41000 },
+      upgrades: { maxHearts: 1, doubleJump: 1, glide: 0, charge: 0 },
+      settings: { musicVol: 0.5, sfxVol: 0.5, masterVol: 0.5, screenShake: true, flashReduction: false },
+    };
+    store.map.set('emberwilds.save', JSON.stringify(v2));
+    const s = new SaveManager(store);
+    expect(s.data.version).toBe(SAVE_VERSION);
+    expect(s.data.levelUnlocked).toBe(7);
+    expect(s.data.upgrades.doubleJump).toBe(1); // preserved
+    expect(s.data.introSeen).toBe(false);
+    expect(s.data.worldsSeen).toEqual([]);
   });
 
   it('buys upgrades, spends gems, and blocks when unaffordable or maxed', () => {
