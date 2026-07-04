@@ -301,7 +301,11 @@ impact-per-effort:
 - [x] Phase 1 — story spine: intro (Coglar takes the Heart + Pip), world-entry
       cards, boss shard beats, map warmth states, finale (flood/stats/credits),
       one-tap title flow; mobile UI ×2 + contextual touch buttons shipped with it
-- [ ] Phase 2 — full revamp of W1–W3: ≥220×40 multi-route sprawls + visual overhaul (2A layouts, 2B art)
+- [x] Phase 2A — ALL 11 standard levels rebuilt at ≥220×40 with concept
+      identities + named setpieces (Thornwood, Canyon, Mossgrave); the size
+      floor is now enforced by the lint. Boss arenas untouched by design.
+- [ ] Phase 2B — the "retro but lavish" visual overhaul (tiles, animation
+      budgets, light/atmosphere, parallax depth, weather, UI storybook)
 - [ ] Phase 3 — Worlds 4–6 + three new bosses + Coglar finale fight
 - [ ] Phase 4 — mechanics/power-ups/music/juice depth pass
 - [ ] Phase 5 — compete & share: medals, achievements+scarves, leaderboards

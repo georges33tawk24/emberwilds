@@ -92,9 +92,10 @@ describe('level lint', () => {
       );
 
       it('parses with sane dimensions', () => {
-        // boss arenas are legitimately more compact than standard levels
-        expect(level.width).toBeGreaterThanOrEqual(isBoss ? 48 : 100);
-        expect(level.height).toBeGreaterThanOrEqual(24);
+        // Phase-2 floor: standard levels are Super-Mario scale or bigger
+        // (SMB 1-1 is ~211 wide); boss arenas are legitimately compact
+        expect(level.width).toBeGreaterThanOrEqual(isBoss ? 48 : 220);
+        expect(level.height).toBeGreaterThanOrEqual(isBoss ? 24 : 40);
       });
 
       it('has exactly one goal and one checkpoint', () => {
