@@ -40,6 +40,7 @@ interface EnemyView {
   shadow: Phaser.GameObjects.Image;
   prevX: number;
   prevY: number;
+  dying: boolean;
 }
 
 interface Projectile {
@@ -324,7 +325,7 @@ export class GameScene extends Phaser.Scene {
             .setOrigin(0.5, 1)
             .setDepth(8);
           const shadow = this.add.image(px, feetY, 'pickups', 'shadow.0').setDepth(3).setAlpha(0.26);
-          this.enemies.push({ sim, spr, shadow, prevX: px, prevY: feetY });
+          this.enemies.push({ sim, spr, shadow, prevX: px, prevY: feetY, dying: false });
           break;
         }
         case '*': case 'B': case 'M': case 'W': case 'e': case 'z': case 'h': case 'j': {
@@ -1265,7 +1266,18 @@ export class GameScene extends Phaser.Scene {
     // enemies
     for (const e of this.enemies) {
       if (!e.sim.alive) {
-        e.spr.setVisible(false);
+        // death pop: puff up and fade once, drop the contact shadow immediately
+        if (!e.dying && e.spr.visible) {
+          e.dying = true;
+          e.shadow.setVisible(false);
+          e.spr.clearTint();
+          this.tweens.add({
+            targets: e.spr,
+            scaleX: 1.5, scaleY: 1.5, alpha: 0,
+            duration: 190, ease: 'Quad.easeOut',
+            onComplete: () => e.spr.setVisible(false),
+          });
+        }
         continue;
       }
       const ex = lerp(e.prevX, e.sim.body.x);
