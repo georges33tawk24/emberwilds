@@ -20,6 +20,8 @@ interface ClearData {
   gemTotal: number;
   tokens: number;
   name: string;
+  /** names of achievements unlocked by this clear */
+  achievements?: string[];
 }
 
 export class ClearScene extends Phaser.Scene {
@@ -86,6 +88,19 @@ export class ClearScene extends Phaser.Scene {
       v.setAlpha(0);
       this.tweens.add({ targets: [l, v], alpha: 1, delay: 250 + i * 260, duration: 200 });
       this.time.delayedCall(250 + i * 260, () => audio.sfx('menuMove'));
+    });
+
+    // any achievements this clear unlocked — pop them in after the tally, with a
+    // little token fanfare
+    const earned = data.achievements ?? [];
+    earned.forEach((name, i) => {
+      const y = H / 2 + (ui > 1 ? 30 : 22) + i * (ui > 1 ? 16 : 11);
+      const line = new PixelText(this, W / 2, y, `ACHIEVEMENT - ${name.toUpperCase()}`, {
+        scale: 1, color: 'O', align: 'center', shadow: true,
+      }).setAlpha(0);
+      const delay = 1100 + i * 400;
+      this.tweens.add({ targets: line, alpha: 1, y: { from: y + 6, to: y }, delay, duration: 260, ease: 'Back.easeOut' });
+      this.time.delayedCall(delay, () => audio.sfx('token'));
     });
 
     // no colons — the 4x6 font has no ':' glyph (renders as '?')

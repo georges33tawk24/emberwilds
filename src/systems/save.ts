@@ -46,6 +46,25 @@ export const SHOP_ITEMS: ShopItem[] = [
   { key: 'charge', name: 'QUICK EMBER', desc: 'FASTER CHARGE SHOT', costs: [40, 90] },
 ];
 
+/** Lifetime play statistics (feed achievements + a future stats screen). */
+export interface PlayerStats {
+  deaths: number;
+  jumps: number;
+  stomps: number;
+  enemiesDefeated: number;
+  gemsAllTime: number;
+  levelsCleared: number;
+  /** levels cleared without taking a hit */
+  perfectClears: number;
+  bossesDefeated: number;
+  playtimeMs: number;
+}
+
+export const DEFAULT_STATS: PlayerStats = {
+  deaths: 0, jumps: 0, stomps: 0, enemiesDefeated: 0, gemsAllTime: 0,
+  levelsCleared: 0, perfectClears: 0, bossesDefeated: 0, playtimeMs: 0,
+};
+
 export interface SaveData {
   version: number;
   /** highest unlocked level index (0-based) */
@@ -61,11 +80,15 @@ export interface SaveData {
   introSeen: boolean;
   /** world numbers whose entry interstitial has been shown */
   worldsSeen: number[];
+  /** lifetime play statistics */
+  stats: PlayerStats;
+  /** ids of unlocked achievements */
+  achievements: string[];
 }
 
 const KEY = 'emberwilds.save';
 const BACKUP_KEY = 'emberwilds.save.bak';
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 export const DEFAULT_SETTINGS: Settings = {
   musicVol: 0.8,
@@ -86,6 +109,8 @@ export function defaultSave(): SaveData {
     settings: { ...DEFAULT_SETTINGS },
     introSeen: false,
     worldsSeen: [],
+    stats: { ...DEFAULT_STATS },
+    achievements: [],
   };
 }
 
@@ -108,6 +133,8 @@ const MIGRATIONS: Record<number, (d: SaveData) => SaveData> = {
   // intro and the world cards are new content they have never seen, and both
   // are skippable one-shots.
   2: (d) => ({ ...d, version: 3, introSeen: false, worldsSeen: [] }),
+  // v4: lifetime stats + achievements. Start fresh — nothing was tracked before.
+  3: (d) => ({ ...d, version: 4, stats: { ...DEFAULT_STATS }, achievements: [] }),
 };
 
 export function migrate(d: SaveData): SaveData {
@@ -123,6 +150,8 @@ export function migrate(d: SaveData): SaveData {
   cur.bestTimes = cur.bestTimes ?? {};
   cur.introSeen = cur.introSeen ?? false;
   cur.worldsSeen = cur.worldsSeen ?? [];
+  cur.stats = { ...DEFAULT_STATS, ...cur.stats };
+  cur.achievements = cur.achievements ?? [];
   return cur;
 }
 
@@ -174,6 +203,21 @@ export class SaveManager {
     let n = 0;
     while (mask) { n += mask & 1; mask >>= 1; }
     return n;
+  }
+
+  /** Total ember tokens collected across every level. */
+  totalTokens(): number {
+    let total = 0;
+    for (const mask of Object.values(this.data.tokens)) {
+      let m = mask;
+      while (m) { total += m & 1; m >>= 1; }
+    }
+    return total;
+  }
+
+  /** Increment a lifetime stat in memory (persisted on the next save()). */
+  bumpStat(key: keyof PlayerStats, n = 1): void {
+    this.data.stats[key] += n;
   }
 
   /** Cost of the NEXT level of an upgrade, or null if maxed. */

@@ -86,6 +86,27 @@ describe('SaveManager', () => {
     expect(s.data.upgrades.doubleJump).toBe(1); // preserved
     expect(s.data.introSeen).toBe(false);
     expect(s.data.worldsSeen).toEqual([]);
+    // v4 fields backfilled too
+    expect(s.data.stats.deaths).toBe(0);
+    expect(s.data.achievements).toEqual([]);
+  });
+
+  it('migrates a v3 save to v4 with stats + achievements', () => {
+    const store = memStorage();
+    const v3 = {
+      version: 3, levelUnlocked: 5, gems: 40, tokens: {}, bestTimes: {},
+      upgrades: { maxHearts: 0, doubleJump: 0, glide: 0, charge: 0 },
+      settings: { musicVol: 0.5, sfxVol: 0.5, masterVol: 0.5, screenShake: true, flashReduction: false },
+      introSeen: true, worldsSeen: [1, 2],
+    };
+    store.map.set('emberwilds.save', JSON.stringify(v3));
+    const s = new SaveManager(store);
+    expect(s.data.version).toBe(SAVE_VERSION);
+    expect(s.data.introSeen).toBe(true); // preserved
+    expect(s.data.worldsSeen).toEqual([1, 2]);
+    expect(s.data.stats).toBeDefined();
+    expect(s.data.stats.jumps).toBe(0);
+    expect(s.data.achievements).toEqual([]);
   });
 
   it('buys upgrades, spends gems, and blocks when unaffordable or maxed', () => {

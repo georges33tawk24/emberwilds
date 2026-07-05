@@ -28,6 +28,7 @@ import { PixelText } from '../gfx/text';
 import { themeOf, type WorldTheme } from '../gfx/themes';
 import { levelLabel, worldOf } from '../data/levels';
 import { STORY } from '../data/story';
+import { earnAchievements } from '../data/achievements';
 import { audio } from '../audio/engine';
 import { VIEW } from '../gfx/viewport';
 
@@ -176,6 +177,7 @@ export class GameScene extends Phaser.Scene {
   private gemChain = 0;
   private tokensGot: number[] = [];
   private ending = false;
+  private damagedThisLevel = false;
 
   constructor() {
     super('Game');
@@ -210,6 +212,7 @@ export class GameScene extends Phaser.Scene {
     this.checkpointLit = false;
     this.goalReached = false;
     this.ending = false;
+    this.damagedThisLevel = false;
     this.bossSim = null;
     this.bossSpr = null;
     this.bossDefeated = false;
@@ -457,6 +460,7 @@ export class GameScene extends Phaser.Scene {
       audio.sfx('jump');
       this.particles.dust(this.player.x, this.player.y, 3, 20);
       this.stretch = 0.14;
+      this.save.bumpStat('jumps');
     });
     b.on('player:land', ({ impact }) => {
       audio.sfx('land');
@@ -469,6 +473,7 @@ export class GameScene extends Phaser.Scene {
       audio.sfx('stomp');
       this.addHitstop(T.feel.hitstopMs.stomp);
       this.addTrauma(T.feel.traumaStomp);
+      this.save.bumpStat('stomps');
     });
     b.on('player:pound', ({ x, y }) => {
       audio.sfx('pound');
@@ -488,16 +493,21 @@ export class GameScene extends Phaser.Scene {
       this.addHitstop(T.feel.hitstopMs.hurt);
       this.addTrauma(T.feel.traumaHurt);
       this.flashVignette();
+      this.damagedThisLevel = true; // disqualifies the no-hit clear
     });
     b.on('player:died', () => {
       audio.sfx('die');
       this.respawnTimer = 1.1;
+      this.damagedThisLevel = true;
+      this.save.bumpStat('deaths');
+      this.save.save(); // deaths are infrequent — persist immediately
     });
     b.on('enemy:died', ({ x, y }) => {
       audio.sfx('enemyDie');
       this.addHitstop(T.feel.hitstopMs.enemyDie);
       this.particles.sparks(x, y - 6, 4);
       this.particles.leafBurst(x, y - 6, 4);
+      this.save.bumpStat('enemiesDefeated');
     });
     b.on('pickup:gem', () => audio.sfx('gem'));
     b.on('pickup:berry', () => audio.sfx('berry'));
@@ -1153,7 +1163,17 @@ export class GameScene extends Phaser.Scene {
     this.time.delayedCall(300, () => { this.particles.sparks(bx, by - 12, 8); this.particles.gemPop(bx, by - 4); });
 
     const timeMs = this.time.now - this.startTime;
-    this.save.clearLevel(this.levelIndex, timeMs, this.gemsCollected);
+
+    // record lifetime stats, then earn any achievements the clear unlocked
+    this.save.bumpStat('gemsAllTime', this.gemsCollected);
+    this.save.bumpStat('levelsCleared');
+    this.save.bumpStat('playtimeMs', timeMs);
+    if (!this.damagedThisLevel) this.save.bumpStat('perfectClears');
+    if (this.level.boss) this.save.bumpStat('bossesDefeated');
+    this.save.clearLevel(this.levelIndex, timeMs, this.gemsCollected); // persists
+    const earned = earnAchievements(this.save.data);
+    if (earned.length) this.save.save();
+
     this.time.delayedCall(1500, () => {
       this.scene.launch('Clear', {
         levelIndex: this.levelIndex,
@@ -1162,6 +1182,7 @@ export class GameScene extends Phaser.Scene {
         gemTotal: this.level.gemTotal,
         tokens: this.save.tokenCount(this.levelIndex),
         name: this.level.name,
+        achievements: earned.map((a) => a.name),
       });
       this.scene.pause();
     });
