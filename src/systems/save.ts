@@ -14,6 +14,8 @@ export interface Settings {
   masterVol: number;
   screenShake: boolean;
   flashReduction: boolean;
+  /** show a live run timer during gameplay (for best-time / flawless chasers) */
+  speedrunTimer: boolean;
 }
 
 /** Persistent upgrades bought in the Grove (each is a small integer level). */
@@ -98,6 +100,7 @@ export const DEFAULT_SETTINGS: Settings = {
   masterVol: 0.9,
   screenShake: true,
   flashReduction: false,
+  speedrunTimer: false,
 };
 
 export function defaultSave(): SaveData {

@@ -31,6 +31,7 @@ export class HudScene extends Phaser.Scene {
   private bossFill!: Phaser.GameObjects.Rectangle;
   private bossMax = 1;
   private barW = 180;
+  private timerText: PixelText | null = null;
   private unsub: (() => void)[] = [];
 
   constructor() {
@@ -81,6 +82,10 @@ export class HudScene extends Phaser.Scene {
     const label = new PixelText(this, 0, -(barH + 2 + 4 * ui), '', { scale: ui, color: 'o', align: 'center', shadow: true });
     label.name = 'bosslabel';
     this.bossBar.add([frame, this.bossFill, label]);
+
+    // optional speedrun timer (top-centre, under the tokens) — always built,
+    // shown/hidden live from the setting so toggling in pause takes effect now
+    this.timerText = new PixelText(this, W / 2, 0, '0.0', { scale: ui, color: 'W', align: 'center', shadow: true });
 
     const bus = data.bus;
     this.unsub.push(
@@ -175,5 +180,19 @@ export class HudScene extends Phaser.Scene {
       this.tokens[i].setPosition(W / 2 + (i - (n - 1) / 2) * 15 * ui, insetT + 12 * ui);
     }
     this.bossBar.setPosition(W / 2, H - 18 - 4 * (ui - 1) - insetB);
+
+    // optional speedrun timer — reads the Game scene's clock (freezes on pause);
+    // visibility is live from the setting so a pause-menu toggle applies at once
+    if (this.timerText) {
+      const save = this.registry.get('save') as { data: { settings: { speedrunTimer: boolean } } };
+      const on = save.data.settings.speedrunTimer;
+      this.timerText.setVisible(on);
+      if (on) {
+        const game = this.scene.get('Game') as unknown as { elapsedMs?: () => number } | null;
+        const ms = game?.elapsedMs?.() ?? 0;
+        this.timerText.setText(`${(ms / 1000).toFixed(1)}`);
+        this.timerText.setPosition(W / 2, insetT + (n > 0 ? 28 : 12) * ui);
+      }
+    }
   }
 }

@@ -173,6 +173,7 @@ export class GameScene extends Phaser.Scene {
   private leafTimer = 0;
   private respawnTimer = 0;
   private startTime = 0;
+  private timerStarted = false;
   private gemsCollected = 0;
   private gemChain = 0;
   private tokensGot: number[] = [];
@@ -186,6 +187,12 @@ export class GameScene extends Phaser.Scene {
   init(data: { levelIndex?: number }): void {
     this.levelIndex = data.levelIndex ?? 0;
     this.registry.set('lastLevel', this.levelIndex);
+  }
+
+  /** Elapsed run time in ms — matches the level-clear time, and freezes with the
+   *  scene clock on pause. Read by the HUD's optional speedrun timer. */
+  elapsedMs(): number {
+    return this.timerStarted ? this.time.now - this.startTime : 0;
   }
 
   create(): void {
@@ -293,7 +300,9 @@ export class GameScene extends Phaser.Scene {
     this.wireEvents();
     this.scene.launch('Hud', { bus: this.bus, tokenTotal: 4, hearts: this.player.hearts, max: this.player.maxHearts });
     this.showIntroCard();
-    this.startTime = this.time.now;
+    // startTime is captured on the first update frame (the Clock reads 0 here)
+    this.startTime = 0;
+    this.timerStarted = false;
 
     audio.applySettings(this.save.data.settings);
     audio.playSong(this.theme.song);
@@ -623,6 +632,13 @@ export class GameScene extends Phaser.Scene {
   // ------------------------------------------------------------ main loop
 
   update(_time: number, delta: number): void {
+    // The scene Clock reads 0 during create(), so capture the run start on the
+    // first update frame instead — otherwise startTime is 0 and every clear
+    // time / speedrun timer reports the absolute game time, not the level's.
+    if (!this.timerStarted) {
+      this.startTime = this.time.now;
+      this.timerStarted = true;
+    }
     // a NaN/∞ delta (browser hiccup, tab wake) must never enter the sim or the
     // camera accumulators — one bad frame would poison them permanently
     const dt = Number.isFinite(delta) ? Math.min(delta, 100) : STEP_MS;
