@@ -13,6 +13,7 @@ import { HudScene } from './scenes/HudScene';
 import { PauseScene } from './scenes/PauseScene';
 import { ClearScene } from './scenes/ClearScene';
 import { FinaleScene } from './scenes/FinaleScene';
+import { AchievementsScene } from './scenes/AchievementsScene';
 import { SaveManager } from './systems/save';
 import { audio } from './audio/engine';
 import { initTouchControls } from './systems/touch';
@@ -66,7 +67,7 @@ const game = new Phaser.Game({
   input: {
     gamepad: true,
   },
-  scene: [BootScene, TitleScene, IntroScene, WorldMapScene, ShopScene, GameScene, HudScene, PauseScene, ClearScene, FinaleScene],
+  scene: [BootScene, TitleScene, IntroScene, WorldMapScene, ShopScene, GameScene, HudScene, PauseScene, ClearScene, FinaleScene, AchievementsScene],
 });
 
 game.registry.set('save', save);

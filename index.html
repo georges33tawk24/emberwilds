@@ -146,6 +146,11 @@
         position: fixed;
         inset: 0;
         overflow: hidden;
+        /* opaque + above #seo-content so the crawlable page NEVER flashes for a
+           player: the dark shell covers it from the first paint (the SEO block
+           stays in the DOM for crawlers). */
+        z-index: 1;
+        background: #14100d;
       }
       /* invisible probe measuring env(safe-area-inset-*) so the game can keep
          HUD/controls clear of notches while the canvas paints beneath them */

@@ -71,7 +71,10 @@ export class TitleScene extends Phaser.Scene {
     this.promptLabel = new PixelText(this, W / 2, 236, cleared > 0 ? `${verb} TO CONTINUE` : `${verb} TO PLAY`, {
       scale: 2, color: 'W', align: 'center', shadow: true,
     }).setDepth(3);
-    new PixelText(this, W / 2, 260, touch ? 'WORLD MAP' : 'M - WORLD MAP', {
+    new PixelText(this, W / 2, 256, touch ? 'WORLD MAP' : 'M - WORLD MAP', {
+      scale: 1, color: 't', align: 'center', shadow: true,
+    }).setDepth(3);
+    new PixelText(this, W / 2, 274, touch ? 'ACHIEVEMENTS' : 'A - ACHIEVEMENTS', {
       scale: 1, color: 't', align: 'center', shadow: true,
     }).setDepth(3);
     new PixelText(
@@ -82,13 +85,16 @@ export class TitleScene extends Phaser.Scene {
       { scale: 1, color: 't', align: 'center', shadow: true },
     ).setDepth(3);
 
-    // one tap = play (mobile-first): the whole screen starts the game except
-    // the small WORLD MAP row, which opens the map
+    // one tap = play (mobile-first): the whole screen starts the game except the
+    // small WORLD MAP / ACHIEVEMENTS rows, which route to those screens
     this.input.on('pointerup', (p: Phaser.Input.Pointer) => {
-      if (Math.abs(p.y - 260) < 10 && Math.abs(p.x - VIEW.w / 2) < 60) this.begin(true);
+      const cx = Math.abs(p.x - VIEW.w / 2);
+      if (Math.abs(p.y - 256) < 9 && cx < 70) this.begin(true);
+      else if (Math.abs(p.y - 274) < 9 && cx < 90) this.openAchievements();
       else this.begin(false);
     });
     this.input.keyboard?.on('keydown-M', () => this.begin(true));
+    this.input.keyboard?.on('keydown-A', () => this.openAchievements());
 
     // unlock audio on the very first interaction
     this.input.keyboard?.once('keydown', () => {
@@ -96,6 +102,14 @@ export class TitleScene extends Phaser.Scene {
       audio.applySettings(this.save.data.settings);
       audio.playSong(TITLE_SONG);
     });
+  }
+
+  private openAchievements(): void {
+    if (this.started) return;
+    this.started = true;
+    audio.unlock();
+    audio.sfx('menuSelect');
+    this.scene.start('Achievements', { returnTo: 'Title' });
   }
 
   /** Route into play: intro on a fresh save, straight into the next level

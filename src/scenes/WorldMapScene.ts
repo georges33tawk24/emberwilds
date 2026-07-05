@@ -10,6 +10,7 @@ import { buildParallax, type ParallaxLayers, type ThemeKey } from '../gfx/parall
 import { ParticleSystem } from '../gfx/particles';
 import { InputSystem } from '../systems/input';
 import { setTouchContext } from '../systems/touch';
+import { isMobile } from '../systems/platform';
 import { SaveManager } from '../systems/save';
 import { audio } from '../audio/engine';
 import { LEVELS, worldOf, levelLabel } from '../data/levels';
@@ -78,13 +79,27 @@ export class WorldMapScene extends Phaser.Scene {
     this.add.rectangle(W / 2, 16, W, 32, 0x2a1f1b, 0.55).setScrollFactor(0).setDepth(30);
     this.headerTitle = new PixelText(this, 12, 7, '', { scale: 2, color: 'O', shadow: true }).setScrollFactor(0).setDepth(31);
     this.headerSub = new PixelText(this, 12, 23, '', { scale: 1, color: 'c', shadow: true }).setScrollFactor(0).setDepth(31);
-    this.add.image(W - 78, 15, 'pickups', 'gem.0').setScrollFactor(0).setDepth(31);
-    this.gemText = new PixelText(this, W - 70, 11, '', { scale: 1, color: 'W', shadow: true }).setScrollFactor(0).setDepth(31);
+    this.add.image(W - 150, 15, 'pickups', 'gem.0').setScrollFactor(0).setDepth(31);
+    this.gemText = new PixelText(this, W - 142, 11, '', { scale: 1, color: 'W', shadow: true }).setScrollFactor(0).setDepth(31);
+
+    // a tappable GROVE button — the shop opens on FIRE (keyboard/pad), but the
+    // map hides the FIRE touch button, so mobile needs a real on-screen button
+    const groveBtn = this.add
+      .rectangle(W - 46, 15, 76, 24, 0x5f7d34, 0.96)
+      .setStrokeStyle(2, 0xf2a03d)
+      .setScrollFactor(0)
+      .setDepth(31)
+      .setInteractive({ useHandCursor: true });
+    new PixelText(this, W - 46, 11, 'GROVE', { scale: 1, color: 'W', align: 'center', shadow: true })
+      .setScrollFactor(0)
+      .setDepth(32);
+    groveBtn.on('pointerup', () => this.openGrove());
 
     this.add.rectangle(W / 2, H - 12, W, 24, 0x2a1f1b, 0.55).setScrollFactor(0).setDepth(30);
-    this.prompt = new PixelText(this, W / 2, H - 17, 'Z  ENTER      FIRE  THE GROVE      ESC  BACK', {
-      scale: 1, color: 'W', align: 'center', shadow: true,
-    }).setScrollFactor(0).setDepth(31);
+    this.prompt = new PixelText(this, W / 2, H - 17,
+      isMobile() ? 'JUMP  ENTER      TAP GROVE  SHOP      II  BACK' : 'Z  ENTER      FIRE  THE GROVE      ESC  BACK', {
+        scale: 1, color: 'W', align: 'center', shadow: true,
+      }).setScrollFactor(0).setDepth(31);
 
     this.camX = Phaser.Math.Clamp(n0.x - W / 2, 0, Math.max(0, this.mapWidth - W));
     this.cameras.main.setScroll(Math.round(this.camX), 0);
@@ -218,6 +233,13 @@ export class WorldMapScene extends Phaser.Scene {
     this.refreshHeader();
   }
 
+  private openGrove(): void {
+    if (this.moving) return;
+    audio.sfx('menuSelect');
+    this.scene.launch('Shop', { returnTo: 'WorldMap' });
+    this.scene.pause();
+  }
+
   private enterLevel(): void {
     if (this.sel > this.save.data.levelUnlocked) {
       audio.sfx('pause');
@@ -247,10 +269,8 @@ export class WorldMapScene extends Phaser.Scene {
       if (f.right && !this.prev.right) this.moveSel(1);
       else if (f.left && !this.prev.left) this.moveSel(-1);
       else if ((f.up && !this.prev.up) || f.firePressed) {
-        // up (keyboard/pad) or FIRE (mobile) opens the Grove
-        audio.sfx('menuSelect');
-        this.scene.launch('Shop', { returnTo: 'WorldMap' });
-        this.scene.pause();
+        // up or FIRE (keyboard/pad) opens the Grove; touch uses the GROVE button
+        this.openGrove();
       } else if (f.jumpPressed) this.enterLevel();
       else if (f.pause) {
         audio.sfx('pause');
