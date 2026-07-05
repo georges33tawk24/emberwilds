@@ -162,6 +162,108 @@ function mod(n: number, m: number): number {
   return ((n % m) + m) % m;
 }
 
+// ---- color helpers for aerial perspective (derive far/near neighbours) ------
+function parseHex(hex: string): [number, number, number] {
+  const h = hex.replace('#', '');
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+function toHex(r: number, g: number, b: number): string {
+  const c = (n: number) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0');
+  return `#${c(r)}${c(g)}${c(b)}`;
+}
+/** Blend a→b by t (0..1). Farthest layers blend toward the sky = aerial haze. */
+function blendHex(a: string, b: string, t: number): string {
+  const [ar, ag, ab] = parseHex(a);
+  const [br, bg, bb] = parseHex(b);
+  return toHex(ar + (br - ar) * t, ag + (bg - ag) * t, ab + (bb - ab) * t);
+}
+/** Darken toward black by t (near foreground = darker + a touch warmer). */
+function shadeHex(a: string, t: number, warm = 0): string {
+  const [r, g, b] = parseHex(a);
+  return toHex(r * (1 - t) + warm, g * (1 - t), b * (1 - t));
+}
+
+/**
+ * Top-edge foreground occluder that drifts past the camera (scrollFactor > 1)
+ * for depth — placed ONLY in the top band so it never hides the gameplay floor.
+ * Thornwood = hanging leafy branches; Canyon = a rugged rock overhang lip;
+ * Mossgrave = drooping vines and roots. Mostly-transparent canvas.
+ */
+function foregroundStrip(theme: ThemeKey, color: string, rng: Rng): HTMLCanvasElement {
+  const W = VIEW.w;
+  const [c, ctx] = makeCanvas(W, H);
+  ctx.fillStyle = color;
+  if (theme === 'canyon') {
+    // a broken rock lip clinging to the top, with a few hanging chunks
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    for (let x = 0; x <= W; x += 8) {
+      const y = 10 + Math.sin(x * 0.05) * 5 + Math.cos(x * 0.11) * 4 + rng.range(0, 4);
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(W, 0);
+    ctx.closePath();
+    ctx.fill();
+    for (let i = 0; i < 5; i++) {
+      const x = rng.range(0, W);
+      const h = rng.range(10, 26);
+      ctx.fillRect(x - 3, 12, 6, h);
+      ctx.fillRect(x - 5, 12, 10, h * 0.4);
+    }
+  } else if (theme === 'mossgrave') {
+    // drooping vines from the top, occasional leaves
+    for (let i = 0; i < 10; i++) {
+      const x = mod(Math.round(rng.range(0, W)), W);
+      const len = rng.range(22, 58);
+      ctx.fillRect(x - 1, 0, 3, len);
+      for (let l = 8; l < len; l += rng.range(9, 16)) {
+        blob(ctx, x + (l % 2 ? 4 : -4), l, 8, 5);
+      }
+      blob(ctx, x, len, 6, 6); // a heavier leaf at the tip
+    }
+  } else {
+    // thornwood: a leafy canopy corner — a thick bough sweeps in from each top
+    // corner, hung with dense overlapping foliage; a couple of leaf sprigs droop
+    // between them so the top reads as looking out from under the trees
+    ctx.strokeStyle = color;
+    ctx.lineCap = 'round';
+    for (let side = 0; side < 2; side++) {
+      const baseX = side === 0 ? 0 : W;
+      const dir = side === 0 ? 1 : -1;
+      // the main bough (thick, tapering) + one offshoot
+      for (const [reach, drop, w] of [[150, 34, 9], [92, 20, 6]] as const) {
+        ctx.beginPath();
+        ctx.moveTo(baseX - dir * 6, -4);
+        ctx.quadraticCurveTo(baseX + dir * reach * 0.5, drop * 0.4, baseX + dir * reach, drop);
+        ctx.lineWidth = w;
+        ctx.stroke();
+      }
+      // dense foliage clustered over the corner
+      const leaf = (lx: number, ly: number, r: number) => blob(ctx, lx, ly, r, r * 0.72);
+      for (let i = 0; i < 14; i++) {
+        const t = rng.range(0.15, 1);
+        const lx = baseX + dir * 150 * t + rng.range(-14, 14);
+        const ly = 34 * t * t + rng.range(-8, 10);
+        leaf(lx, ly, rng.range(16, 26));
+      }
+      // solid mass filling the very corner
+      leaf(baseX, 2, 40);
+      leaf(baseX + dir * 26, 10, 30);
+    }
+    // two hanging sprigs between the boughs
+    for (const sx of [W * 0.4, W * 0.62]) {
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(sx, -2);
+      ctx.quadraticCurveTo(sx + 4, 14, sx, 30);
+      ctx.stroke();
+      blob(ctx, sx, 30, 12, 9);
+      blob(ctx, sx + 3, 20, 9, 7);
+    }
+  }
+  return c;
+}
+
 export interface ParallaxLayers {
   destroy(): void;
   update(scrollX: number, scrollY: number): void;
@@ -211,27 +313,41 @@ export function buildParallax(
     scene.textures.addCanvas(`${keyBase}-sky`, c);
   }
 
+  // aerial-perspective neighbours: a distant layer hazed toward the sky, and a
+  // dark near-foreground occluder drawn warmer (art bible: far = lighter/cooler,
+  // near = darker/warmer)
+  const farthestTint = blendHex(tints.far, sky.bottom, 0.5);
+  const fgTint = shadeHex(tints.near, 0.3, 8);
+
   const factors: [string, number][] = [
+    [`${keyBase}-farthest`, 0.05],
     [`${keyBase}-far`, 0.12],
     [`${keyBase}-mid`, 0.3],
     [`${keyBase}-near`, 0.55],
   ];
   if (!scene.textures.exists(`${keyBase}-far`)) {
     if (theme === 'canyon') {
+      scene.textures.addCanvas(`${keyBase}-farthest`, mesaStrip(farthestTint, 195, new Rng(seed + 91), 4, 55));
       scene.textures.addCanvas(`${keyBase}-far`, mesaStrip(tints.far, 215, rng, 5, 85));
       scene.textures.addCanvas(`${keyBase}-mid`, mesaStrip(tints.mid, 240, rng, 4, 60));
       scene.textures.addCanvas(`${keyBase}-near`, scrubStrip(tints.near, 260, rng, 8));
     } else {
+      scene.textures.addCanvas(`${keyBase}-farthest`, hillStrip(farthestTint, 188, 44, new Rng(seed + 91), 4));
       scene.textures.addCanvas(`${keyBase}-far`, hillStrip(tints.far, 205, 60, rng, 5));
       scene.textures.addCanvas(`${keyBase}-mid`, treeStrip(tints.mid, 232, rng, 9, false));
       scene.textures.addCanvas(`${keyBase}-near`, treeStrip(tints.near, 258, rng, 7, true));
     }
+    scene.textures.addCanvas(`${keyBase}-fg`, foregroundStrip(theme, fgTint, new Rng(seed + 137)));
   }
 
   const skyImg = scene.add.image(0, 0, `${keyBase}-sky`).setOrigin(0).setScrollFactor(0).setDepth(-100);
   const layers = factors.map(([key], i) =>
     scene.add.tileSprite(0, 0, W, H, key).setOrigin(0).setScrollFactor(0).setDepth(-99 + i),
   );
+  // foreground occluder: top-band only, drifts past the camera (factor > 1),
+  // depth 15 so it sits in front of actors but below HUD/atmosphere
+  const FG_FACTOR = 1.15;
+  const fg = scene.add.tileSprite(0, 0, W, H, `${keyBase}-fg`).setOrigin(0).setScrollFactor(0).setDepth(15).setAlpha(0.92);
 
   return {
     update(scrollX: number, scrollY: number) {
@@ -239,9 +355,11 @@ export function buildParallax(
         layer.tilePositionX = scrollX * factors[i][1];
         layer.tilePositionY = scrollY * factors[i][1] * 0.07;
       });
+      fg.tilePositionX = scrollX * FG_FACTOR;
     },
     destroy() {
       skyImg.destroy();
+      fg.destroy();
       layers.forEach((l) => l.destroy());
     },
   };
