@@ -527,20 +527,32 @@ export class GameScene extends Phaser.Scene {
     }
     const W = VIEW.w;
     const ui = uiScale();
+    const cy = H / 2 - 40;
+    const barH = ui > 1 ? 52 : 34;
     const card = this.add.container(0, 0).setScrollFactor(0).setDepth(100);
-    const bg = this.add.rectangle(W / 2, H / 2 - 40, W, ui > 1 ? 52 : 34, 0x2a1f1b, 0.85);
-    const name = new PixelText(this, W / 2, H / 2 - (ui > 1 ? 56 : 48), this.level.name.toUpperCase(), {
+
+    // banner bar + two amber rules that wipe in from the centre
+    const bg = this.add.rectangle(W / 2, cy, W, barH, 0x2a1f1b, 0.86).setScale(0, 1);
+    const ruleTop = this.add.rectangle(W / 2, cy - barH / 2, W, 2, 0xf2a03d, 0.9).setScale(0, 1);
+    const ruleBot = this.add.rectangle(W / 2, cy + barH / 2, W, 2, 0xf2a03d, 0.9).setScale(0, 1);
+    const name = new PixelText(this, W / 2, cy - 8, this.level.name.toUpperCase(), {
       scale: ui > 1 ? 3 : 2, color: 'O', align: 'center', shadow: true,
-    });
-    const sub = new PixelText(this, W / 2, H / 2 - (ui > 1 ? 32 : 30), levelLabel(this.levelIndex), {
+    }).setAlpha(0);
+    const sub = new PixelText(this, W / 2, cy + 10, levelLabel(this.levelIndex), {
       scale: ui, color: 'c', align: 'center',
-    });
-    card.add([bg, name, sub]);
+    }).setAlpha(0);
+    card.add([bg, ruleTop, ruleBot, name, sub]);
+
+    // entrance: bar wipes open, rules sweep, text rises in staggered
+    this.tweens.add({ targets: bg, scaleX: 1, duration: 340, ease: 'Cubic.easeOut' });
+    this.tweens.add({ targets: [ruleTop, ruleBot], scaleX: 1, delay: 70, duration: 440, ease: 'Cubic.easeOut' });
+    this.tweens.add({ targets: name, alpha: 1, y: { from: cy - 14, to: cy - 8 }, delay: 200, duration: 300, ease: 'Quad.easeOut' });
+    this.tweens.add({ targets: sub, alpha: 1, delay: 360, duration: 300 });
+    // exit: text fades, bar wipes shut
+    this.tweens.add({ targets: [name, sub], alpha: 0, delay: 1550, duration: 240 });
     this.tweens.add({
-      targets: card,
-      alpha: { from: 1, to: 0 },
-      delay: 1400,
-      duration: 400,
+      targets: [bg, ruleTop, ruleBot],
+      scaleX: 0, delay: 1700, duration: 300, ease: 'Cubic.easeIn',
       onComplete: () => card.destroy(),
     });
   }
