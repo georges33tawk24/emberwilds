@@ -46,7 +46,7 @@ export class ClearScene extends Phaser.Scene {
     const isBoss = LEVELS[data.levelIndex]?.boss === true;
     const save = this.registry.get('save') as SaveManager;
     this.add.rectangle(W / 2, H / 2, W, H, 0x14100d, 0.66);
-    this.add.rectangle(W / 2, H / 2, ui > 1 ? 430 : 280, ui > 1 ? 232 : 160, 0x2a1f1b, 0.95).setStrokeStyle(1, 0x7a5a3e);
+    this.add.rectangle(W / 2, H / 2, ui > 1 ? 440 : 288, ui > 1 ? 250 : 178, 0x2a1f1b, 0.95).setStrokeStyle(1, 0x7a5a3e);
 
     new PixelText(this, W / 2, H / 2 - (ui > 1 ? 92 : 62), isBoss ? STORY.bossFall.title : 'BEACON RELIT!', {
       scale: ui > 1 ? 3 : 2, color: 'O', align: 'center', shadow: true,
@@ -67,8 +67,10 @@ export class ClearScene extends Phaser.Scene {
         delay: 450, loop: true,
         callback: () => shard.setFrame(shard.frame.name === 'shard.0' ? 'shard.1' : 'shard.0'),
       });
-      const line = new PixelText(this, W / 2, H / 2 + (ui > 1 ? 52 : 30), STORY.bossFall.lines[1], {
-        scale: ui, color: 'y', align: 'center', shadow: true,
+      // narrative beat — placed just under the level name so it never collides
+      // with the tally or the achievement summary below
+      const line = new PixelText(this, W / 2, H / 2 - (ui > 1 ? 44 : 28), STORY.bossFall.lines[1], {
+        scale: 1, color: 'y', align: 'center', shadow: true,
       });
       line.setAlpha(0);
       this.tweens.add({ targets: line, alpha: 1, delay: 1100, duration: 300 });
@@ -90,18 +92,19 @@ export class ClearScene extends Phaser.Scene {
       this.time.delayedCall(250 + i * 260, () => audio.sfx('menuMove'));
     });
 
-    // any achievements this clear unlocked — pop them in after the tally, with a
-    // little token fanfare
+    // any achievements this clear unlocked — ONE compact line (a burst of 6 on a
+    // final-boss clear must never stack and overlap); full list is in the
+    // Achievements menu
     const earned = data.achievements ?? [];
-    earned.forEach((name, i) => {
-      const y = H / 2 + (ui > 1 ? 30 : 22) + i * (ui > 1 ? 16 : 11);
-      const line = new PixelText(this, W / 2, y, `ACHIEVEMENT - ${name.toUpperCase()}`, {
-        scale: 1, color: 'O', align: 'center', shadow: true,
-      }).setAlpha(0);
-      const delay = 1100 + i * 400;
-      this.tweens.add({ targets: line, alpha: 1, y: { from: y + 6, to: y }, delay, duration: 260, ease: 'Back.easeOut' });
-      this.time.delayedCall(delay, () => audio.sfx('token'));
-    });
+    if (earned.length > 0) {
+      const txt = earned.length === 1
+        ? `ACHIEVEMENT - ${earned[0].toUpperCase()}`
+        : `${earned.length} ACHIEVEMENTS UNLOCKED!`;
+      const y = H / 2 + (ui > 1 ? 56 : 34);
+      const line = new PixelText(this, W / 2, y, txt, { scale: ui, color: 'O', align: 'center', shadow: true }).setAlpha(0);
+      this.tweens.add({ targets: line, alpha: 1, y: { from: y + 6, to: y }, delay: 1150, duration: 300, ease: 'Back.easeOut' });
+      this.time.delayedCall(1150, () => audio.sfx('token'));
+    }
 
     // no colons — the 4x6 font has no ':' glyph (renders as '?')
     const hasNext = data.levelIndex + 1 < LEVELS.length;
@@ -111,7 +114,7 @@ export class ClearScene extends Phaser.Scene {
       : nextIsNewWorld
         ? `${worldOf(data.levelIndex + 1).label} AHEAD!  Z - ONWARD   X - MAP`
         : 'Z - NEXT LEVEL   X - MAP';
-    const p = new PixelText(this, W / 2, H / 2 + (ui > 1 ? 96 : 52), prompt, { scale: ui, color: 'W', align: 'center', shadow: true });
+    const p = new PixelText(this, W / 2, H / 2 + (ui > 1 ? 104 : 66), prompt, { scale: ui, color: 'W', align: 'center', shadow: true });
     this.tweens.add({ targets: p, alpha: { from: 0.4, to: 1 }, yoyo: true, repeat: -1, duration: 500 });
   }
 
