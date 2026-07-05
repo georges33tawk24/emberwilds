@@ -231,6 +231,25 @@ Build the back half of the game per the original spec (§6/§7 of
 
 ## PHASE 5 — Compete & share (the healthy-addiction layer)
 
+> **Full scored evaluation + 4-phase plan + backend design + distribution
+> strategy live in `GROWTH_ROADMAP.txt`** (research-backed, reviewed against a
+> 24-part "growth ecosystem" proposal). That file is the authority; this is the
+> short version. Key additions from the review:
+> - **Discovery is via PORTALS, not our own SEO.** CrazyGames (~104M MAU) and
+>   Poki (~152M) algorithmically push free games — but gate visibility on a
+>   leaderboard, a share button, an ad SDK, a save system, and short-session
+>   onboarding. So Phase-1 below is also the ADMISSION TICKET to distribution:
+>   build it, then submit to CrazyGames (take the ~2-month exclusivity for +50%
+>   rev share), then Poki, then a distributor. Reddit (r/WebGames) + streamer
+>   seeding beat Discord/paid-ads for cold discovery.
+> - **Instrument analytics (D1/D7, session length, per-level QUIT points) BEFORE
+>   adding content** — fix the jump/boss players rage-quit on first.
+> - **Obsess over the first 10 minutes** — a strong self-contained slice is what
+>   converts players into advocates.
+> - **HARD-CUT** (do not build): level editor / UGC, user accounts + public
+>   profiles, seasonal live-events, referral engine, notifications. All are
+>   solo-dev moderation/maintenance traps that fight the handcrafted identity.
+
 The replayability/virality layer, designed for what EMBERWILDS is (a
 handcrafted level platformer), not bolted on from arcade games. Ordered by
 impact-per-effort:

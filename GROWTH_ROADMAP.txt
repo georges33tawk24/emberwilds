@@ -1,0 +1,210 @@
+===============================================================================
+EMBERWILDS — GROWTH & ENGAGEMENT ROADMAP
+Research-backed evaluation of the 24-part "growth ecosystem" proposal,
+scored on impact-vs-effort for a SOLO dev building a HAND-CRAFTED NARRATIVE
+platformer. Read this before building any retention/growth feature.
+Produced from a 3-angle web-research pass (retention/virality, SEO/discovery,
+solo-dev live-service reality) + a scored matrix + synthesis.
+===============================================================================
+
+-------------------------------------------------------------------------------
+THE VERDICT (read this if nothing else)
+-------------------------------------------------------------------------------
+The 24-part prompt is a GOOD research dump and a BAD roadmap. Its DNA is
+live-service giants (Fortnite, Clash Royale, Geometry Dash), and ~1/3 of it is
+machinery for games EMBERWILDS is NOT. The prompt's instinct to INSTRUMENT, add
+LEADERBOARDS, and build a SHAREABLE RESULT is exactly right. Its instinct to add
+ACCOUNTS, a LEVEL EDITOR, SEASONAL DROPS, and a REFERRAL ENGINE is a trap that
+turns a solo designer into a full-time moderation-and-support desk for an
+audience that doesn't exist yet.
+
+EMBERWILDS' two real enemies are (1) the retention CLIFF at "the end" of a
+linear campaign, and (2) OBSCURITY. Not a thin content pipeline that needs
+perpetual feeding. So: build the cheap, self-moderating, campaign-reinforcing
+wins now; hard-cut the treadmill; stay on a static host as long as possible.
+
+THE UNFAIR ADVANTAGE: the sim is deterministic + Phaser-free, so a server can
+re-simulate a submitted input recording. Cheat-proof leaderboards + ghost
+replays — normally a multi-week slog — are uniquely cheap here. That's the one
+piece of live-service tech worth building, and few solo devs can afford it.
+
+BIGGEST STRATEGIC INSIGHT FROM RESEARCH (not in the prompt):
+For a solo browser-game dev, the #1 discovery channel is NOT your own SEO — it's
+AGGREGATOR PORTALS (CrazyGames ~104M MAU, Poki ~152M) that algorithmically PUSH
+your game for free. But they gate visibility on hard requirements: a
+leaderboard, a share button, an ad SDK, a save system, and short-session-
+friendly onboarding. So the Phase-1 features below aren't just retention — they
+are the ADMISSION TICKET to the channel that actually brings players. Build
+them, then submit to CrazyGames (take the ~2-month exclusivity for +50% rev
+share), then Poki, then a distributor (GameDistribution) to blanket small sites.
+
+-------------------------------------------------------------------------------
+IMPACT vs EFFORT MATRIX (all 24 parts)
+Legend: fit(strong/partial/weak/cut) impact effort maint -> phase
+-------------------------------------------------------------------------------
+PHASE 1 (do now — highest ROI, mostly no backend):
+  #2  Leaderboards ....... strong  imp:high  eff:med  maint:low  (per-level +
+        weekly auto-reset ONLY; server-side replay validation; skip the 11-flavor list)
+  #3  Achievements ....... strong  imp:med   eff:med  maint:low  (~30 meaningful,
+        feat-gated; force route/secret exploration; pure client, no moderation)
+  #5  Player Statistics .. strong  imp:med   eff:low  maint:low  (already computable
+        from the sim + localStorage; feeds death-positive framing + share cards)
+  #10 Exploration ........ strong  imp:high  eff:med  maint:low  (secret rooms,
+        collectibles, lore, secret boss — CORE CRAFT, how Celeste-class games retain)
+  #17 World map .......... strong  imp:med   eff:med  maint:low  (animate the
+        existing map: unlockable regions, progress %, boss markers; no backend)
+  #20 SEO ................ strong  imp:med   eff:low  maint:low  (DONE this session)
+  #21 Analytics .......... strong  imp:high  eff:low  maint:low  (instrument D1/D7,
+        session length, RAGE-QUIT points BEFORE adding content — portals are metric-driven)
+  #23 Performance ........ strong  imp:high  eff:med  maint:low  (a portal PASS/FAIL
+        gate, not optional; 60fps mobile)
+  #24 Impl. strategy ..... strong  imp:high  eff:low  maint:low  (adopt THIS cut list —
+        the single most valuable line in the whole prompt)
+
+PHASE 2 (growth — after Phase 1 + first backend):
+  #6  Social sharing ..... strong  imp:high  eff:med  maint:low  (Wordle/Balatro
+        virality: "I beat LEVEL in TIME / N deaths" card + one-tap share)
+  #7  Replay system ...... strong  imp:high  eff:med  maint:low  (THE unique asset —
+        ghost / race-ghost / WR replay from deterministic recordings; the depth hook)
+  #11 Game Modes ......... strong  imp:high  eff:med  maint:low  (time-attack,
+        hardcore, boss-rush, permadeath — the post-completion "endless" hooks; cut
+        randomizer/endless which fight the hand-crafted premise)
+  #13 News system ........ partial imp:med   eff:low  maint:low  (a simple static
+        changelog/roadmap page; weekly storytelling patch notes = top VS retention driver)
+
+PHASE 3 (scale — only once there's traffic/audience):
+  #1  Daily Challenges ... partial imp:high  eff:high maint:low  (no procedural
+        generator, so "daily" = seeded remixes of existing levels + validated board;
+        DEPENDS on the leaderboard backend existing first)
+  #9  Cosmetics .......... partial imp:med   eff:high maint:med  (a tiny handful tied
+        to achievements — fox trail, a title, an alt skin; NO shop, no purchase flow)
+  #16 Game wiki .......... partial imp:med   eff:med  maint:low  (auto-gen enemy/boss/
+        level pages = sustainable long-tail SEO; pays off MONTHS out, not at launch)
+  #19 Media system ....... partial imp:high  eff:high maint:low  (auto GIF/clip capture
+        from replays — uniquely feasible here, but real engineering; after #7 proves out)
+
+PHASE 4 / CUT (defer indefinitely or hard-cut):
+  #4  Player Profile ..... weak  4-future  (public /player/Name = accounts + name
+        moderation + GDPR erasure; single-player has no social loop to justify it.
+        For leaderboards you need only a device UUID + a filtered display name)
+  #18 Referral system .... weak  4-future  (needs accounts + attribution + cosmetic
+        pipeline; pre-audience, DMing streamers beats building this)
+  #22 Notifications ...... weak  4-future  (web-push needs an audience + opt-in
+        plumbing; low opt-in, high annoyance)
+  #8  Weekly Events ...... CUT   (authored rotating modifiers = content treadmill;
+        deliver mastery via PERMANENT game modes instead)
+  #12 Seasonal content ... CUT   (spring/halloween/xmas drops = the textbook solo-dev
+        commitment trap; fake seasonality with automatic monthly leaderboard resets)
+  #14 Level editor ....... CUT   (UGC = the #1 moderation nightmare: slurs/porn/
+        copyright with no solo-scalable moderation; also contradicts a hand-crafted
+        narrative identity. Technically tempting via the deterministic sim — RESIST)
+  #15 Player content ..... CUT   (creator pages/competitions = same UGC/account
+        liabilities, less payoff; let the community post guides on Reddit/YouTube)
+
+-------------------------------------------------------------------------------
+THE 4-PHASE PLAN (concrete)
+-------------------------------------------------------------------------------
+PHASE 1 — "MAKE IT STICKY & DISCOVERABLE" (mostly no backend)
+  * Achievements: ~30 feat-gated (no-damage clear, all-tokens world, stomp chains,
+    speed thresholds, secret finds). Client-side, in the versioned save.
+  * Cosmetic scarves tied to the hardest achievements (visible progression, $0).
+  * Player stats: deaths, jumps, distance, perfect runs, per-level best — from the
+    sim, shown on a stats screen + the clear tally (death-positive framing).
+  * Exploration depth: at least one real secret room per level (mostly done in
+    Phase 2A), lore drops, and an optional secret boss down the line.
+  * World-map polish: animate region unlocks, show completion %, boss markers.
+  * Analytics: a lightweight privacy-friendly beacon (or Cloudflare Web Analytics)
+    for D1/D7, session length, and per-level quit points. Instrument BEFORE content.
+  * SEO: DONE (JSON-LD, OG card, sitemap, crawlable content).
+  * Performance: hold 60fps on mid mobile; code-split the 1.6MB bundle.
+  * THEN: submit to CrazyGames (take exclusivity), Poki, a distributor; list on
+    itch.io/Newgrounds timed with a game jam; post authentically to r/WebGames.
+
+PHASE 2 — "COMPETE & SHARE" (first backend + the unique asset)
+  * Replay recording: capture the input stream per run (the sim is deterministic).
+  * Ghost racing: race your PB, the WR, or a friend's ghost from a share link.
+  * Leaderboards: global + per-level speedrun + auto-resetting weekly, with
+    server-side replay validation (re-simulate the input stream in a Worker).
+  * Share cards: "I beat LEVEL in TIME with N deaths" image + one-tap copy.
+  * Game modes: time-attack, boss-rush, hardcore/permadeath (reuse levels).
+  * Static changelog/roadmap page; weekly storytelling patch notes.
+
+PHASE 3 — "DEPTH AT SCALE" (once traffic justifies the maintenance)
+  * Daily challenge: seeded remixes of existing levels + its own board + streak.
+  * Small cosmetic set expansion (still achievement-gated, no purchases).
+  * Auto-generated wiki/guide pages for long-tail SEO.
+  * Media/clip auto-capture from replays for shareable highlights.
+
+PHASE 4 — "FUTURE VISION" (only if the game is already successful)
+  * Accounts (OAuth only, never roll your own) IF a social loop demands it.
+  * Referral cosmetics, opt-in notifications. Everything cosmetic, never P2W.
+
+-------------------------------------------------------------------------------
+BACKEND DECISION
+-------------------------------------------------------------------------------
+Stay STATIC as long as humanly possible. Everything in Phase 1 except nothing
+(all of Phase 1 is client-side) ships on Cloudflare Pages with no server.
+
+When leaderboards force your hand (Phase 2): Cloudflare Workers + D1 (SQLite,
+ORDER BY/LIMIT free) + KV caching the hot top-N. Scope the ENTIRE first backend
+to ONE Worker with TWO routes:
+  POST /score       -> Cloudflare Turnstile check + server-side sanity-cap +
+                       per-device rate-limit + insert; THEN layer replay
+                       re-simulation validation (the gold standard you can afford).
+  GET  /leaderboard -> cached top-N from KV.
+Identity = a random device UUID in localStorage + a profanity-filtered display
+name. NO accounts, NO moderation queue, NO GDPR deletion flow. $0 on the free
+tier (D1 5GB / 5M reads-day, Workers 100K req-day). Add nothing heavier until
+real player demand — not the prompt — justifies the ongoing cost.
+
+-------------------------------------------------------------------------------
+KEY RESEARCH TAKEAWAYS (the principles behind the plan)
+-------------------------------------------------------------------------------
+RETENTION / VIRALITY
+  * Campaign games retain via MASTERY + hidden collectibles + optional challenges
+    + death-positive framing — but they END (a hard cliff). Bolt ENDLESS hooks on
+    post-completion: challenge/deathless modes, speedrun variants, collectible
+    hunts, a named difficulty ladder.
+  * Named, ascending, POSTABLE milestones (Balatro Antes, GD Demon tiers) structure
+    the D7/D30 long tail; finishing a hard tier is itself the shareable install-driver.
+  * Ship the CLIP-GENERATOR inside the game: engineer setup->payoff "holy-crap"
+    moments that read in a 15-second clip (clear framing + reaction cue + visible payoff).
+  * Publish a permissive creator policy ("streamers can monetize") + personally seed
+    the game to mid-size streamers. Free marketing (worked for Balatro, Slither.io).
+  * Retention benchmarks are brutal (median D7 ~3.4%). Track quit points, ship small
+    VISIBLE weekly patches with storytelling notes (VS's #1 long-term driver).
+  * Obsess over the FIRST 10 MINUTES — a strong self-contained slice converts players
+    into advocates; that commitment beats vanity top-of-funnel numbers.
+
+SEO / DISCOVERY
+  * Portals (CrazyGames/Poki) > your own SEO. Build their requirements IN, submit,
+    take CrazyGames exclusivity for +50% rev share.
+  * itch.io is a listing, not a traffic source; time a launch with a GAME JAM (highest-
+    ROI free discovery), fill every tag, post devlogs for "freshness".
+  * Reddit (r/WebGames) > Discord for COLD discovery (74% of gaming Redditors aren't on
+    Discord). Discord is a RETENTION tool — stand one up only once you have players.
+  * VideoGame JSON-LD is cheap insurance for rich snippets + AI-answer surfacing, not a
+    growth engine. Long-tail wiki SEO compounds but pays off months out.
+  * WASTE OF TIME pre-audience: paid ads, an elaborate marketing site expecting Google
+    traffic, head-term SEO ("free games"), spreading thin across 15 tiny portals.
+
+SOLO-DEV / LIVE-SERVICE REALITY
+  * Tier features by MAINTENANCE COST. Cheap+safe: leaderboards, seeded dailies, stats,
+    achievements. Expensive+dangerous: accounts, UGC/level editors, chat, real-time MP,
+    prize competitions.
+  * UGC inherits the full internet moderation problem with no solo-scalable answer.
+  * Accounts = hidden time-sink + legal liability (GDPR erasure/export, breach). Use
+    device UUIDs or OAuth; never store passwords; a leaderboard needs only name + token.
+  * Client-submitted scores are faked within days. Minimum anti-cheat: Turnstile +
+    server sanity-cap + rate-limit (80% of value, ~1 day). True anti-cheat = replay
+    re-simulation (a real project — do it only for competitive boards, which you can).
+  * Prefer STATELESS, SELF-EXPIRING, SELF-MODERATING designs: auto-resetting boards,
+    profanity-filtered names, no free-text surfaces between users.
+
+===============================================================================
+BOTTOM LINE: Build leaderboards+ghosts (your unfair advantage), achievements,
+stats, exploration, world-map polish, analytics, and the portal-readiness
+checklist. Submit to CrazyGames. HARD-CUT the level editor, accounts, seasonal
+events, and referral engine. Stay static until the leaderboard needs one Worker.
+Grow through portals + Reddit + streamer seeding, not through building Fortnite.
+===============================================================================

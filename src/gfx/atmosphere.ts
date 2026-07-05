@@ -1,6 +1,5 @@
 /**
  * Screen-space atmosphere — the "lavish" layer over every level (Phase 2B):
- *   - soft diagonal LIGHT SHAFTS in sunlit forests and ruins (day/dawn)
  *   - FIREFLIES that drift and pulse at dusk
  *   - a gentle radial VIGNETTE that frames the screen
  * Everything is warm and natural per the art bible (light is sun and fire,
@@ -36,6 +35,7 @@ export function buildAtmosphere(
   const W = VIEW.w;
   const rng = new Rng(seed);
   const items: Phaser.GameObjects.GameObject[] = [];
+  void theme;
 
   // ---- vignette: baked radial gradient, width-keyed like the parallax -------
   const vigKey = `vignette-${W}`;
@@ -53,33 +53,6 @@ export function buildAtmosphere(
   }
   const vignette = scene.add.image(0, 0, vigKey).setOrigin(0).setScrollFactor(0).setDepth(55).setAlpha(0.5);
   items.push(vignette);
-
-  // ---- light shafts: sun through the canopy / the ruin oculi ----------------
-  const shafts: Phaser.GameObjects.Graphics[] = [];
-  const shaftPhase: number[] = [];
-  const sunlit = daypart === 'day' || daypart === 'dawn';
-  if (sunlit && (theme === 'thornwood' || theme === 'mossgrave')) {
-    for (let i = 0; i < 3; i++) {
-      const g = scene.add.graphics().setScrollFactor(0).setDepth(30);
-      const bx = rng.range(W * 0.12, W * 0.85);
-      const wTop = rng.range(14, 22);
-      const wBot = wTop * 2.2;
-      const drop = H * 0.85;
-      const lean = drop * 0.35; // beams lean with the upper-left key light
-      g.fillStyle(0xf7e6c4, 1);
-      g.beginPath();
-      g.moveTo(bx, -8);
-      g.lineTo(bx + wTop, -8);
-      g.lineTo(bx + wTop + lean, drop);
-      g.lineTo(bx + lean - (wBot - wTop), drop);
-      g.closePath();
-      g.fillPath();
-      g.setAlpha(0.05);
-      shafts.push(g);
-      shaftPhase.push(rng.range(0, Math.PI * 2));
-      items.push(g);
-    }
-  }
 
   // ---- fireflies at dusk -----------------------------------------------------
   const flies: Firefly[] = [];
@@ -104,11 +77,6 @@ export function buildAtmosphere(
 
   return {
     update(t: number, camX: number) {
-      for (let i = 0; i < shafts.length; i++) {
-        // breathe, and drift gently against the camera for depth
-        shafts[i].setAlpha(0.04 + Math.sin(t * 0.5 + shaftPhase[i]) * 0.025);
-        shafts[i].x = -((camX * 0.06 + i * 37) % (VIEW.w + 80)) + 40;
-      }
       for (const f of flies) {
         f.x -= f.speed * 0.016;
         if (f.x < -4) f.x += VIEW.w + 8;
