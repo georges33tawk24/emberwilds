@@ -1137,9 +1137,21 @@ export class GameScene extends Phaser.Scene {
     this.ending = true;
     this.player.enterGoal();
     audio.sfx('goal');
-    this.addTrauma(0.2);
-    this.particles.sparks(this.beaconPos.x, this.beaconPos.y - 24, 12);
-    this.particles.leafBurst(this.beaconPos.x, this.beaconPos.y - 16, 8);
+    this.addTrauma(0.28);
+
+    // the beacon relights — warmth floods back (the level's golden payoff)
+    const bx = this.beaconPos.x;
+    const by = this.beaconPos.y - 20;
+    if (!this.save.data.settings.flashReduction) this.cameras.main.flash(420, 242, 176, 80);
+    // an expanding warmth ring
+    const ring = this.add.circle(bx, by, 24, 0xf2a03d, 0).setStrokeStyle(3, 0xf2a03d, 0.85).setDepth(11).setScale(0.12);
+    this.tweens.add({ targets: ring, scale: 4.5, alpha: 0, duration: 800, ease: 'Cubic.easeOut', onComplete: () => ring.destroy() });
+    // a rising ember fountain, in three quick beats
+    this.particles.sparks(bx, by, 14);
+    this.particles.leafBurst(bx, by, 8);
+    this.time.delayedCall(140, () => this.particles.sparks(bx, by - 6, 10));
+    this.time.delayedCall(300, () => { this.particles.sparks(bx, by - 12, 8); this.particles.gemPop(bx, by - 4); });
+
     const timeMs = this.time.now - this.startTime;
     this.save.clearLevel(this.levelIndex, timeMs, this.gemsCollected);
     this.time.delayedCall(1500, () => {
