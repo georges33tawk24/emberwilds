@@ -1168,7 +1168,10 @@ export class GameScene extends Phaser.Scene {
     this.save.bumpStat('gemsAllTime', this.gemsCollected);
     this.save.bumpStat('levelsCleared');
     this.save.bumpStat('playtimeMs', timeMs);
-    if (!this.damagedThisLevel) this.save.bumpStat('perfectClears');
+    if (!this.damagedThisLevel) {
+      this.save.bumpStat('perfectClears');
+      if (!this.save.data.flawless.includes(this.levelIndex)) this.save.data.flawless.push(this.levelIndex);
+    }
     if (this.level.boss) this.save.bumpStat('bossesDefeated');
     this.save.clearLevel(this.levelIndex, timeMs, this.gemsCollected); // persists
     const earned = earnAchievements(this.save.data);

@@ -169,6 +169,14 @@ export class WorldMapScene extends Phaser.Scene {
       if (isBoss && available) {
         disc.lineStyle(2, cleared ? 0xf2a03d : 0xc7402b, 1).strokeCircle(p.x, p.y, r + 2);
       }
+      // flawless (no-hit) clear earns a small gold star on the node's shoulder
+      if (cleared && this.save.data.flawless.includes(i)) {
+        const mx = p.x + r * 0.82;
+        const my = p.y - r * 0.82;
+        disc.fillStyle(0x2a1f1b, 1).fillPoints(starPoints(mx, my + 0.5, 5, 2.2), true);
+        disc.fillStyle(0xf2a03d, 1).fillPoints(starPoints(mx, my, 4.2, 1.8), true);
+        disc.fillStyle(0xf7e6c4, 1).fillCircle(mx - 1, my - 1.2, 0.9);
+      }
 
       const label = new PixelText(this, p.x, p.y - 3, '', { scale: 1, color: available ? 'K' : 's', align: 'center' }).setDepth(7);
       label.setText(isBoss ? '!' : String(worldLevelNum(i)));
@@ -195,7 +203,13 @@ export class WorldMapScene extends Phaser.Scene {
     const w = worldOf(this.sel);
     const available = this.sel <= this.save.data.levelUnlocked;
     this.headerTitle.setText(available ? LEVELS[this.sel].name.toUpperCase() : 'LOCKED');
-    this.headerSub.setText(available ? levelLabel(this.sel) : 'CLEAR THE PATH BEHIND IT');
+    let sub = available ? levelLabel(this.sel) : 'CLEAR THE PATH BEHIND IT';
+    const best = this.save.data.bestTimes[this.sel];
+    if (available && best) {
+      sub += `   BEST ${(best / 1000).toFixed(1)}s`;
+      if (this.save.data.flawless.includes(this.sel)) sub += '   FLAWLESS';
+    }
+    this.headerSub.setText(sub);
     this.headerTitle.setColor(available ? 'O' : 'i');
     this.gemText.setText(`${this.save.data.gems}`);
     void w;
@@ -305,4 +319,15 @@ function worldLevelNum(index: number): number {
   let n = 0;
   for (let i = 0; i <= index; i++) if (LEVELS[i].theme === theme) n++;
   return n;
+}
+
+/** Points of a 5-point star centred at (cx, cy) — the flawless medal. */
+function starPoints(cx: number, cy: number, outer: number, inner: number): Phaser.Math.Vector2[] {
+  const pts: Phaser.Math.Vector2[] = [];
+  for (let i = 0; i < 10; i++) {
+    const r = i % 2 === 0 ? outer : inner;
+    const a = (Math.PI / 5) * i - Math.PI / 2;
+    pts.push(new Phaser.Math.Vector2(cx + Math.cos(a) * r, cy + Math.sin(a) * r));
+  }
+  return pts;
 }

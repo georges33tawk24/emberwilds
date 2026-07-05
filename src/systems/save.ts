@@ -84,11 +84,13 @@ export interface SaveData {
   stats: PlayerStats;
   /** ids of unlocked achievements */
   achievements: string[];
+  /** level indices cleared without taking a hit (the "flawless" medal) */
+  flawless: number[];
 }
 
 const KEY = 'emberwilds.save';
 const BACKUP_KEY = 'emberwilds.save.bak';
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 export const DEFAULT_SETTINGS: Settings = {
   musicVol: 0.8,
@@ -111,6 +113,7 @@ export function defaultSave(): SaveData {
     worldsSeen: [],
     stats: { ...DEFAULT_STATS },
     achievements: [],
+    flawless: [],
   };
 }
 
@@ -135,6 +138,8 @@ const MIGRATIONS: Record<number, (d: SaveData) => SaveData> = {
   2: (d) => ({ ...d, version: 3, introSeen: false, worldsSeen: [] }),
   // v4: lifetime stats + achievements. Start fresh — nothing was tracked before.
   3: (d) => ({ ...d, version: 4, stats: { ...DEFAULT_STATS }, achievements: [] }),
+  // v5: per-level flawless (no-hit) medals. Not retroactive — earned going forward.
+  4: (d) => ({ ...d, version: 5, flawless: [] }),
 };
 
 export function migrate(d: SaveData): SaveData {
@@ -152,6 +157,7 @@ export function migrate(d: SaveData): SaveData {
   cur.worldsSeen = cur.worldsSeen ?? [];
   cur.stats = { ...DEFAULT_STATS, ...cur.stats };
   cur.achievements = cur.achievements ?? [];
+  cur.flawless = cur.flawless ?? [];
   return cur;
 }
 

@@ -107,6 +107,7 @@ describe('SaveManager', () => {
     expect(s.data.stats).toBeDefined();
     expect(s.data.stats.jumps).toBe(0);
     expect(s.data.achievements).toEqual([]);
+    expect(s.data.flawless).toEqual([]); // v5 field backfilled
   });
 
   it('buys upgrades, spends gems, and blocks when unaffordable or maxed', () => {
