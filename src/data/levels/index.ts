@@ -18,6 +18,10 @@ import { LEVEL as CINDER_3 } from './cinder3';
 import { LEVEL as CINDER_4 } from './cinder4';
 import { LEVEL as CINDER_5 } from './cinder5';
 import { LEVEL as RIME_1 } from './rime1';
+import { LEVEL as RIME_2 } from './rime2';
+import { LEVEL as RIME_3 } from './rime3';
+import { LEVEL as RIME_4 } from './rime4';
+import { LEVEL as RIME_5 } from './rime5';
 
 export const LEVELS: LevelDef[] = [
   THORNWOOD_1 as LevelDef,
@@ -39,6 +43,10 @@ export const LEVELS: LevelDef[] = [
   CINDER_4 as LevelDef,
   CINDER_5 as LevelDef,
   RIME_1 as LevelDef,
+  RIME_2 as LevelDef,
+  RIME_3 as LevelDef,
+  RIME_4 as LevelDef,
+  RIME_5 as LevelDef,
 ];
 
 const WORLD_LABELS: Record<string, { label: string; num: number }> = {

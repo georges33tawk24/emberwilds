@@ -13,6 +13,11 @@
  *     shockwave outward; the landing leaves it winded (core open) — no wall
  *     needed. Dodge out from under the slam, then punish the recovery.
  *
+ *   • Old Shiverback (Rimefell) — a hoarfrost bear. It curls into a boulder
+ *     and ROLLS, ricocheting wall to wall (more bounces each phase) before
+ *     it tires out dizzy (core open) — and the arena floor is ice, so the
+ *     player is sliding too. Count the bounces, be elsewhere, punish.
+ *
  *   • The Cinder Shrike (The Cinderpeaks) — a ragged raptor of foundry
  *     scrap. It HOVERS above the arena raining ember volleys, then DIVES at
  *     the player and impales its beak in the ash — the vertical threat. Bait
@@ -25,7 +30,7 @@ import { TILE } from '../data/levelTypes';
 import { moveY, type Body, type SolidityQuery } from '../systems/physics';
 
 export type BossState = 'intro' | 'walk' | 'telegraph' | 'charge' | 'stun' | 'recover' | 'dead';
-export type BossVariant = 'rustjaw' | 'warden' | 'shrike';
+export type BossVariant = 'rustjaw' | 'warden' | 'shrike' | 'shiverback';
 
 export interface BossShot {
   x: number;
@@ -64,6 +69,8 @@ interface BossConfig {
   diveSpeed: [number, number, number];
   /** Shrike: climb rate back to hover altitude */
   riseSpeed: number;
+  /** Shiverback: wall bounces per phase before the roll tires into stun */
+  bounces: [number, number, number];
 }
 
 const RUSTJAW: BossConfig = {
@@ -87,6 +94,7 @@ const RUSTJAW: BossConfig = {
   hoverH: 0,
   diveSpeed: [0, 0, 0],
   riseSpeed: 0,
+  bounces: [0, 0, 0],
 };
 
 const WARDEN: BossConfig = {
@@ -110,6 +118,7 @@ const WARDEN: BossConfig = {
   hoverH: 0,
   diveSpeed: [0, 0, 0],
   riseSpeed: 0,
+  bounces: [0, 0, 0],
 };
 
 const SHRIKE: BossConfig = {
@@ -133,12 +142,38 @@ const SHRIKE: BossConfig = {
   hoverH: 88,
   diveSpeed: [340, 400, 460],
   riseSpeed: 130,
+  bounces: [0, 0, 0],
+};
+
+const SHIVERBACK: BossConfig = {
+  name: 'OLD SHIVERBACK',
+  prefix: 'shiverback',
+  variant: 'shiverback',
+  maxHp: 9,
+  bodyW: 42,
+  bodyH: 24,
+  walkSpeed: 35,
+  chargeSpeed: [200, 250, 300], // the roll speed
+  telegraphS: [0.9, 0.75, 0.6],
+  stunS: [2.5, 2.1, 1.8],
+  walkS: [1.7, 1.4, 1.1],
+  recoverS: 0.6,
+  volleyCount: [0, 3, 5],
+  shotSpeed: 140,
+  leapVX: [0, 0, 0],
+  leapImpulse: 0,
+  shockSpeed: 0,
+  hoverH: 0,
+  diveSpeed: [0, 0, 0],
+  riseSpeed: 0,
+  bounces: [1, 2, 3], // ricochets before it tires
 };
 
 export const BOSS_CONFIGS: Record<BossVariant, BossConfig> = {
   rustjaw: RUSTJAW,
   warden: WARDEN,
   shrike: SHRIKE,
+  shiverback: SHIVERBACK,
 };
 
 export class BossSim {
@@ -163,6 +198,8 @@ export class BossSim {
   /** Shrike: player x captured when the telegraph BEGINS — the dive aims
    *  here, so moving after the tell is the dodge */
   private commitTargetX = 0;
+  /** Shiverback: wall bounces left in the current roll */
+  private bouncesLeft = 0;
   /** captured each step: did the vertical solver land the body this step? */
   private landedThisStep = false;
 
@@ -267,9 +304,9 @@ export class BossSim {
         break;
 
       case 'charge':
-        // leapers and divers share the airborne handler; only Rustjaw rams
         if (this.cfg.variant === 'rustjaw') this.stepCharge();
-        else this.stepLeap();
+        else if (this.cfg.variant === 'shiverback') this.stepRoll();
+        else this.stepLeap(); // leapers and divers share the airborne handler
         break;
 
       case 'stun':
@@ -304,6 +341,9 @@ export class BossSim {
       this.airborneT = 0;
       this.body.vy = -this.cfg.leapImpulse;
       this.body.vx = this.facing * this.cfg.leapVX[this.phaseIndex()];
+    } else if (this.cfg.variant === 'shiverback') {
+      this.bouncesLeft = this.cfg.bounces[this.phaseIndex()];
+      this.body.vx = this.facing * this.cfg.chargeSpeed[this.phaseIndex()];
     } else {
       this.body.vx = this.facing * this.cfg.chargeSpeed[this.phaseIndex()];
     }
@@ -314,6 +354,23 @@ export class BossSim {
     const dir = (this.body.vx > 0 ? 1 : -1) as 1 | -1;
     if (this.wallAhead(dir)) {
       this.enterStun();
+    } else {
+      this.body.x += this.body.vx * STEP_S;
+    }
+  }
+
+  /** Shiverback: roll flat out, ricochet off walls, tire into the stun. */
+  private stepRoll(): void {
+    const dir = (this.body.vx > 0 ? 1 : -1) as 1 | -1;
+    if (this.wallAhead(dir)) {
+      if (this.bouncesLeft > 0) {
+        this.bouncesLeft--;
+        this.body.vx = -this.body.vx;
+        this.facing = -dir as 1 | -1;
+        this.slammed = true; // shake + dust on every ricochet
+      } else {
+        this.enterStun();
+      }
     } else {
       this.body.x += this.body.vx * STEP_S;
     }

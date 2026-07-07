@@ -195,9 +195,12 @@ Build the back half of the game per the original spec (§6/§7 of
    vents (verticality) + the Rust's machinery. 4 concept levels (VENTS /
    CLIMB / FOUNDRY LOCKS / GAUNTLET) + THE CINDER SHRIKE — a hover-and-dive
    raptor, the vertical boss (mechanics distinct from charge and leap-slam).
-2. **World 5 — Fen Hollow or Rimefell** (pick one per pacing): misty marsh
-   (hazard timing, lifts, mud geysers) or snowfield (ice physics, wind gusts,
-   Frostbloom synergy). The one not picked can ship post-launch.
+2. **World 5 — ✅ SHIPPED as RIMEFELL** (snowfield): the ICE mechanic ('I'
+   tiles, momentum-carrying ground physics in TUNING.ice), fragile-ice crack
+   plates, under-crust swimming, Frostbloom on stage. 4 concept levels
+   (SLIDE / ICE CLIMB / FRAGILE ICE / GAUNTLET) + OLD SHIVERBACK — a
+   hoarfrost bear that ricochets wall to wall on an iced arena floor (the
+   player slides too). Fen Hollow (misty marsh) can ship post-launch.
 3. **World 6 — Coglar Foundry** (the Rust's heart): conveyors, piston crushers,
    everything-combined remix levels, the coldest palette in the game (iron +
    sullen molten orange — still zero neon).
@@ -332,7 +335,9 @@ impact-per-effort:
       budgets, light/atmosphere, parallax depth, weather, UI storybook)
 - [x] Phase 3a — World 4 THE CINDERPEAKS complete: theme (tiles/enemies/song/
       parallax), 4 concept levels, The Cinder Shrike boss + eyrie arena
-- [ ] Phase 3b — Worlds 5–6 + two more bosses + Coglar finale fight
+- [x] Phase 3b — World 5 RIMEFELL complete: ice mechanic + theme + 4 concept
+      levels + Old Shiverback (ricochet roll on an iced den floor)
+- [ ] Phase 3c — World 6 Coglar Foundry + the Baron finale fight
 - [ ] Phase 4 — mechanics/power-ups/music/juice depth pass
 - [ ] Phase 5 — compete & share: medals, achievements+scarves, leaderboards
       (replay-validated), daily challenge, ghost racing; Ember Rush optional

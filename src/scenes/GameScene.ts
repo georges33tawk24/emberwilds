@@ -428,8 +428,9 @@ export class GameScene extends Phaser.Scene {
         }
         case 'Y': {
           const variant =
-            this.level.theme === 'cinder' ? 'shrike'
-              : this.level.theme === 'mossgrave' ? 'warden' : 'rustjaw';
+            this.level.theme === 'rimefell' ? 'shiverback'
+              : this.level.theme === 'cinder' ? 'shrike'
+                : this.level.theme === 'mossgrave' ? 'warden' : 'rustjaw';
           this.bossSim = new BossSim(px, feetY, this.world.solidAt, variant);
           this.bossSpr = this.add.sprite(px, feetY, 'boss', `${variant}_walk.0`)
             .setOrigin(0.5, 1)
