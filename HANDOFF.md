@@ -266,6 +266,19 @@ Gotcha: carve air pits **after** filling soil, or they get floored over.
   `TouchEvent`s on `window`, and Phaser scene input by dispatching
   `MouseEvent`s on the canvas. Synthetic `KeyboardEvent`s never reach Phaser.
   `?mobile=1` forces the mobile experience (camera FOV + UI ×2) on desktop.
+- **No preview tooling? Drive headless Chrome over raw CDP** — zero deps:
+  Node ≥22 has a built-in `WebSocket`. Launch
+  `"/Applications/Google Chrome.app/.../Google Chrome" --headless=new
+  --remote-debugging-port=9223 --user-data-dir=<scratch>`, `PUT
+  /json/new?url=about:blank` to open a tab, connect to its
+  `webSocketDebuggerUrl`, then `Runtime.evaluate` (with `awaitPromise` +
+  `returnByValue`) to drive the game and `Page.captureScreenshot` for proof.
+  `--headless=new` pages report *visible*, so rAF runs and no worker driver is
+  needed. To click UI, dispatch `MouseEvent`s on the canvas at
+  `canvasRect.left + gameX / scale.gameSize.width * canvasRect.width`.
+  Canvas-only rendering (e.g. the share card) can skip the browser entirely:
+  feed the renderer a fake 2D ctx that records `fillRect`s into a pixel
+  buffer, write a PPM, `sips -s format png` it, and inspect the image.
 - **Scene instances are REUSED across scene.start()** — class-field
   initializers run ONCE. Every per-run accumulator must re-init in create()
   (a NaN that sneaks into one is otherwise permanent — the camera lookAhead
