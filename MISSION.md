@@ -188,11 +188,16 @@ retro resolution, lavish craft). Same palette law, far richer screens:
 Build the back half of the game per the original spec (§6/§7 of
 `~/Downloads/EMBERWILDS-BUILD-PROMPT.md`):
 
-1. **World 4 — Fen Hollow** (misty marsh): hazard timing, verticality, lifts,
-   gas-bloaters/leapers/dragonflies, mud geysers. New mechanic seeds: moving
-   platforms / lift timing.
-2. **World 5 — Rimefell** (snowfield): ice physics (low-friction ground),
-   wind gusts, fragile/cracking ice, freeze-platforming synergy with Frostbloom.
+1. **World 4 — ✅ SHIPPED as THE CINDERPEAKS** (ash-grey volcanic highlands
+   under the foundry smoke — swapped in for the planned Fen Hollow because the
+   story canon marches the trail of shards TOWARD the Foundry, and ash gave
+   the strongest palette contrast after Mossgrave's green). Identity: ember
+   vents (verticality) + the Rust's machinery. 4 concept levels (VENTS /
+   CLIMB / FOUNDRY LOCKS / GAUNTLET) + THE CINDER SHRIKE — a hover-and-dive
+   raptor, the vertical boss (mechanics distinct from charge and leap-slam).
+2. **World 5 — Fen Hollow or Rimefell** (pick one per pacing): misty marsh
+   (hazard timing, lifts, mud geysers) or snowfield (ice physics, wind gusts,
+   Frostbloom synergy). The one not picked can ship post-launch.
 3. **World 6 — Coglar Foundry** (the Rust's heart): conveyors, piston crushers,
    everything-combined remix levels, the coldest palette in the game (iron +
    sullen molten orange — still zero neon).
@@ -325,7 +330,9 @@ impact-per-effort:
       floor is now enforced by the lint. Boss arenas untouched by design.
 - [ ] Phase 2B — the "retro but lavish" visual overhaul (tiles, animation
       budgets, light/atmosphere, parallax depth, weather, UI storybook)
-- [ ] Phase 3 — Worlds 4–6 + three new bosses + Coglar finale fight
+- [x] Phase 3a — World 4 THE CINDERPEAKS complete: theme (tiles/enemies/song/
+      parallax), 4 concept levels, The Cinder Shrike boss + eyrie arena
+- [ ] Phase 3b — Worlds 5–6 + two more bosses + Coglar finale fight
 - [ ] Phase 4 — mechanics/power-ups/music/juice depth pass
 - [ ] Phase 5 — compete & share: medals, achievements+scarves, leaderboards
       (replay-validated), daily challenge, ghost racing; Ember Rush optional

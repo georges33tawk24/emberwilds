@@ -13,6 +13,11 @@
  *     shockwave outward; the landing leaves it winded (core open) — no wall
  *     needed. Dodge out from under the slam, then punish the recovery.
  *
+ *   • The Cinder Shrike (The Cinderpeaks) — a ragged raptor of foundry
+ *     scrap. It HOVERS above the arena raining ember volleys, then DIVES at
+ *     the player and impales its beak in the ash — the vertical threat. Bait
+ *     the dive, step aside, and punish while it is stuck.
+ *
  * Pure, deterministic, Phaser-free; stepped at 120 Hz.
  */
 import { STEP_S, TUNING } from '../data/tuning';
@@ -20,7 +25,7 @@ import { TILE } from '../data/levelTypes';
 import { moveY, type Body, type SolidityQuery } from '../systems/physics';
 
 export type BossState = 'intro' | 'walk' | 'telegraph' | 'charge' | 'stun' | 'recover' | 'dead';
-export type BossVariant = 'rustjaw' | 'warden';
+export type BossVariant = 'rustjaw' | 'warden' | 'shrike';
 
 export interface BossShot {
   x: number;
@@ -53,6 +58,12 @@ interface BossConfig {
   leapImpulse: number;
   /** Warden: ground-shockwave shot speed on landing */
   shockSpeed: number;
+  /** Shrike: hover height above the arena floor (px; 0 = grounded boss) */
+  hoverH: number;
+  /** Shrike: downward dive launch speed per phase */
+  diveSpeed: [number, number, number];
+  /** Shrike: climb rate back to hover altitude */
+  riseSpeed: number;
 }
 
 const RUSTJAW: BossConfig = {
@@ -73,6 +84,9 @@ const RUSTJAW: BossConfig = {
   leapVX: [0, 0, 0],
   leapImpulse: 0,
   shockSpeed: 0,
+  hoverH: 0,
+  diveSpeed: [0, 0, 0],
+  riseSpeed: 0,
 };
 
 const WARDEN: BossConfig = {
@@ -93,11 +107,38 @@ const WARDEN: BossConfig = {
   leapVX: [130, 165, 200],
   leapImpulse: 640,
   shockSpeed: 165,
+  hoverH: 0,
+  diveSpeed: [0, 0, 0],
+  riseSpeed: 0,
+};
+
+const SHRIKE: BossConfig = {
+  name: 'THE CINDER SHRIKE',
+  prefix: 'shrike',
+  variant: 'shrike',
+  maxHp: 9,
+  bodyW: 40,
+  bodyH: 22,
+  walkSpeed: 55,
+  chargeSpeed: [0, 0, 0],
+  telegraphS: [0.8, 0.65, 0.5],
+  stunS: [2.4, 2.0, 1.7],
+  walkS: [2.0, 1.7, 1.4],
+  recoverS: 0.6,
+  volleyCount: [2, 4, 6],
+  shotSpeed: 120,
+  leapVX: [0, 0, 0],
+  leapImpulse: 0,
+  shockSpeed: 150,
+  hoverH: 88,
+  diveSpeed: [340, 400, 460],
+  riseSpeed: 130,
 };
 
 export const BOSS_CONFIGS: Record<BossVariant, BossConfig> = {
   rustjaw: RUSTJAW,
   warden: WARDEN,
+  shrike: SHRIKE,
 };
 
 export class BossSim {
@@ -119,6 +160,9 @@ export class BossSim {
   private didVolley = false;
   /** Warden: seconds airborne during the current leap (guards landing stun) */
   private airborneT = 0;
+  /** Shrike: player x captured when the telegraph BEGINS — the dive aims
+   *  here, so moving after the tell is the dodge */
+  private commitTargetX = 0;
   /** captured each step: did the vertical solver land the body this step? */
   private landedThisStep = false;
 
@@ -174,11 +218,23 @@ export class BossSim {
     this.stateTimer -= STEP_S;
     if (this.state === 'dead') return;
 
-    // gravity keeps the boss grounded on the arena floor (and shapes leaps)
-    this.body.vy = Math.min(this.body.vy + TUNING.gravity.fall * STEP_S, TUNING.gravity.max);
-    const res = moveY(this.body, this.body.vy * STEP_S, this.solidAt, {});
-    this.landedThisStep = res.landed;
-    if (res.landed) this.body.vy = 0;
+    // gravity keeps the boss grounded on the arena floor (and shapes leaps);
+    // the Shrike defies it outside its dive and its impaled stun
+    const hovering =
+      this.cfg.hoverH > 0 && this.state !== 'charge' && this.state !== 'stun';
+    if (hovering) {
+      this.body.vy = 0;
+      const targetY = this.floorY - this.cfg.hoverH;
+      const dy = targetY - this.body.y;
+      const stepMax = this.cfg.riseSpeed * STEP_S;
+      this.body.y += Math.max(-stepMax, Math.min(stepMax, dy));
+      this.landedThisStep = false;
+    } else {
+      this.body.vy = Math.min(this.body.vy + TUNING.gravity.fall * STEP_S, TUNING.gravity.max);
+      const res = moveY(this.body, this.body.vy * STEP_S, this.solidAt, {});
+      this.landedThisStep = res.landed;
+      if (res.landed) this.body.vy = 0;
+    }
 
     switch (this.state) {
       case 'intro':
@@ -200,6 +256,7 @@ export class BossSim {
           this.state = 'telegraph';
           this.stateTimer = this.cfg.telegraphS[this.phaseIndex()];
           this.body.vx = 0;
+          this.commitTargetX = playerX;
         }
         break;
       }
@@ -210,8 +267,9 @@ export class BossSim {
         break;
 
       case 'charge':
-        if (this.cfg.variant === 'warden') this.stepLeap();
-        else this.stepCharge();
+        // leapers and divers share the airborne handler; only Rustjaw rams
+        if (this.cfg.variant === 'rustjaw') this.stepCharge();
+        else this.stepLeap();
         break;
 
       case 'stun':
@@ -231,7 +289,18 @@ export class BossSim {
   /** telegraph → committed attack (variant-specific). */
   private commit(): void {
     this.state = 'charge';
-    if (this.cfg.variant === 'warden') {
+    if (this.cfg.variant === 'shrike') {
+      // dive to arrive exactly where the player stood at commit — steep,
+      // fair, and sidesteppable. Horizontal speed is capped so late phases
+      // stay a dodge, not a homing missile.
+      this.airborneT = 0.2; // already airborne — arm the landing check now
+      const dive = this.cfg.diveSpeed[this.phaseIndex()];
+      const fallH = Math.max(24, this.floorY - this.body.y);
+      const t = fallH / dive;
+      const vx = (this.commitTargetX - this.body.x) / t;
+      this.body.vx = Math.max(-dive * 0.8, Math.min(dive * 0.8, vx));
+      this.body.vy = dive;
+    } else if (this.cfg.variant === 'warden') {
       this.airborneT = 0;
       this.body.vy = -this.cfg.leapImpulse;
       this.body.vx = this.facing * this.cfg.leapVX[this.phaseIndex()];
@@ -296,16 +365,27 @@ export class BossSim {
     const dir = playerX < this.body.x ? -1 : 1;
     const cx = this.body.x + dir * (this.body.w / 2);
     const cy = this.body.y - this.body.h * 0.7;
-    // an upward fan that rains down across the arena
     for (let i = 0; i < n; i++) {
       const t = n === 1 ? 0.5 : i / (n - 1);
-      const ang = -Math.PI * (0.7 - 0.4 * t); // between ~ -126° and -54°
-      this.shots.push({
-        x: cx,
-        y: cy,
-        vx: Math.cos(ang) * this.cfg.shotSpeed * dir,
-        vy: Math.sin(ang) * this.cfg.shotSpeed,
-      });
+      if (this.cfg.hoverH > 0) {
+        // a hovering boss sheds embers downward in a spreading fan
+        const ang = Math.PI * (0.3 + 0.4 * t); // between ~ +54° and +126°
+        this.shots.push({
+          x: this.body.x,
+          y: this.body.y - this.body.h / 2,
+          vx: Math.cos(ang) * this.cfg.shotSpeed,
+          vy: Math.sin(ang) * this.cfg.shotSpeed,
+        });
+      } else {
+        // an upward fan that rains down across the arena
+        const ang = -Math.PI * (0.7 - 0.4 * t); // between ~ -126° and -54°
+        this.shots.push({
+          x: cx,
+          y: cy,
+          vx: Math.cos(ang) * this.cfg.shotSpeed * dir,
+          vy: Math.sin(ang) * this.cfg.shotSpeed,
+        });
+      }
     }
   }
 
