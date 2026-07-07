@@ -30,7 +30,7 @@ export class AudioEngine {
   private gemChainAt = 0;
 
   private settings: Settings = {
-    musicVol: 0.8, sfxVol: 0.9, masterVol: 0.9, screenShake: true, flashReduction: false, speedrunTimer: false,
+    musicVol: 0.8, sfxVol: 0.9, masterVol: 0.9, screenShake: true, flashReduction: false, speedrunTimer: false, ghostRacer: true,
   };
 
   applySettings(s: Settings): void {

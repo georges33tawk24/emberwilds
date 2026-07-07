@@ -81,6 +81,11 @@ export class PauseScene extends Phaser.Scene {
         get: () => s.speedrunTimer,
         set: (v) => { s.speedrunTimer = v; this.apply(); },
       },
+      {
+        kind: 'toggle', label: 'RACE GHOST',
+        get: () => s.ghostRacer,
+        set: (v) => { s.ghostRacer = v; this.apply(); },
+      },
       { kind: 'action', label: 'QUIT TO MAP', act: () => this.quit() },
     ];
 

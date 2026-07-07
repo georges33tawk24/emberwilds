@@ -16,6 +16,8 @@ export interface Settings {
   flashReduction: boolean;
   /** show a live run timer during gameplay (for best-time / flawless chasers) */
   speedrunTimer: boolean;
+  /** race a translucent ghost of your best-time run (shows once one exists) */
+  ghostRacer: boolean;
 }
 
 /** Persistent upgrades bought in the Grove (each is a small integer level). */
@@ -101,6 +103,7 @@ export const DEFAULT_SETTINGS: Settings = {
   screenShake: true,
   flashReduction: false,
   speedrunTimer: false,
+  ghostRacer: true,
 };
 
 export function defaultSave(): SaveData {

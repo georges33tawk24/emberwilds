@@ -29,6 +29,7 @@ import { themeOf, type WorldTheme } from '../gfx/themes';
 import { levelLabel, worldOf } from '../data/levels';
 import { STORY } from '../data/story';
 import { earnAchievements } from '../data/achievements';
+import { GHOST_DT, ghostAt, loadGhost, saveGhost, type GhostData } from '../systems/ghosts';
 import { audio } from '../audio/engine';
 import { VIEW } from '../gfx/viewport';
 
@@ -174,6 +175,12 @@ export class GameScene extends Phaser.Scene {
   private respawnTimer = 0;
   private startTime = 0;
   private timerStarted = false;
+  // ghost racing: record this run's path; replay the best-time ghost
+  private ghostRec: GhostData | null = null;
+  private ghostNextSampleMs = 0;
+  private ghostPlay: GhostData | null = null;
+  private ghostSpr: Phaser.GameObjects.Sprite | null = null;
+  private ghostPrevX = 0;
   private gemsCollected = 0;
   private gemChain = 0;
   private tokensGot: number[] = [];
@@ -193,6 +200,34 @@ export class GameScene extends Phaser.Scene {
    *  scene clock on pause. Read by the HUD's optional speedrun timer. */
   elapsedMs(): number {
     return this.timerStarted ? this.time.now - this.startTime : 0;
+  }
+
+  /** Record this run's path at a fixed cadence, and play back the best-time
+   *  ghost (a faded fox) at the current run time. Purely cosmetic. */
+  private updateGhost(): void {
+    const ms = this.elapsedMs();
+    if (this.ghostRec && !this.goalReached) {
+      while (ms >= this.ghostNextSampleMs) {
+        this.ghostRec.xs.push(Math.round(this.player.x));
+        this.ghostRec.ys.push(Math.round(this.player.y));
+        this.ghostRec.fs.push(this.player.facing);
+        this.ghostNextSampleMs += GHOST_DT;
+        if (this.ghostRec.xs.length > 6000) { this.ghostRec = null; break; } // ~4 min cap
+      }
+    }
+    if (this.ghostPlay && this.ghostSpr) {
+      const pos = ghostAt(this.ghostPlay, ms);
+      if (!pos) { this.ghostSpr.setVisible(false); return; }
+      const moving = Math.abs(pos.x - this.ghostPrevX) > 0.5;
+      this.ghostPrevX = pos.x;
+      const grp = moving ? 'run' : 'idle';
+      const n = moving ? 6 : 4;
+      this.ghostSpr
+        .setVisible(true)
+        .setFrame(`${grp}.${Math.floor(this.t * (moving ? 10 : 5)) % n}`)
+        .setPosition(Math.round(pos.x), Math.round(pos.y))
+        .setFlipX(pos.facing === -1);
+    }
   }
 
   create(): void {
@@ -303,6 +338,17 @@ export class GameScene extends Phaser.Scene {
     // startTime is captured on the first update frame (the Clock reads 0 here)
     this.startTime = 0;
     this.timerStarted = false;
+
+    // ghost racing — record this run; replay the best-time ghost (a faded fox
+    // that never touches the world) if one exists and the setting is on
+    this.ghostRec = { dt: GHOST_DT, xs: [], ys: [], fs: [] };
+    this.ghostNextSampleMs = 0;
+    this.ghostPlay = this.save.data.settings.ghostRacer ? loadGhost(this.levelIndex) : null;
+    this.ghostSpr = null;
+    if (this.ghostPlay) {
+      this.ghostSpr = this.add.sprite(start.x, start.y, 'player', 'idle.0')
+        .setOrigin(0.5, 1).setDepth(9).setAlpha(0.42).setTint(0xa9c6d6);
+    }
 
     audio.applySettings(this.save.data.settings);
     audio.playSong(this.theme.song);
@@ -1180,6 +1226,12 @@ export class GameScene extends Phaser.Scene {
 
     const timeMs = this.time.now - this.startTime;
 
+    // a faster run replaces the ghost for this level
+    const prevBest = this.save.data.bestTimes[this.levelIndex];
+    if (this.ghostRec && this.ghostRec.xs.length > 1 && (!prevBest || timeMs < prevBest)) {
+      saveGhost(this.levelIndex, this.ghostRec);
+    }
+
     // record lifetime stats, then earn any achievements the clear unlocked
     this.save.bumpStat('gemsAllTime', this.gemsCollected);
     this.save.bumpStat('levelsCleared');
@@ -1277,6 +1329,7 @@ export class GameScene extends Phaser.Scene {
     const py = lerp(this.pPrevY, this.player.y);
     this.playerSpr.setPosition(Math.round(px), Math.round(py));
     this.updateShadow(this.playerShadow, px, py, 1.1);
+    this.updateGhost();
 
     const key = this.player.animKey();
     if (key !== this.animKey) {
