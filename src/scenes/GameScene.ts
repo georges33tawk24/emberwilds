@@ -1228,7 +1228,8 @@ export class GameScene extends Phaser.Scene {
 
     // a faster run replaces the ghost for this level
     const prevBest = this.save.data.bestTimes[this.levelIndex];
-    if (this.ghostRec && this.ghostRec.xs.length > 1 && (!prevBest || timeMs < prevBest)) {
+    const newBest = !prevBest || timeMs < prevBest;
+    if (this.ghostRec && this.ghostRec.xs.length > 1 && newBest) {
       saveGhost(this.levelIndex, this.ghostRec);
     }
 
@@ -1254,6 +1255,8 @@ export class GameScene extends Phaser.Scene {
         tokens: this.save.tokenCount(this.levelIndex),
         name: this.level.name,
         achievements: earned.map((a) => a.name),
+        flawless: !this.damagedThisLevel,
+        newBest,
       });
       this.scene.pause();
     });

@@ -8,6 +8,8 @@ import { audio } from '../audio/engine';
 import { LEVELS, worldOf } from '../data/levels';
 import { STORY } from '../data/story';
 import { uiScale } from '../systems/platform';
+import { attachMenuTouch } from '../systems/menuTouch';
+import { shareClearCard } from '../systems/shareCard';
 import { TUNING } from '../data/tuning';
 import { VIEW } from '../gfx/viewport';
 
@@ -22,6 +24,10 @@ interface ClearData {
   name: string;
   /** names of achievements unlocked by this clear */
   achievements?: string[];
+  /** this run took no damage */
+  flawless?: boolean;
+  /** this run set a new best time */
+  newBest?: boolean;
 }
 
 export class ClearScene extends Phaser.Scene {
@@ -116,6 +122,52 @@ export class ClearScene extends Phaser.Scene {
         : 'Z - NEXT LEVEL   X - MAP';
     const p = new PixelText(this, W / 2, H / 2 + (ui > 1 ? 104 : 66), prompt, { scale: ui, color: 'W', align: 'center', shadow: true });
     this.tweens.add({ targets: p, alpha: { from: 0.4, to: 1 }, yoyo: true, repeat: -1, duration: 500 });
+
+    // share card — a tappable chip in the free band between tally and prompt
+    // (mobile-first: every action needs a button), plus C on the keyboard
+    const shareY = H / 2 + (ui > 1 ? 84 : 50);
+    const chipW = (ui > 1 ? 110 : 68);
+    const chipH = (ui > 1 ? 20 : 13);
+    this.add.rectangle(W / 2, shareY, chipW, chipH, 0x4a362b, 0.95).setStrokeStyle(1, 0xb58b5e);
+    this.shareLabel = new PixelText(this, W / 2, shareY - 3 * ui, ui > 1 ? 'SHARE CARD' : 'C - SHARE', {
+      scale: ui, color: 'O', align: 'center',
+    });
+    this.shareRect = new Phaser.Geom.Rectangle(W / 2 - chipW / 2, shareY - chipH / 2 - 4, chipW, chipH + 8);
+    this.input.keyboard?.on('keydown-C', () => this.doShare());
+    attachMenuTouch(this, {
+      rowAt: (x, y) => (this.shareRect.contains(x, y) ? 0 : null),
+      onTapRow: () => this.doShare(),
+    });
+  }
+
+  private shareLabel!: PixelText;
+  private shareRect!: Phaser.Geom.Rectangle;
+  private sharing = false;
+
+  private doShare(): void {
+    if (this.sharing || this.grace > 0) return;
+    this.sharing = true;
+    audio.sfx('menuSelect');
+    this.shareLabel.setText('...');
+    const d = this.data2;
+    void shareClearCard({
+      levelName: d.name,
+      world: worldOf(d.levelIndex).label,
+      timeMs: d.timeMs,
+      gems: d.gems,
+      gemTotal: d.gemTotal,
+      tokens: d.tokens,
+      flawless: d.flawless ?? false,
+      newBest: d.newBest ?? false,
+    }).then((outcome) => {
+      this.sharing = false;
+      if (!this.scene.isActive()) return;
+      const ui = uiScale();
+      const idle = ui > 1 ? 'SHARE CARD' : 'C - SHARE';
+      const text = outcome === 'shared' ? 'SHARED!' : outcome === 'saved' ? 'SAVED!' : idle;
+      this.shareLabel.setText(text).setColor(outcome === 'failed' ? 'R' : 'O');
+      if (outcome === 'shared' || outcome === 'saved') audio.sfx('token');
+    });
   }
 
   update(_time: number, delta: number): void {
