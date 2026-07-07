@@ -357,10 +357,20 @@ export class PlayerSim {
     return s !== 'solid' && s !== 'crack';
   }
 
+  /** Standing on an ice tile? (checked at the feet, body center) */
+  private onIce(): boolean {
+    if (!this.onGround) return false;
+    const tx = Math.floor(this.body.x / 16);
+    const ty = Math.floor((this.body.y + 1) / 16);
+    return this.solidAt(tx, ty) === 'ice';
+  }
+
   private horizontalControl(input: InputFrame, dt: number, inAir: boolean): void {
     if (this.wallInputLock > 0) return;
     const dir = (input.right ? 1 : 0) - (input.left ? 1 : 0);
     const controlMult = inAir ? T.run.airControlMult : 1;
+    // on ice, ground control decays: pushes soften, coasting barely slows
+    const icy = !inAir && this.onIce();
     if (dir !== 0) {
       this.facing = dir as 1 | -1;
       const sameDir = Math.sign(this.body.vx) === dir;
@@ -368,11 +378,12 @@ export class PlayerSim {
       let accel: number = T.run.accel;
       if (!sameDir && speed > 1) accel = T.run.accel + T.run.friction; // turn-around boost
       else if (speed >= T.run.walkCap) accel = T.run.dashAccel; // build into dash
+      if (icy) accel *= T.ice.accelMult;
       this.body.vx += dir * accel * controlMult * dt;
       const cap = T.run.dashCap;
       if (Math.abs(this.body.vx) > cap) this.body.vx = dir * cap;
     } else {
-      const fr = T.run.friction * (inAir ? 0.35 : 1) * dt;
+      const fr = T.run.friction * (inAir ? 0.35 : icy ? T.ice.frictionMult : 1) * dt;
       if (Math.abs(this.body.vx) <= fr) this.body.vx = 0;
       else this.body.vx -= Math.sign(this.body.vx) * fr;
     }

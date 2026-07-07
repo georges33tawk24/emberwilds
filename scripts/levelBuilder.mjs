@@ -70,7 +70,7 @@ export class Canvas {
   /** the topmost solid/standable tile top in a column (or h if none) */
   topAt(x) {
     for (let y = 0; y < this.h; y++) {
-      if ('#XC='.includes(this.g[y][x])) return y;
+      if ('#XCI='.includes(this.g[y][x])) return y;
     }
     return this.h;
   }
@@ -96,7 +96,7 @@ export class Canvas {
 // validator — a faithful clone of tests/levelLint.test.ts
 // ---------------------------------------------------------------------------
 
-const SOLID = new Set(['#', 'X', 'C']);
+const SOLID = new Set(['#', 'X', 'C', 'I']);
 const STANDABLE = new Set(['#', 'X', 'C', '=']);
 const ENTITY_CHARS = 'PKFSETOA*BMWezhjn';
 
@@ -187,7 +187,7 @@ export function validate(rows, { water = [], boss = false, minW = 220, minH = 40
     let ok = false;
     for (let dy = 1; dy <= 2; dy++) {
       const ch = level.grid[e.ty + dy]?.[e.tx];
-      if (ch && '#X=C'.includes(ch)) ok = true;
+      if (ch && '#X=CI'.includes(ch)) ok = true;
     }
     if (!ok) issues.push(`${e.type} at ${e.tx},${e.ty} is floating`);
   }

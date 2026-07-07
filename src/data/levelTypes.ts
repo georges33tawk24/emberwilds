@@ -64,7 +64,7 @@ export interface LevelDef {
 
 export const TILE = 16;
 
-export type Solidity = 'empty' | 'solid' | 'oneway' | 'spike' | 'crack' | 'water' | 'door' | 'gate';
+export type Solidity = 'empty' | 'solid' | 'oneway' | 'spike' | 'crack' | 'water' | 'door' | 'gate' | 'ice';
 
 export const TILE_SOLIDITY: Readonly<Record<string, Solidity>> = {
   '.': 'empty',
@@ -76,6 +76,9 @@ export const TILE_SOLIDITY: Readonly<Record<string, Solidity>> = {
   w: 'water',
   D: 'door',
   H: 'gate',
+  // 'I' ice block (Rimefell): solid in every collision sense, but ground
+  // friction/accel drop hard while standing on it — momentum carries
+  I: 'ice',
 };
 
 export const ENTITY_CHARS = new Set([

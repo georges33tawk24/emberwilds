@@ -46,6 +46,11 @@ export const TUNING = {
     drag: 3.2,
   },
 
+  /** Ice (Rimefell 'I' tiles) — ground control multipliers while standing on
+   *  ice. Push accel softens, release friction nearly vanishes: momentum
+   *  carries, turning is a commitment, stopping takes room. */
+  ice: { accelMult: 0.38, frictionMult: 0.07 },
+
   wall: { slideCap: 90, jumpVx: 220, jumpVy: -520, inputLockMs: 110 },
 
   stomp: { bounce: -360, heldBounce: -460 },

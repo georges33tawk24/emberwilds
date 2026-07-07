@@ -35,9 +35,10 @@ const EPS = 0.0001;
 /** max px moved per sub-step; must stay below TILE */
 const MAX_STEP = 4;
 
-/** Full-tile blockers: never-pass terrain plus closed doors and gates. */
+/** Full-tile blockers: never-pass terrain plus closed doors and gates.
+ *  Ice collides exactly like stone — the slip lives in ground control. */
 function blocks(s: Solidity): boolean {
-  return s === 'solid' || s === 'crack' || s === 'door' || s === 'gate';
+  return s === 'solid' || s === 'crack' || s === 'door' || s === 'gate' || s === 'ice';
 }
 
 export function left(b: Body): number {

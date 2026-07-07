@@ -193,7 +193,7 @@ export class BossSim {
     const tx = Math.floor(edge / TILE);
     const midTy = Math.floor((this.body.y - this.body.h / 2) / TILE);
     const s = this.solidAt(tx, midTy);
-    return s === 'solid' || s === 'crack';
+    return s === 'solid' || s === 'crack' || s === 'ice';
   }
 
   get damageable(): boolean {

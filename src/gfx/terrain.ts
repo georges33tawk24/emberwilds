@@ -39,7 +39,7 @@ export function bakeTerrain(
     if (tx < 0 || ty < 0 || tx >= level.width || ty >= level.height) return 'X';
     return level.grid[ty][tx];
   };
-  const solidish = (ch: string): boolean => ch === '#' || ch === 'X' || ch === 'C';
+  const solidish = (ch: string): boolean => ch === '#' || ch === 'X' || ch === 'C' || ch === 'I';
 
   const pick = (group: string, tx: number, ty: number): PixelFrame => {
     const frames = tiles[group];
@@ -81,6 +81,10 @@ export function bakeTerrain(
           }
           case 'X':
             drawFrame(ctx, pick('stone', tx, ty), px, py);
+            break;
+          case 'I':
+            // ice blocks — only Rimefell's sheet carries the group
+            drawFrame(ctx, pick(tiles.ice ? 'ice' : 'stone', tx, ty), px, py);
             break;
           case '=':
             drawFrame(ctx, tiles.oneway[0], px, py);
