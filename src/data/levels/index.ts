@@ -12,6 +12,7 @@ import { LEVEL as MOSS_2 } from './moss2';
 import { LEVEL as MOSS_3 } from './moss3';
 import { LEVEL as MOSS_4 } from './moss4';
 import { LEVEL as MOSS_5 } from './moss5';
+import { LEVEL as CINDER_1 } from './cinder1';
 
 export const LEVELS: LevelDef[] = [
   THORNWOOD_1 as LevelDef,
@@ -27,12 +28,14 @@ export const LEVELS: LevelDef[] = [
   MOSS_3 as LevelDef,
   MOSS_4 as LevelDef,
   MOSS_5 as LevelDef,
+  CINDER_1 as LevelDef,
 ];
 
 const WORLD_LABELS: Record<string, { label: string; num: number }> = {
   thornwood: { label: 'THORNWOOD', num: 1 },
   canyon: { label: 'OCHRE CANYON', num: 2 },
   mossgrave: { label: 'MOSSGRAVE RUINS', num: 3 },
+  cinder: { label: 'THE CINDERPEAKS', num: 4 },
 };
 
 export function worldOf(index: number): { label: string; num: number } {

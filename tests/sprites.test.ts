@@ -10,9 +10,11 @@ import { PLAYER_FRAMES } from '../src/gfx/data/playerSprites';
 import { ENEMY_FRAMES } from '../src/gfx/data/enemySprites';
 import { ENEMY_FRAMES_CANYON } from '../src/gfx/data/enemySpritesCanyon';
 import { ENEMY_FRAMES_MOSS } from '../src/gfx/data/enemySpritesMoss';
+import { ENEMY_FRAMES_ASH } from '../src/gfx/data/enemySpritesAsh';
 import { TILE_FRAMES } from '../src/gfx/data/tileSprites';
 import { TILE_FRAMES_CANYON } from '../src/gfx/data/tileSpritesCanyon';
 import { TILE_FRAMES_MOSS } from '../src/gfx/data/tileSpritesMoss';
+import { TILE_FRAMES_ASH } from '../src/gfx/data/tileSpritesAsh';
 import { PICKUP_FRAMES } from '../src/gfx/data/pickupSprites';
 import { EXTRA_PICKUP_FRAMES } from '../src/gfx/data/extraSprites';
 import { BOSS_FRAMES } from '../src/gfx/data/bossSprites';
@@ -23,9 +25,11 @@ const SHEETS: Record<string, Record<string, string[][]>> = {
   enemies: ENEMY_FRAMES,
   'enemies-canyon': ENEMY_FRAMES_CANYON,
   'enemies-moss': ENEMY_FRAMES_MOSS,
+  'enemies-ash': ENEMY_FRAMES_ASH,
   tiles: TILE_FRAMES,
   'tiles-canyon': TILE_FRAMES_CANYON,
   'tiles-moss': TILE_FRAMES_MOSS,
+  'tiles-ash': TILE_FRAMES_ASH,
   pickups: PICKUP_FRAMES,
   'extra-pickups': EXTRA_PICKUP_FRAMES,
   boss: BOSS_FRAMES,

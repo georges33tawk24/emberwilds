@@ -14,7 +14,7 @@ import { VIEW } from './viewport';
 const H = TUNING.view.height;
 
 type Daypart = 'day' | 'dawn' | 'dusk';
-export type ThemeKey = 'thornwood' | 'canyon' | 'mossgrave';
+export type ThemeKey = 'thornwood' | 'canyon' | 'mossgrave' | 'cinder';
 
 interface SkySpec {
   top: string;
@@ -52,6 +52,12 @@ const THEME_TINTS: Record<ThemeKey, Record<Daypart, LayerTints>> = {
     day: { far: '#7d8a78', mid: '#4d5a44', near: '#333d2e' },
     dawn: { far: '#8f8a7a', mid: '#5a5a3e', near: '#3a3a2a' },
     dusk: { far: '#5f6a68', mid: '#3e4a44', near: '#28302c' },
+  },
+  cinder: {
+    // ash mountains under foundry smoke: grey haze fading to charcoal
+    day: { far: '#8a8a86', mid: '#5f5c58', near: '#3a3835' },
+    dawn: { far: '#a38a7e', mid: '#6a5a50', near: '#423930' },
+    dusk: { far: '#6a5f66', mid: '#484249', near: '#2e2b30' },
   },
 };
 
@@ -152,6 +158,58 @@ function scrubStrip(color: string, baseY: number, rng: Rng, count: number): HTML
   return c;
 }
 
+/** Jagged volcanic peak silhouette strip that tiles horizontally. */
+function peakStrip(color: string, baseY: number, rng: Rng, count: number, maxH: number): HTMLCanvasElement {
+  const W = VIEW.w;
+  const [c, ctx] = makeCanvas(W, H);
+  ctx.fillStyle = color;
+  ctx.fillRect(0, baseY, W, H - baseY);
+  for (let i = 0; i < count; i++) {
+    const x = Math.round((i / count) * W + rng.range(-18, 18));
+    const w = rng.range(36, 80);
+    const h = rng.range(maxH * 0.5, maxH);
+    const lean = rng.range(-w * 0.15, w * 0.15);
+    for (const ox of [-W, 0, W]) {
+      // asymmetric triangle with a notched summit — a cooled cone
+      ctx.beginPath();
+      ctx.moveTo(x + ox - w / 2, baseY);
+      ctx.lineTo(x + ox + lean - 3, baseY - h);
+      ctx.lineTo(x + ox + lean + 1, baseY - h + 4);
+      ctx.lineTo(x + ox + lean + 4, baseY - h + 1);
+      ctx.lineTo(x + ox + w / 2, baseY);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+  return c;
+}
+
+/** Charred snag trees + slag boulders for the cinder near layer. */
+function snagStrip(color: string, baseY: number, rng: Rng, count: number): HTMLCanvasElement {
+  const W = VIEW.w;
+  const [c, ctx] = makeCanvas(W, H);
+  ctx.fillStyle = color;
+  ctx.fillRect(0, baseY, W, H - baseY);
+  for (let i = 0; i < count; i++) {
+    const x = Math.round((i / count) * W + rng.range(-12, 12));
+    for (const ox of [-W, 0, W]) {
+      if (rng.next() < 0.55) {
+        // a burnt snag: bare trunk, one or two stub branches
+        const h = rng.range(22, 46);
+        const tx = mod(x, W) + ox;
+        ctx.fillRect(tx - 2, baseY - h, 4, h);
+        ctx.fillRect(tx - 9, baseY - h * 0.7, 8, 3);
+        if (rng.next() < 0.6) ctx.fillRect(tx + 2, baseY - h * 0.45, 7, 3);
+      } else {
+        // slag boulder pile
+        blob(ctx, mod(x, W) + ox, baseY - 4, rng.range(12, 20), 10);
+        blob(ctx, mod(x, W) + ox + 6, baseY - 2, rng.range(8, 12), 7);
+      }
+    }
+  }
+  return c;
+}
+
 function blob(ctx: CanvasRenderingContext2D, cx: number, cy: number, rw: number, rh: number): void {
   ctx.beginPath();
   ctx.ellipse(cx, cy, rw / 2, rh / 2, 0, 0, Math.PI * 2);
@@ -200,7 +258,8 @@ export function buildParallax(
     for (let i = 0; i < 5; i++) {
       const cx = rng.range(0, W);
       const cy = rng.range(16, 90);
-      if (theme === 'canyon') {
+      if (theme === 'canyon' || theme === 'cinder') {
+        // long thin streaks — desert haze / drifting foundry smoke
         ctx.fillRect(cx - 30, cy, 60, 3);
         ctx.fillRect(cx - 18, cy - 3, 36, 3);
       } else {
@@ -221,6 +280,10 @@ export function buildParallax(
       scene.textures.addCanvas(`${keyBase}-far`, mesaStrip(tints.far, 215, rng, 5, 85));
       scene.textures.addCanvas(`${keyBase}-mid`, mesaStrip(tints.mid, 240, rng, 4, 60));
       scene.textures.addCanvas(`${keyBase}-near`, scrubStrip(tints.near, 260, rng, 8));
+    } else if (theme === 'cinder') {
+      scene.textures.addCanvas(`${keyBase}-far`, peakStrip(tints.far, 212, rng, 5, 95));
+      scene.textures.addCanvas(`${keyBase}-mid`, peakStrip(tints.mid, 238, rng, 4, 62));
+      scene.textures.addCanvas(`${keyBase}-near`, snagStrip(tints.near, 258, rng, 8));
     } else {
       scene.textures.addCanvas(`${keyBase}-far`, hillStrip(tints.far, 205, 60, rng, 5));
       scene.textures.addCanvas(`${keyBase}-mid`, treeStrip(tints.mid, 232, rng, 9, false));

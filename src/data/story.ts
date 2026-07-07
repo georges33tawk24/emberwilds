@@ -33,6 +33,7 @@ export const STORY = {
     thornwood: ['SUNLIT WOODS, GROWING DIM.', 'RELIGHT THE BEACONS.'],
     canyon: ['THE RUST CRAWLS UP THE MESAS.', 'RUN FAST. RUN WARM.'],
     mossgrave: ['DROWNED HALLS, COLD AND GREEN.', 'A SHARD LIES DEEP BELOW.'],
+    cinder: ['ASH FALLS LIKE SNOW UP HERE.', 'THE FOUNDRY SMOKE IS CLOSE NOW.'],
   } as Record<string, string[]>,
 
   /** boss-level clear beat (replaces the standard tally header) */

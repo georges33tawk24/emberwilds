@@ -8,12 +8,15 @@ import type { Song } from '../audio/songTypes';
 import { TILE_FRAMES } from './data/tileSprites';
 import { TILE_FRAMES_CANYON } from './data/tileSpritesCanyon';
 import { TILE_FRAMES_MOSS } from './data/tileSpritesMoss';
+import { TILE_FRAMES_ASH } from './data/tileSpritesAsh';
 import { ENEMY_FRAMES } from './data/enemySprites';
 import { ENEMY_FRAMES_CANYON } from './data/enemySpritesCanyon';
 import { ENEMY_FRAMES_MOSS } from './data/enemySpritesMoss';
+import { ENEMY_FRAMES_ASH } from './data/enemySpritesAsh';
 import { THORNWOOD_SONG } from '../audio/songs';
 import { CANYON_SONG } from '../audio/canyonSong';
 import { MOSS_SONG } from '../audio/mossSong';
+import { ASH_SONG } from '../audio/ashSong';
 
 export interface WorldTheme {
   key: string;
@@ -57,6 +60,16 @@ export const THEMES: Record<string, WorldTheme> = {
     enemies: ENEMY_FRAMES_MOSS as FrameGroups,
     enemySheet: 'enemies-moss',
     song: MOSS_SONG as Song,
+  },
+  cinder: {
+    key: 'cinder',
+    label: 'THE CINDERPEAKS',
+    worldNum: 4,
+    tiles: TILE_FRAMES_ASH as FrameGroups,
+    tileSheet: 'tiles-ash',
+    enemies: ENEMY_FRAMES_ASH as FrameGroups,
+    enemySheet: 'enemies-ash',
+    song: ASH_SONG as Song,
   },
 };
 
