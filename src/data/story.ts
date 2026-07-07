@@ -34,6 +34,7 @@ export const STORY = {
     canyon: ['THE RUST CRAWLS UP THE MESAS.', 'RUN FAST. RUN WARM.'],
     mossgrave: ['DROWNED HALLS, COLD AND GREEN.', 'A SHARD LIES DEEP BELOW.'],
     cinder: ['ASH FALLS LIKE SNOW UP HERE.', 'THE FOUNDRY SMOKE IS CLOSE NOW.'],
+    rimefell: ['REAL SNOW NOW. COLD THAT BELONGS.', 'DO NOT STOP MOVING.'],
   } as Record<string, string[]>,
 
   /** boss-level clear beat (replaces the standard tally header) */

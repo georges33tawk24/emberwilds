@@ -97,7 +97,7 @@ export class Canvas {
 // ---------------------------------------------------------------------------
 
 const SOLID = new Set(['#', 'X', 'C', 'I']);
-const STANDABLE = new Set(['#', 'X', 'C', '=']);
+const STANDABLE = new Set(['#', 'X', 'C', '=', 'I']);
 const ENTITY_CHARS = 'PKFSETOA*BMWezhjn';
 
 function parse(rows, water = []) {

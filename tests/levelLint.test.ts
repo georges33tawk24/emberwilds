@@ -7,7 +7,7 @@ import { LEVELS } from '../src/data/levels';
 import { parseLevel } from '../src/data/levelParser';
 
 const SOLID = new Set(['#', 'X', 'C', 'I']);
-const STANDABLE = new Set(['#', 'X', 'C', '=']);
+const STANDABLE = new Set(['#', 'X', 'C', '=', 'I']);
 
 /**
  * Conservative reachability: BFS over "standing cells" (air with support

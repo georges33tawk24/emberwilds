@@ -17,6 +17,7 @@ import { LEVEL as CINDER_2 } from './cinder2';
 import { LEVEL as CINDER_3 } from './cinder3';
 import { LEVEL as CINDER_4 } from './cinder4';
 import { LEVEL as CINDER_5 } from './cinder5';
+import { LEVEL as RIME_1 } from './rime1';
 
 export const LEVELS: LevelDef[] = [
   THORNWOOD_1 as LevelDef,
@@ -37,6 +38,7 @@ export const LEVELS: LevelDef[] = [
   CINDER_3 as LevelDef,
   CINDER_4 as LevelDef,
   CINDER_5 as LevelDef,
+  RIME_1 as LevelDef,
 ];
 
 const WORLD_LABELS: Record<string, { label: string; num: number }> = {
@@ -44,6 +46,7 @@ const WORLD_LABELS: Record<string, { label: string; num: number }> = {
   canyon: { label: 'OCHRE CANYON', num: 2 },
   mossgrave: { label: 'MOSSGRAVE RUINS', num: 3 },
   cinder: { label: 'THE CINDERPEAKS', num: 4 },
+  rimefell: { label: 'RIMEFELL', num: 5 },
 };
 
 export function worldOf(index: number): { label: string; num: number } {

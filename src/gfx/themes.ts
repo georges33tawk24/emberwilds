@@ -9,14 +9,17 @@ import { TILE_FRAMES } from './data/tileSprites';
 import { TILE_FRAMES_CANYON } from './data/tileSpritesCanyon';
 import { TILE_FRAMES_MOSS } from './data/tileSpritesMoss';
 import { TILE_FRAMES_ASH } from './data/tileSpritesAsh';
+import { TILE_FRAMES_RIME } from './data/tileSpritesRime';
 import { ENEMY_FRAMES } from './data/enemySprites';
 import { ENEMY_FRAMES_CANYON } from './data/enemySpritesCanyon';
 import { ENEMY_FRAMES_MOSS } from './data/enemySpritesMoss';
 import { ENEMY_FRAMES_ASH } from './data/enemySpritesAsh';
+import { ENEMY_FRAMES_RIME } from './data/enemySpritesRime';
 import { THORNWOOD_SONG } from '../audio/songs';
 import { CANYON_SONG } from '../audio/canyonSong';
 import { MOSS_SONG } from '../audio/mossSong';
 import { ASH_SONG } from '../audio/ashSong';
+import { RIME_SONG } from '../audio/rimeSong';
 
 export interface WorldTheme {
   key: string;
@@ -70,6 +73,16 @@ export const THEMES: Record<string, WorldTheme> = {
     enemies: ENEMY_FRAMES_ASH as FrameGroups,
     enemySheet: 'enemies-ash',
     song: ASH_SONG as Song,
+  },
+  rimefell: {
+    key: 'rimefell',
+    label: 'RIMEFELL',
+    worldNum: 5,
+    tiles: TILE_FRAMES_RIME as FrameGroups,
+    tileSheet: 'tiles-rime',
+    enemies: ENEMY_FRAMES_RIME as FrameGroups,
+    enemySheet: 'enemies-rime',
+    song: RIME_SONG as Song,
   },
 };
 

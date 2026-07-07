@@ -14,7 +14,7 @@ import { VIEW } from './viewport';
 const H = TUNING.view.height;
 
 type Daypart = 'day' | 'dawn' | 'dusk';
-export type ThemeKey = 'thornwood' | 'canyon' | 'mossgrave' | 'cinder';
+export type ThemeKey = 'thornwood' | 'canyon' | 'mossgrave' | 'cinder' | 'rimefell';
 
 interface SkySpec {
   top: string;
@@ -58,6 +58,13 @@ const THEME_TINTS: Record<ThemeKey, Record<Daypart, LayerTints>> = {
     day: { far: '#8a8a86', mid: '#5f5c58', near: '#3a3835' },
     dawn: { far: '#a38a7e', mid: '#6a5a50', near: '#423930' },
     dusk: { far: '#6a5f66', mid: '#484249', near: '#2e2b30' },
+  },
+  rimefell: {
+    // snowfield: pale drifts fading to blue-slate treelines (thornwood's
+    // hill + tree strips, wearing frost)
+    day: { far: '#c2ccd2', mid: '#93a6b2', near: '#5f7484' },
+    dawn: { far: '#d2b8ac', mid: '#a08a90', near: '#6a5f70' },
+    dusk: { far: '#8a8aa0', mid: '#5f6180', near: '#3d4258' },
   },
 };
 
