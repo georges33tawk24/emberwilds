@@ -67,6 +67,16 @@ describe('leaderboard worker', () => {
     expect((await submit({ level: 0, timeMs: 50000, name: 'X', uid: 'bad uid!!!!!!!' })).status).toBe(400);
   });
 
+  it('enforces per-level physical minimum times (rejects impossible, accepts real)', async () => {
+    // level 0 (Sunroot Hollow, 224 wide): floor ~5.7s. A 5s clear is physically
+    // impossible; a 6s+ clear is a plausible speedrun.
+    expect((await submit({ level: 0, timeMs: 5000, name: 'CHEAT', uid: 'uid-floor01' })).status).toBe(400);
+    expect((await submit({ level: 0, timeMs: 6500, name: 'FAST', uid: 'uid-floor02' })).status).toBe(200);
+    // a boss arena (level 7) is tiny -> keeps the 3s fallback floor
+    expect((await submit({ level: 7, timeMs: 3500, name: 'BOSS', uid: 'uid-floor03' })).status).toBe(200);
+    expect((await submit({ level: 7, timeMs: 2000, name: 'NOPE', uid: 'uid-floor04' })).status).toBe(400);
+  });
+
   it('rate limits repeat submissions per uid+level but not across levels', async () => {
     await submit({ level: 5, timeMs: 50000, name: 'A', uid: UID });
     const again = await submit({ level: 5, timeMs: 45000, name: 'A', uid: UID });

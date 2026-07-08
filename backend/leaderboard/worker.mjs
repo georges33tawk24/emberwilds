@@ -16,10 +16,27 @@
  */
 
 const TOP_N = 20;
-const MIN_TIME_MS = 3_000; // faster than any human clear -> reject
+const MIN_TIME_MS = 3_000; // fallback floor (scratch / unlisted levels)
 const MAX_TIME_MS = 1_800_000; // 30 minutes
 const MAX_LEVEL = 63; // generous headroom over the current 28
 const RATE_TTL_S = 60; // one submission per uid+level per minute (KV TTL floor)
+
+// Per-level PHYSICAL minimum clear times (ms). Derived from each level's width
+// and the hard horizontal speed cap (dash 260 + max belt drag 55 = 315 px/s):
+// a run cannot average faster than that over the start->goal distance, so the
+// true minimum is width*16/315. These floors are HALF of that — comfortably
+// below any real run (zero false-negative risk) but they reject the physically
+// impossible fakes a raw-API cheater would POST. Boss arenas are tiny -> 3s.
+// Regenerate with scripts/genMinTimes.mjs if levels change.
+const MIN_TIMES = [
+  5689, 5790, 5892, 6197, 5994, 6298, 6095, 3000, 6197, 6298,
+  6400, 6502, 3000, 6197, 5892, 5689, 6095, 3000, 6095, 5790,
+  5994, 6095, 3000, 6095, 5790, 6298, 6400, 3000,
+];
+
+function minTimeFor(level) {
+  return MIN_TIMES[level] ?? MIN_TIME_MS;
+}
 
 // conservative and short — anything that trips it just plays as FOX
 const NAME_BLOCKLIST = ['FUCK', 'SHIT', 'CUNT', 'NIGG', 'FAG', 'RAPE', 'NAZI', 'HITLER', 'PISS', 'DICK', 'COCK', 'ASS'];
@@ -121,7 +138,7 @@ export async function handle(request, env) {
     if (!Number.isInteger(level) || level < 0 || level > MAX_LEVEL) {
       return json(env, 400, { error: 'bad level' });
     }
-    if (!Number.isInteger(timeMs) || timeMs < MIN_TIME_MS || timeMs > MAX_TIME_MS) {
+    if (!Number.isInteger(timeMs) || timeMs < minTimeFor(level) || timeMs > MAX_TIME_MS) {
       return json(env, 400, { error: 'bad time' });
     }
     if (!/^[a-zA-Z0-9-]{8,64}$/.test(uid)) {
