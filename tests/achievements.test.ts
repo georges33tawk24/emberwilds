@@ -45,6 +45,17 @@ describe('achievements', () => {
     expect(earned).not.toContain('ember_collector'); // needs 30
   });
 
+  it('earns lantern achievements from found relics', () => {
+    const d = defaultSave();
+    d.relics = [0];
+    const first = earnAchievements(d).map((a) => a.id);
+    expect(first).toContain('first_tale');
+    expect(first).not.toContain('keeper_of_tales'); // needs all six
+    d.relics = [0, 3, 8, 13, 18, 23];
+    const all = earnAchievements(d).map((a) => a.id);
+    expect(all).toContain('keeper_of_tales');
+  });
+
   it('does not re-earn already unlocked achievements', () => {
     const d = defaultSave();
     d.levelUnlocked = 13;

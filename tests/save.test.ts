@@ -108,6 +108,17 @@ describe('SaveManager', () => {
     expect(s.data.stats.jumps).toBe(0);
     expect(s.data.achievements).toEqual([]);
     expect(s.data.flawless).toEqual([]); // v5 field backfilled
+    expect(s.data.relics).toEqual([]); // v7 field backfilled
+  });
+
+  it('records found lanterns idempotently and persists them', () => {
+    const store = memStorage();
+    const s = new SaveManager(store);
+    s.collectRelic(3);
+    s.collectRelic(3); // twice — must not duplicate
+    expect(s.data.relics).toEqual([3]);
+    const reloaded = new SaveManager(store);
+    expect(reloaded.data.relics).toEqual([3]);
   });
 
   it('buys upgrades, spends gems, and blocks when unaffordable or maxed', () => {

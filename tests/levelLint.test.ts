@@ -142,6 +142,31 @@ describe('level lint', () => {
         };
         expect(goalReachable(cut, springs)).toBe(true);
       });
+
+      it('hides at most one keepers lantern (none in boss arenas)', () => {
+        expect(level.relicTotal).toBeLessThanOrEqual(isBoss ? 0 : 1);
+      });
+
+      it('any keepers lantern is reachable (pound-aware)', () => {
+        const lantern = level.entities.find((e) => e.type === 'L');
+        if (!lantern) return;
+        // unlike the goal check, this models the ground-pound: cracked lids
+        // ('C') count as open, because every lantern hides in a poundable
+        // cellar and pound is a base verb the game teaches in world 1
+        const cut = {
+          ...level,
+          grid: level.grid.map((row) => row.map((ch) => (ch === 'C' ? '.' : ch))),
+          entities: level.entities.map((e) =>
+            e.type === 'F' ? { ...lantern, type: 'F' } : e.type === 'L' ? { ...e, type: 'l-moved' } : e,
+          ),
+        };
+        expect(goalReachable(cut, springs)).toBe(true);
+      });
     });
   }
+
+  it('exactly six keepers lanterns burn across the campaign', () => {
+    const total = LEVELS.reduce((n, def) => n + parseLevel(def).relicTotal, 0);
+    expect(total).toBe(6);
+  });
 });

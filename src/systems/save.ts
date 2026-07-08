@@ -94,6 +94,8 @@ export interface SaveData {
   flawless: number[];
   /** cosmetics — owned ids + what's currently worn (see systems/cosmetics.ts) */
   style: StyleData;
+  /** level indices whose hidden Keeper's Lantern was found (lore collectible) */
+  relics: number[];
 }
 
 export interface StyleData {
@@ -107,7 +109,7 @@ export const DEFAULT_STYLE: StyleData = { owned: [], character: null, scarf: nul
 
 const KEY = 'emberwilds.save';
 const BACKUP_KEY = 'emberwilds.save.bak';
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 export const DEFAULT_SETTINGS: Settings = {
   musicVol: 0.8,
@@ -135,6 +137,7 @@ export function defaultSave(): SaveData {
     achievements: [],
     flawless: [],
     style: { ...DEFAULT_STYLE, owned: [] },
+    relics: [],
   };
 }
 
@@ -163,6 +166,8 @@ const MIGRATIONS: Record<number, (d: SaveData) => SaveData> = {
   4: (d) => ({ ...d, version: 5, flawless: [] }),
   // v6: cosmetics (the Wardrobe). Everyone starts in Sorrel's own fur.
   5: (d) => ({ ...d, version: 6, style: { owned: [], character: null, scarf: null, hat: null } }),
+  // v7: Keeper's Lanterns (hidden lore). New secrets — everyone starts at zero.
+  6: (d) => ({ ...d, version: 7, relics: [] }),
 };
 
 export function migrate(d: SaveData): SaveData {
@@ -182,6 +187,7 @@ export function migrate(d: SaveData): SaveData {
   cur.achievements = cur.achievements ?? [];
   cur.flawless = cur.flawless ?? [];
   cur.style = { ...DEFAULT_STYLE, ...(cur.style ?? {}), owned: cur.style?.owned ?? [] };
+  cur.relics = cur.relics ?? [];
   return cur;
 }
 
@@ -225,6 +231,13 @@ export class SaveManager {
 
   collectToken(level: number, index: number): void {
     this.data.tokens[level] = (this.data.tokens[level] ?? 0) | (1 << index);
+    this.save();
+  }
+
+  /** Record a found Keeper's Lantern (idempotent; persists immediately). */
+  collectRelic(level: number): void {
+    if (this.data.relics.includes(level)) return;
+    this.data.relics.push(level);
     this.save();
   }
 

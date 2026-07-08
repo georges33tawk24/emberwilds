@@ -131,6 +131,41 @@ export const PICKUP_FRAMES = {
     ],
   ],
 
+  // ── lantern: 12x12, 2 frames ──────────────────────────────────────
+  // The Keeper's Lantern (hidden lore relic). Wood-brown cap and base,
+  // K frame, amber glass with a cream flame. Frame 1: the flame flickers
+  // taller and the glass glints on the other side.
+  lantern: [
+    [
+      "....KbbK....",
+      "....K..K....",
+      "...KKKKKK...",
+      "..KbbbbbbK..",
+      ".KOOOOOOOoK.",
+      ".KOOWWOOOoK.",
+      ".KOWWWWOOoK.",
+      ".KOOWWOOOoK.",
+      ".KOOOOOOOoK.",
+      "..KbbbbbbK..",
+      "...KbbbbK...",
+      "....KKKK....",
+    ],
+    [
+      "....KbbK....",
+      "....K..K....",
+      "...KKKKKK...",
+      "..KbbbbbbK..",
+      ".KOOOWWOOoK.",
+      ".KOOWWWOOoK.",
+      ".KOOWWWWOoK.",
+      ".KOOOWWOWoK.",
+      ".KOOOOOOOoK.",
+      "..KbbbbbbK..",
+      "...KbbbbK...",
+      "....KKKK....",
+    ],
+  ],
+
   // ── pellet: 6x6, 2 frames ─────────────────────────────────────────
   // Slingblast seed shot. Tan seed, cream light up-left, wheat spin
   // streaks. Frame 1: seed rotated upright, streaks on the other diagonal.

@@ -80,3 +80,18 @@ export const STORY = {
     ['THANK YOU FOR PLAYING', 'W', 2],
   ] as [string, string, number][],
 } as const;
+
+/**
+ * Fireside tales — one per hidden Keeper's Lantern ('L' in the level grids),
+ * keyed by level index. Pip lit these lanterns long before the Baron came;
+ * each one still holds a small memory. Copy rules as above — the 4×6 font
+ * has no apostrophe or colon.
+ */
+export const TALES: Record<number, string[]> = {
+  0: ['PIP LIT THIS ONE FIRST.', 'THE TREES LEANED IN TO LISTEN.'],
+  3: ['THE WIND CARRIES EMBERS FAR.', 'PIP CHASED THIS ONE FOR A DAY.'],
+  8: ['EVEN UNDER STONE AND MOSS', 'A SMALL FLAME REMEMBERS THE SUN.'],
+  13: ['THE MOUNTAIN BREATHES SLOW.', 'PIP TAUGHT IT A LULLABY.'],
+  18: ['FROST CANNOT ARGUE', 'WITH A WELL KEPT FLAME.'],
+  23: ['THE BARON MAKES HEAT.', 'ONLY KEEPERS MAKE WARMTH.'],
+};

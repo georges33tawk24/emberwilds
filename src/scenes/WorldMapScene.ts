@@ -219,6 +219,21 @@ export class WorldMapScene extends Phaser.Scene {
       node.pips.fillStyle(0x2a1f1b, 0.8).fillCircle(px + 1, py + 1, 2.4);
       node.pips.fillStyle(k < got ? 0xf2a03d : 0x4a362b, 1).fillCircle(px, py, 2.2);
     }
+    // a hidden Keeper's Lantern lives here — show its little diamond slot so
+    // completionists know there is a tale to hunt (lit once it's found)
+    if (LEVELS[node.index].rows.some((r) => r.includes('L'))) {
+      const lx = node.x + 20;
+      const ly = node.y + 17;
+      const found = this.save.data.relics.includes(node.index);
+      const diamond = (cx: number, cy: number, r: number): Phaser.Math.Vector2[] => [
+        new Phaser.Math.Vector2(cx, cy - r), new Phaser.Math.Vector2(cx + r, cy),
+        new Phaser.Math.Vector2(cx, cy + r), new Phaser.Math.Vector2(cx - r, cy),
+      ];
+      if (found) node.pips.fillStyle(0xf2a03d, 0.18).fillCircle(lx, ly, 6);
+      node.pips.fillStyle(0x2a1f1b, 0.8).fillPoints(diamond(lx + 1, ly + 1, 3.4), true);
+      node.pips.fillStyle(found ? 0xf2a03d : 0x4a362b, 1).fillPoints(diamond(lx, ly, 3), true);
+      if (found) node.pips.fillStyle(0xf7e6c4, 1).fillCircle(lx, ly - 0.5, 0.9);
+    }
   }
 
   private refreshHeader(): void {

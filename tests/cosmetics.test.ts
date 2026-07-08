@@ -61,7 +61,7 @@ describe('cosmetics', () => {
     }
   });
 
-  it('v5 saves migrate to v6 with an empty wardrobe', () => {
+  it('v5 saves migrate through v6 with an empty wardrobe', () => {
     const v5 = {
       version: 5, levelUnlocked: 9, gems: 321, tokens: { 1: 5 }, bestTimes: { 1: 44000 },
       upgrades: { maxHearts: 1, doubleJump: 1, glide: 0, charge: 0 },
@@ -71,7 +71,7 @@ describe('cosmetics', () => {
       achievements: ['first_light'], flawless: [2],
     } as unknown as SaveData;
     const out = migrate(v5);
-    expect(out.version).toBe(6);
+    expect(out.version).toBeGreaterThanOrEqual(6); // continues to the current version
     expect(out.style).toEqual({ owned: [], character: null, scarf: null, hat: null });
     expect(out.gems).toBe(321); // nothing else touched
   });

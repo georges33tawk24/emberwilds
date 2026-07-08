@@ -28,7 +28,7 @@ import { ParticleSystem } from '../gfx/particles';
 import { PixelText } from '../gfx/text';
 import { themeOf, type WorldTheme } from '../gfx/themes';
 import { levelLabel, worldOf } from '../data/levels';
-import { STORY } from '../data/story';
+import { STORY, TALES } from '../data/story';
 import { earnAchievements } from '../data/achievements';
 import { GHOST_DT, ghostAt, loadGhost, saveGhost, type GhostData } from '../systems/ghosts';
 import { submitScore } from '../systems/leaderboard';
@@ -56,7 +56,7 @@ interface Projectile {
   prevY: number;
 }
 
-type PickupType = '*' | 'B' | 'M' | 'W' | 'e' | 'z' | 'h' | 'j';
+type PickupType = '*' | 'B' | 'M' | 'W' | 'e' | 'z' | 'h' | 'j' | 'L';
 
 interface Pickup {
   type: PickupType;
@@ -473,13 +473,16 @@ export class GameScene extends Phaser.Scene {
           this.enemies.push({ sim, spr, shadow, prevX: px, prevY: feetY, dying: false });
           break;
         }
-        case '*': case 'B': case 'M': case 'W': case 'e': case 'z': case 'h': case 'j': {
+        case '*': case 'B': case 'M': case 'W': case 'e': case 'z': case 'h': case 'j': case 'L': {
+          // a found lantern stays found — its tale is one-time lore
+          if (e.type === 'L' && this.save.data.relics.includes(this.levelIndex)) break;
           const frame =
             e.type === '*' ? 'gem.0'
               : e.type === 'B' ? 'berry.0'
                 : e.type === 'M' ? 'token.0'
                   : e.type === 'j' ? 'key.0'
-                    : POWER_ICON[e.type];
+                    : e.type === 'L' ? 'lantern.0'
+                      : POWER_ICON[e.type];
           const img = this.add.image(px, feetY - TILE / 2, 'pickups', frame).setDepth(6);
           this.pickups.push({
             type: e.type as PickupType, x: px, y: feetY - TILE / 2, taken: false, img,
@@ -1176,13 +1179,32 @@ export class GameScene extends Phaser.Scene {
           });
           break;
         }
+        case 'L': {
+          // a Keeper's Lantern — the fireside tale is the reward
+          this.save.collectRelic(this.levelIndex);
+          audio.sfx('checkpoint');
+          this.particles.sparks(p.x, p.y, 14);
+          track('relic_found', { level_index: this.levelIndex, level: levelLabel(this.levelIndex) });
+          const lines = ['A KEEPERS LANTERN', ...(TALES[this.levelIndex] ?? [])];
+          lines.forEach((line, i) => {
+            const tale = new PixelText(this, VIEW.w / 2, H / 2 - 70 + i * 12, line, {
+              scale: 1, color: i === 0 ? 'O' : 'c', align: 'center', shadow: true,
+            }).setScrollFactor(0).setDepth(95).setAlpha(0);
+            this.tweens.add({ targets: tale, alpha: 1, delay: i * 220, duration: 260 });
+            this.tweens.add({
+              targets: tale, alpha: 0, delay: 3400, duration: 400,
+              onComplete: () => tale.destroy(),
+            });
+          });
+          break;
+        }
       }
       // arc the sprite up and fade — "coins arc into the HUD" feel
       this.tweens.add({
         targets: p.img,
         y: p.y - 14,
         alpha: 0,
-        scale: p.type === 'M' ? 1.6 : 1.2,
+        scale: p.type === 'M' || p.type === 'L' ? 1.6 : 1.2,
         duration: 240,
         onComplete: () => p.img.setVisible(false),
       });
@@ -1584,6 +1606,7 @@ export class GameScene extends Phaser.Scene {
       p.img.setY(Math.round(p.y + bob));
       if (p.type === '*') p.img.setFrame(`gem.${Math.floor(this.t * 6 + p.x * 0.1) % 4}`);
       else if (p.type === 'M') p.img.setFrame(`token.${Math.floor(this.t * 4) % 2}`);
+      else if (p.type === 'L') p.img.setFrame(`lantern.${Math.floor(this.t * 5) % 2}`);
       else if (p.type === 'j') p.img.setFrame(`key.${Math.floor(this.t * 4) % 2}`);
       else if (p.type in POWER_ICON) {
         const g = POWER_ICON[p.type].split('.')[0];

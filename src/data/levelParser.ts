@@ -21,6 +21,8 @@ export interface ParsedLevel {
   playerStart: { x: number; y: number };
   gemTotal: number;
   tokenTotal: number;
+  /** hidden Keeper's Lanterns in this level (0 or 1) */
+  relicTotal: number;
   /** water bodies (inclusive tile rects) + a fast per-tile lookup */
   water: [number, number, number, number][];
   waterSet: Set<number>;
@@ -34,6 +36,7 @@ export function parseLevel(def: LevelDef): ParsedLevel {
   let playerStart: { x: number; y: number } | null = null;
   let gemTotal = 0;
   let tokenTotal = 0;
+  let relicTotal = 0;
 
   for (let ty = 0; ty < height; ty++) {
     const row = def.rows[ty];
@@ -50,6 +53,7 @@ export function parseLevel(def: LevelDef): ParsedLevel {
           entities.push({ type: ch, tx, ty });
           if (ch === '*') gemTotal++;
           if (ch === 'M') tokenTotal++;
+          if (ch === 'L') relicTotal++;
         }
         out.push('.');
       } else {
@@ -89,6 +93,7 @@ export function parseLevel(def: LevelDef): ParsedLevel {
     playerStart,
     gemTotal,
     tokenTotal,
+    relicTotal,
     water,
     waterSet,
   };

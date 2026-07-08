@@ -42,6 +42,8 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'stomper', name: 'Stomper', desc: 'Stomp 50 enemies', test: (c) => c.data.stats.stomps >= 50 },
   { id: 'get_back_up', name: 'Get Back Up', desc: 'Fall and rise again 25 times', test: (c) => c.data.stats.deaths >= 25 },
   { id: 'warmth_bearer', name: 'Warmth Bearer', desc: 'Play for 30 minutes', test: (c) => c.data.stats.playtimeMs >= 1_800_000 },
+  { id: 'first_tale', name: 'A Fireside Tale', desc: 'Find one of Pips lost lanterns', test: (c) => c.data.relics.length >= 1 },
+  { id: 'keeper_of_tales', name: 'Keeper of Tales', desc: 'Find all six lost lanterns', test: (c) => c.data.relics.length >= 6 },
 ];
 
 /**

@@ -34,6 +34,8 @@
  *   'h'  Gale seed (helicopter transformation: mid-air hover/climb)
  *   'j'  key (opens the next locked door 'D' on contact)
  *   'n'  switch (struck by a shot or a stomp; opens all gates 'H')
+ *   'L'  Keeper's Lantern (hidden lore collectible — at most one per level,
+ *        tucked in a secret; collecting it tells a fireside tale)
  *
  * Per-world enemy re-skins reuse the E/T/O/A archetypes (see the theme
  * registry): Mossgrave dresses them as moss-crawler / cave-hopper / bat /
@@ -91,7 +93,7 @@ export const TILE_SOLIDITY: Readonly<Record<string, Solidity>> = {
 
 export const ENTITY_CHARS = new Set([
   'P', 'K', 'F', 'S', 'E', 'T', 'O', 'A', '*', 'B', 'M', 'W', 'e', 'z', 'h', 'Y',
-  'j', 'n',
+  'j', 'n', 'L',
 ]);
 
 /** Power-up pickup chars → the transformation they grant. */
