@@ -16,8 +16,12 @@ import { TUNING } from '../data/tuning';
 import { VIEW } from '../gfx/viewport';
 import { uiScale } from '../systems/platform';
 import { attachMenuTouch } from '../systems/menuTouch';
+import { PixelButton } from '../gfx/ui';
 
 const H = TUNING.view.height;
+
+/** The try-before-you-buy sheet — never the real PLAYER_TEX the game wears. */
+const PREVIEW_TEX = 'player-wardrobe-try';
 
 interface WardrobeRow {
   kind: CosmeticKind;
@@ -41,6 +45,11 @@ export class WardrobeScene extends Phaser.Scene {
   private particles!: ParticleSystem;
   private labels: { name: PixelText; desc: PixelText; state: PixelText; cursor: PixelText }[] = [];
   private preview!: Phaser.GameObjects.Sprite;
+  private previewX = 0;
+  private previewY = 0;
+  private previewKey = '';
+  private tryLabel!: PixelText;
+  private lastTry = '';
   private gemText!: PixelText;
   private sel = 0;
   private scroll = 0;
@@ -66,7 +75,11 @@ export class WardrobeScene extends Phaser.Scene {
     this.inputSys = new InputSystem(this);
     this.particles = new ParticleSystem(this);
     this.labels = [];
-    this.sel = 0;
+    // open with the cursor on the fur he's wearing, so the preview fox greets
+    // you in your own outfit
+    this.sel = Math.max(0, ROWS.findIndex(
+      (r) => r.kind === 'character' && (r.item?.id ?? null) === this.save.data.style.character,
+    ));
     this.scroll = 0;
     this.grace = 0.2;
     this.rowTop = ui > 1 ? 104 : 96;
@@ -79,9 +92,21 @@ export class WardrobeScene extends Phaser.Scene {
     this.add.image(W / 2 - 40 * ui * 0.6, ui > 1 ? 74 : 80, 'pickups', 'gem.0').setScale(1.3);
     this.gemText = new PixelText(this, W / 2 - 28 * ui * 0.6, ui > 1 ? 70 : 76, '', { scale: 2, color: 'W', shadow: true });
 
-    // the live preview fox, wearing every choice immediately
-    this.preview = this.add.sprite(W / 2 + (ui > 1 ? 170 : 140), ui > 1 ? 82 : 84, PLAYER_TEX, 'idle.0')
-      .setOrigin(0.5, 1).setScale(2.2);
+    // the live preview fox — wears the SELECTED row instantly (try before you
+    // buy), the rest of the outfit staying as saved
+    // mobile: 146 not 170 — keeps the fox's head out from under the DOM
+    // fullscreen button on 4:3 tablets, still clear of the price column
+    this.previewX = W / 2 + (ui > 1 ? 146 : 140);
+    this.previewY = ui > 1 ? 82 : 84;
+    this.previewKey = '';
+    this.lastTry = '';
+    // desktop: floats above the fox's head, clear of the state column beside
+    // his feet. Mobile: below his feet instead — the DOM fullscreen button
+    // overhangs the head zone on 4:3 tablets
+    this.tryLabel = new PixelText(this, this.previewX, ui > 1 ? this.previewY + 6 : this.previewY - 63, '', {
+      scale: 1, color: 'y', align: 'center', shadow: true,
+    });
+    this.refreshPreview();
 
     for (const row of ROWS) {
       const cursor = new PixelText(this, W / 2 - (ui > 1 ? 208 : 172), 0, '', { scale: 2, color: 'O' });
@@ -95,8 +120,20 @@ export class WardrobeScene extends Phaser.Scene {
       scale: ui > 1 ? 2 : 1, color: 'W', align: 'center', shadow: true,
     });
 
+    // BACK plaque — top-left corner (the DOM pause/fullscreen cluster owns the
+    // top-right); mobile needs a visible way out beyond the II button
+    const bw = ui > 1 ? 88 : 64;
+    const bh = ui > 1 ? 26 : 20;
+    const backRight = VIEW.insetL + 10 + bw;
+    const backBottom = (ui > 1 ? 24 : 18) + bh / 2 + 3;
+    new PixelButton(this, VIEW.insetL + 10 + bw / 2, ui > 1 ? 24 : 18, {
+      w: bw, h: bh, label: 'BACK', scale: ui, face: 'wood', onTap: () => this.leave(),
+    });
+
     attachMenuTouch(this, {
-      rowAt: (_x, y) => {
+      rowAt: (x, y) => {
+        // the BACK plaque owns its corner — don't let a tap fall through to a row
+        if (x < backRight + 8 && y < backBottom + 8) return null;
         const i = Math.floor((y + this.scroll - (this.rowTop - this.rowH / 2)) / this.rowH);
         return i >= 0 && i < ROWS.length ? i : null;
       },
@@ -131,13 +168,35 @@ export class WardrobeScene extends Phaser.Scene {
     else s.hat = id;
   }
 
-  /** Rebuild the styled sheet + preview so the choice shows instantly. */
+  /** Rebuild the real styled sheet so the game wears the saved choice. */
   private refreshStyle(): void {
     if (this.textures.exists(PLAYER_TEX)) this.textures.remove(PLAYER_TEX);
     registerSheet(this, PLAYER_TEX, buildStyledFrames(this.save.data.style));
-    const { x, y } = this.preview;
-    this.preview.destroy();
-    this.preview = this.add.sprite(x, y, PLAYER_TEX, 'idle.0').setOrigin(0.5, 1).setScale(2.2);
+  }
+
+  /** Dress the preview fox in the saved outfit with the SELECTED row swapped
+   *  into its slot — try before you buy, without touching the real sheet. */
+  private refreshPreview(): void {
+    const row = ROWS[this.sel];
+    const style = { ...this.save.data.style };
+    if (row.kind === 'character') style.character = row.item?.id ?? null;
+    else if (row.kind === 'scarf') style.scarf = row.item?.id ?? null;
+    else style.hat = row.item?.id ?? null;
+    const key = `${style.character}|${style.scarf}|${style.hat}`;
+    if (key !== this.previewKey) {
+      this.previewKey = key;
+      if (this.textures.exists(PREVIEW_TEX)) this.textures.remove(PREVIEW_TEX);
+      registerSheet(this, PREVIEW_TEX, buildStyledFrames(style));
+      this.preview?.destroy();
+      this.preview = this.add.sprite(this.previewX, this.previewY, PREVIEW_TEX, 'idle.0')
+        .setOrigin(0.5, 1).setScale(2.2);
+    }
+    const owned = row.item === null || this.save.data.style.owned.includes(row.item.id);
+    const want = owned ? '' : 'TRYING ON';
+    if (want !== this.lastTry) {
+      this.lastTry = want;
+      this.tryLabel.setText(want);
+    }
   }
 
   private activate(): void {
@@ -183,6 +242,7 @@ export class WardrobeScene extends Phaser.Scene {
   private redraw(): void {
     const W = VIEW.w;
     const ui = uiScale();
+    this.refreshPreview();
     this.gemText.setText(`${this.save.data.gems}`);
     ROWS.forEach((row, i) => {
       const l = this.labels[i];

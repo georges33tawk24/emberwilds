@@ -84,24 +84,42 @@ export class WorldMapScene extends Phaser.Scene {
     this.headerTitle = new PixelText(this, 12, 7, '', { scale: 2, color: 'O', shadow: true }).setScrollFactor(0).setDepth(31);
     this.headerSub = new PixelText(this, 12, 23, '', { scale: 1, color: 'c', shadow: true }).setScrollFactor(0).setDepth(31);
     this.headerWorld = new PixelText(this, 12, 33, '', { scale: 1, color: 'y', shadow: true }).setScrollFactor(0).setDepth(31);
-    this.add.image(W - 150, 15, 'pickups', 'gem.0').setScrollFactor(0).setDepth(31);
-    this.gemText = new PixelText(this, W - 142, 11, '', { scale: 1, color: 'W', shadow: true }).setScrollFactor(0).setDepth(31);
+    const mobile = isMobile();
+    const lb = leaderboardEnabled();
+    // the gem tally stays clear of the plaques on desktop and clear of the DOM
+    // pause/fullscreen cluster (top-right, CSS-positioned) on mobile
+    const gemX = mobile ? W - 195 : lb ? W - 210 : W - 150;
+    this.add.image(gemX, 15, 'pickups', 'gem.0').setScrollFactor(0).setDepth(31);
+    this.gemText = new PixelText(this, gemX + 8, 11, '', { scale: 1, color: 'W', shadow: true }).setScrollFactor(0).setDepth(31);
 
-    // carved-wood plaques — the shop opens on FIRE (keyboard/pad), but the
-    // map hides the FIRE touch button, so mobile needs real on-screen buttons
-    new PixelButton(this, W - 48, 16, {
-      w: 80, h: 22, label: 'GROVE', face: 'green', onTap: () => this.openGrove(),
+    // carved-wood plaques, GROVE + TOP 10 side by side — top-right on desktop;
+    // bottom-centre on mobile, because the DOM pause/fullscreen buttons own the
+    // top-right corner and the rocker/jump clusters own the bottom corners
+    const btnW = mobile ? 104 : 80;
+    const btnH = mobile ? 26 : 22;
+    const btnScale = mobile ? 2 : 1;
+    const btnY = mobile ? H - 18 : 16;
+    // the mobile pair sits 12px right of centre — the true middle of the free
+    // corridor between the rocker (bottom-left) and jump (bottom-right) pads
+    const groveX = mobile ? (lb ? W / 2 - 44 : W / 2) : W - 48;
+    const topX = mobile ? W / 2 + 68 : W - 134;
+    new PixelButton(this, groveX, btnY, {
+      w: btnW, h: btnH, label: 'GROVE', scale: btnScale, face: 'green', onTap: () => this.openGrove(),
     }).setScrollFactor(0).setDepth(31);
-    if (leaderboardEnabled()) {
-      new PixelButton(this, W - 48, 42, {
-        w: 80, h: 22, label: 'TOP 10', face: 'wood', onTap: () => this.openLeaderboard(),
+    if (lb) {
+      new PixelButton(this, topX, btnY, {
+        w: btnW, h: btnH, label: 'TOP 10', scale: btnScale, face: 'wood', onTap: () => this.openLeaderboard(),
       }).setScrollFactor(0).setDepth(31);
       this.input.keyboard?.on('keydown-L', () => this.openLeaderboard());
     }
 
-    this.add.rectangle(W / 2, H - 12, W, 24, 0x2a1f1b, 0.55).setScrollFactor(0).setDepth(30);
-    this.prompt = new PixelText(this, W / 2, H - 17,
-      isMobile() ? 'JUMP  ENTER      TAP GROVE  SHOP      II  BACK' : 'Z  ENTER      FIRE  THE GROVE      ESC  BACK', {
+    // bottom bar — taller on mobile, where it hosts the plaques
+    const barH = mobile ? 36 : 24;
+    this.add.rectangle(W / 2, H - barH / 2, W, barH, 0x2a1f1b, 0.55).setScrollFactor(0).setDepth(30);
+    this.prompt = new PixelText(this, W / 2, mobile ? H - 46 : H - 17,
+      mobile ? 'JUMP  ENTER      II  BACK'
+        : lb ? 'Z  ENTER      FIRE  THE GROVE      L  TOP 10      ESC  BACK'
+          : 'Z  ENTER      FIRE  THE GROVE      ESC  BACK', {
         scale: 1, color: 'W', align: 'center', shadow: true,
       }).setScrollFactor(0).setDepth(31);
 

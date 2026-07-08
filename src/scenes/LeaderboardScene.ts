@@ -78,6 +78,14 @@ export class LeaderboardScene extends Phaser.Scene {
       scale: 1, color: 'W', align: 'center', shadow: true,
     });
 
+    // BACK plaque — top-left corner (the DOM pause/fullscreen cluster owns the
+    // top-right); mobile needs a visible way out beyond the II button
+    const bw = ui > 1 ? 88 : 64;
+    const bh = ui > 1 ? 26 : 20;
+    new PixelButton(this, VIEW.insetL + 10 + bw / 2, ui > 1 ? 24 : 18, {
+      w: bw, h: bh, label: 'BACK', scale: ui, face: 'wood', onTap: () => this.leave(),
+    });
+
     this.input.keyboard?.on('keydown-N', () => this.setName());
 
     void this.refresh();
@@ -125,6 +133,13 @@ export class LeaderboardScene extends Phaser.Scene {
     });
   }
 
+  private leave(): void {
+    audio.sfx('menuSelect');
+    setTouchContext('map');
+    this.scene.stop();
+    this.scene.resume('WorldMap');
+  }
+
   update(_time: number, delta: number): void {
     if (VIEW.w !== this.layoutW) {
       this.scene.restart({ levelIndex: this.levelIndex });
@@ -133,11 +148,6 @@ export class LeaderboardScene extends Phaser.Scene {
     this.grace -= delta / 1000;
     if (this.grace > 0) return;
     const f = this.inputSys.sample();
-    if (f.pause || f.firePressed) {
-      audio.sfx('menuSelect');
-      setTouchContext('map');
-      this.scene.stop();
-      this.scene.resume('WorldMap');
-    }
+    if (f.pause || f.firePressed) this.leave();
   }
 }
