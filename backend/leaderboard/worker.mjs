@@ -2,6 +2,7 @@
  * EMBERWILDS leaderboard — ONE Cloudflare Worker (GROWTH_ROADMAP Phase 2).
  *
  *   POST /score        {level, timeMs, name, uid}  -> submit a clear time
+ *   POST /name         {uid, name, levels[]}       -> rename across boards
  *   GET  /leaderboard?level=N                      -> top 20 for a level
  *
  * Design (per the roadmap): KV top-N per level, one entry per device uid
@@ -69,6 +70,42 @@ export async function handle(request, env) {
     return json(env, 200, { level, scores: board.map(({ name, timeMs }) => ({ name, timeMs })) }, {
       'Cache-Control': 'public, max-age=30',
     });
+  }
+
+  if (request.method === 'POST' && url.pathname === '/name') {
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return json(env, 400, { error: 'bad json' });
+    }
+    const uid = String(body.uid ?? '');
+    if (!/^[a-zA-Z0-9-]{8,64}$/.test(uid)) {
+      return json(env, 400, { error: 'bad uid' });
+    }
+    const levels = Array.isArray(body.levels) ? body.levels.slice(0, MAX_LEVEL + 1) : [];
+    if (!levels.every((l) => Number.isInteger(l) && l >= 0 && l <= MAX_LEVEL)) {
+      return json(env, 400, { error: 'bad levels' });
+    }
+    const name = sanitizeName(body.name);
+    // renames are cheap but still writes — one sweep per device per minute
+    const rlKey = `rl:name:${uid}`;
+    if (await env.SCORES.get(rlKey)) {
+      return json(env, 429, { error: 'slow down' });
+    }
+    await env.SCORES.put(rlKey, '1', { expirationTtl: RATE_TTL_S });
+    let updated = 0;
+    for (const level of levels) {
+      const key = `board:${level}`;
+      const board = JSON.parse((await env.SCORES.get(key)) ?? '[]');
+      const mine = board.find((e) => e.uid === uid);
+      if (mine && mine.name !== name) {
+        mine.name = name;
+        await env.SCORES.put(key, JSON.stringify(board));
+        updated++;
+      }
+    }
+    return json(env, 200, { ok: true, name, updated });
   }
 
   if (request.method === 'POST' && url.pathname === '/score') {

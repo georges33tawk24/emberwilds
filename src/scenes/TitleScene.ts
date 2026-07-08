@@ -1,6 +1,9 @@
 /** Animated title / attract screen — routes to the world-map hub. */
 import Phaser from 'phaser';
 import { PLAYER_TEX } from '../systems/cosmetics';
+import { PixelButton } from '../gfx/ui';
+import { promptName, storedName } from '../systems/nameEntry';
+import { announceName } from '../systems/leaderboard';
 import { PixelText } from '../gfx/text';
 import { buildParallax, type ParallaxLayers } from '../gfx/parallax';
 import { ParticleSystem } from '../gfx/particles';
@@ -64,20 +67,37 @@ export class TitleScene extends Phaser.Scene {
 
     const cleared = this.save.data.levelUnlocked;
     const touch = isMobile();
-    this.tokenLabel = new PixelText(this, W / 2, 190, '', {
+    this.tokenLabel = new PixelText(this, W / 2, 122, '', {
       scale: 1, color: 'y', align: 'center', shadow: true,
     }).setDepth(3);
     this.tokenLabel.setText(cleared > 0 ? `${cleared} BEACON${cleared === 1 ? '' : 'S'} RELIT` : 'THE WILDS AWAIT');
-    const verb = touch ? 'TAP' : 'PRESS Z';
-    this.promptLabel = new PixelText(this, W / 2, 236, cleared > 0 ? `${verb} TO CONTINUE` : `${verb} TO PLAY`, {
-      scale: 2, color: 'W', align: 'center', shadow: true,
+
+    // the menu — carved-wood plaques in the game's own button language
+    const playBtn = new PixelButton(this, W / 2, 154, {
+      w: 190, h: 34, label: cleared > 0 ? 'CONTINUE' : 'PLAY', scale: 2, face: 'green',
+      onTap: () => this.begin(false),
+    }).setDepth(4);
+    playBtn.setLit(true);
+    this.promptLabel = new PixelText(this, W / 2, 176, touch ? 'OR TAP ANYWHERE' : 'OR PRESS Z', {
+      scale: 1, color: 'c', align: 'center',
     }).setDepth(3);
-    new PixelText(this, W / 2, 256, touch ? 'WORLD MAP' : 'M - WORLD MAP', {
-      scale: 1, color: 't', align: 'center', shadow: true,
-    }).setDepth(3);
-    new PixelText(this, W / 2, 274, touch ? 'ACHIEVEMENTS' : 'A - ACHIEVEMENTS', {
-      scale: 1, color: 't', align: 'center', shadow: true,
-    }).setDepth(3);
+
+    const rowY = 200;
+    const bw = 122;
+    new PixelButton(this, W / 2 - bw - 8, rowY, {
+      w: bw, h: 24, label: 'WORLD MAP', face: 'wood', onTap: () => this.begin(true),
+    }).setDepth(4);
+    new PixelButton(this, W / 2, rowY, {
+      w: bw, h: 24, label: 'WARDROBE', face: 'wood', onTap: () => this.openWardrobe(),
+    }).setDepth(4);
+    new PixelButton(this, W / 2 + bw + 8, rowY, {
+      w: bw, h: 24, label: 'AWARDS', face: 'wood', onTap: () => this.openAchievements(),
+    }).setDepth(4);
+    new PixelButton(this, W / 2, rowY + 28, {
+      w: 122, h: 20, label: `NAME - ${storedName()}`.slice(0, 18), face: 'wood',
+      onTap: () => this.editName(),
+    }).setDepth(4);
+
     new PixelText(
       this, W / 2, 300,
       touch
@@ -86,22 +106,41 @@ export class TitleScene extends Phaser.Scene {
       { scale: 1, color: 't', align: 'center', shadow: true },
     ).setDepth(3);
 
-    // one tap = play (mobile-first): the whole screen starts the game except the
-    // small WORLD MAP / ACHIEVEMENTS rows, which route to those screens
+    // one tap still starts the game (mobile-first) — anywhere outside the menu
     this.input.on('pointerup', (p: Phaser.Input.Pointer) => {
-      const cx = Math.abs(p.x - VIEW.w / 2);
-      if (Math.abs(p.y - 256) < 9 && cx < 70) this.begin(true);
-      else if (Math.abs(p.y - 274) < 9 && cx < 90) this.openAchievements();
-      else this.begin(false);
+      if (p.y > 132 && p.y < 262) return; // the plaques own this band
+      this.begin(false);
     });
     this.input.keyboard?.on('keydown-M', () => this.begin(true));
     this.input.keyboard?.on('keydown-A', () => this.openAchievements());
+    this.input.keyboard?.on('keydown-W', () => this.openWardrobe());
+    this.input.keyboard?.on('keydown-N', () => this.editName());
 
     // unlock audio on the very first interaction
     this.input.keyboard?.once('keydown', () => {
       audio.unlock();
       audio.applySettings(this.save.data.settings);
       audio.playSong(TITLE_SONG);
+    });
+  }
+
+  private openWardrobe(): void {
+    if (this.started) return;
+    this.started = true;
+    audio.unlock();
+    audio.sfx('menuSelect');
+    this.scene.start('Wardrobe', { returnTo: 'Title' });
+  }
+
+  private editName(): void {
+    if (this.started) return;
+    audio.unlock();
+    audio.sfx('menuSelect');
+    void promptName().then((name) => {
+      if (name !== null) {
+        void announceName(Object.keys(this.save.data.bestTimes).map(Number));
+        this.scene.restart(); // the NAME plaque re-reads the stored name
+      }
     });
   }
 
@@ -143,7 +182,6 @@ export class TitleScene extends Phaser.Scene {
 
     // gentle attract motion
     this.logo.y = 52 + Math.round(Math.sin(this.t * 1.4) * 2);
-    this.promptLabel.setColor(Math.floor(this.t * 2) % 2 === 0 ? 'W' : 'c');
     const foxFrame = Math.floor(this.t * 5) % 4;
     this.fox.setFrame(`idle.${foxFrame}`);
 

@@ -44,6 +44,22 @@ export function playerName(): string {
 
 const cache = new Map<number, { at: number; entries: LeaderboardEntry[] }>();
 
+/** Push a rename to every board this device already sits on. Resolves once
+ *  the worker has applied it (so callers can refetch immediately). */
+export async function announceName(levels: number[]): Promise<void> {
+  if (!leaderboardEnabled() || levels.length === 0) return;
+  try {
+    await fetch(`${LEADERBOARD_URL}/name`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid: uid(), name: playerName(), levels }),
+    });
+    for (const l of levels) cache.delete(l);
+  } catch {
+    // offline — the rename still rides the next submission
+  }
+}
+
 /** Fire-and-forget: submit a new best clear time. Never throws. */
 export function submitScore(level: number, timeMs: number): void {
   if (!leaderboardEnabled()) return;
@@ -63,7 +79,8 @@ export async function fetchTop(level: number): Promise<LeaderboardEntry[] | null
   try {
     const ctl = new AbortController();
     const t = setTimeout(() => ctl.abort(), 3000);
-    const res = await fetch(`${LEADERBOARD_URL}/leaderboard?level=${level}`, { signal: ctl.signal });
+    // bypass the browser's HTTP cache — our own 30s map above is the cache
+    const res = await fetch(`${LEADERBOARD_URL}/leaderboard?level=${level}`, { signal: ctl.signal, cache: 'no-store' });
     clearTimeout(t);
     if (!res.ok) return null;
     const body = (await res.json()) as { scores?: LeaderboardEntry[] };

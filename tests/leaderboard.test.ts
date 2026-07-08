@@ -82,6 +82,27 @@ describe('leaderboard worker', () => {
     expect((await top(11)).body.scores).toEqual([{ name: 'ELEVEN', timeMs: 40000 }]);
   });
 
+  it('renames a device across only the boards it sits on', async () => {
+    await submit({ level: 2, timeMs: 30000, name: 'FOX', uid: UID });
+    await submit({ level: 3, timeMs: 40000, name: 'FOX', uid: UID });
+    await submit({ level: 3, timeMs: 35000, name: 'RIVAL', uid: 'uid-rival-000' });
+    const res = await handle(new Request('https://api.test/name', {
+      method: 'POST',
+      body: JSON.stringify({ uid: UID, name: 'georges!', levels: [2, 3, 4] }),
+    }), env);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ ok: true, name: 'GEORGES', updated: 2 });
+    expect((await top(2)).body.scores[0].name).toBe('GEORGES');
+    const l3 = (await top(3)).body.scores;
+    expect(l3.find((e: { timeMs: number }) => e.timeMs === 40000)?.name).toBe('GEORGES');
+    expect(l3.find((e: { timeMs: number }) => e.timeMs === 35000)?.name).toBe('RIVAL'); // untouched
+    // and the rename sweep is rate limited
+    const again = await handle(new Request('https://api.test/name', {
+      method: 'POST', body: JSON.stringify({ uid: UID, name: 'ANOTHER', levels: [2] }),
+    }), env);
+    expect(again.status).toBe(429);
+  });
+
   it('sends CORS headers from env and answers preflight', async () => {
     const pre = await handle(new Request('https://api.test/score', { method: 'OPTIONS' }), env);
     expect(pre.status).toBe(204);

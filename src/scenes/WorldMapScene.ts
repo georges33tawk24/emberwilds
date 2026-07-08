@@ -16,6 +16,7 @@ import { SaveManager } from '../systems/save';
 import { audio } from '../audio/engine';
 import { LEVELS, worldOf, levelLabel } from '../data/levels';
 import { fetchTop, leaderboardEnabled } from '../systems/leaderboard';
+import { PixelButton } from '../gfx/ui';
 import { themeOf } from '../gfx/themes';
 import { TUNING } from '../data/tuning';
 import { VIEW } from '../gfx/viewport';
@@ -86,32 +87,15 @@ export class WorldMapScene extends Phaser.Scene {
     this.add.image(W - 150, 15, 'pickups', 'gem.0').setScrollFactor(0).setDepth(31);
     this.gemText = new PixelText(this, W - 142, 11, '', { scale: 1, color: 'W', shadow: true }).setScrollFactor(0).setDepth(31);
 
-    // a tappable GROVE button — the shop opens on FIRE (keyboard/pad), but the
-    // map hides the FIRE touch button, so mobile needs a real on-screen button
-    const groveBtn = this.add
-      .rectangle(W - 46, 15, 76, 24, 0x5f7d34, 0.96)
-      .setStrokeStyle(2, 0xf2a03d)
-      .setScrollFactor(0)
-      .setDepth(31)
-      .setInteractive({ useHandCursor: true });
-    new PixelText(this, W - 46, 11, 'GROVE', { scale: 1, color: 'W', align: 'center', shadow: true })
-      .setScrollFactor(0)
-      .setDepth(32);
-    groveBtn.on('pointerup', () => this.openGrove());
-
-    // TOP 10 — the world leaderboard for the selected level (live only once
-    // the worker is configured)
+    // carved-wood plaques — the shop opens on FIRE (keyboard/pad), but the
+    // map hides the FIRE touch button, so mobile needs real on-screen buttons
+    new PixelButton(this, W - 48, 16, {
+      w: 80, h: 22, label: 'GROVE', face: 'green', onTap: () => this.openGrove(),
+    }).setScrollFactor(0).setDepth(31);
     if (leaderboardEnabled()) {
-      const lbBtn = this.add
-        .rectangle(W - 46, 41, 76, 20, 0x7a5a3e, 0.96)
-        .setStrokeStyle(2, 0xb58b5e)
-        .setScrollFactor(0)
-        .setDepth(31)
-        .setInteractive({ useHandCursor: true });
-      new PixelText(this, W - 46, 37, 'TOP 10', { scale: 1, color: 'W', align: 'center', shadow: true })
-        .setScrollFactor(0)
-        .setDepth(32);
-      lbBtn.on('pointerup', () => this.openLeaderboard());
+      new PixelButton(this, W - 48, 42, {
+        w: 80, h: 22, label: 'TOP 10', face: 'wood', onTap: () => this.openLeaderboard(),
+      }).setScrollFactor(0).setDepth(31);
       this.input.keyboard?.on('keydown-L', () => this.openLeaderboard());
     }
 

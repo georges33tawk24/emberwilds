@@ -9,14 +9,14 @@ import { PixelText } from '../gfx/text';
 import { InputSystem } from '../systems/input';
 import { setTouchContext } from '../systems/touch';
 import { SaveManager } from '../systems/save';
-import { fetchTop, submitScore, type LeaderboardEntry } from '../systems/leaderboard';
+import { announceName, fetchTop, type LeaderboardEntry } from '../systems/leaderboard';
 import { promptName, storedName } from '../systems/nameEntry';
 import { LEVELS, levelLabel } from '../data/levels';
 import { audio } from '../audio/engine';
 import { TUNING } from '../data/tuning';
 import { VIEW } from '../gfx/viewport';
 import { uiScale } from '../systems/platform';
-import { attachMenuTouch } from '../systems/menuTouch';
+import { PixelButton } from '../gfx/ui';
 
 const H = TUNING.view.height;
 const SHOW_N = 10;
@@ -30,8 +30,7 @@ export class LeaderboardScene extends Phaser.Scene {
   private rowsText: PixelText[] = [];
   private status!: PixelText;
   private mine!: PixelText;
-  private nameBandY = 0;
-  private nameLabel!: PixelText;
+  private nameBtn!: PixelButton;
   private busy = false;
 
   constructor() {
@@ -69,19 +68,16 @@ export class LeaderboardScene extends Phaser.Scene {
       myBest ? `YOUR BEST ${(myBest / 1000).toFixed(1)}s AS ${storedName()}` : 'NO CLEAR TIME YET - GO SET ONE',
       { scale: 1, color: 'y', align: 'center', shadow: true });
 
-    // SET NAME band
-    this.nameBandY = H - (ui > 1 ? 42 : 40);
-    this.add.rectangle(W / 2, this.nameBandY, ui > 1 ? 180 : 120, ui > 1 ? 22 : 16, 0x5f7d34, 1).setStrokeStyle(2, 0xf2a03d);
-    this.nameLabel = new PixelText(this, W / 2, this.nameBandY - 3 * ui, 'SET NAME', { scale: ui, color: 'W', align: 'center', shadow: true });
+    // SET NAME plaque
+    this.nameBtn = new PixelButton(this, W / 2, H - (ui > 1 ? 42 : 40), {
+      w: ui > 1 ? 180 : 120, h: ui > 1 ? 26 : 20, label: 'SET NAME', scale: ui, face: 'green',
+      onTap: () => this.setName(),
+    });
 
     new PixelText(this, W / 2, H - (ui > 1 ? 16 : 18), ui > 1 ? 'TAP SET NAME     II  BACK' : 'N  SET NAME     ESC  BACK', {
       scale: 1, color: 'W', align: 'center', shadow: true,
     });
 
-    attachMenuTouch(this, {
-      rowAt: (_x, y) => (Math.abs(y - this.nameBandY) < 14 ? 0 : null),
-      onTapRow: () => this.setName(),
-    });
     this.input.keyboard?.on('keydown-N', () => this.setName());
 
     void this.refresh();
@@ -115,18 +111,17 @@ export class LeaderboardScene extends Phaser.Scene {
     if (this.busy) return;
     this.busy = true;
     audio.sfx('menuSelect');
-    void promptName().then((name) => {
+    void promptName().then(async (name) => {
       this.busy = false;
       if (!this.scene.isActive() || name === null) return;
-      this.nameLabel.setText('SAVED!');
-      this.time.delayedCall(1200, () => this.nameLabel.setText('SET NAME'));
+      this.nameBtn.setLabel('SAVED!').setLit(true);
+      this.time.delayedCall(1400, () => this.nameBtn.setLabel('SET NAME').setLit(false));
       const myBest = this.save.data.bestTimes[this.levelIndex];
       this.mine.setText(myBest ? `YOUR BEST ${(myBest / 1000).toFixed(1)}s AS ${name}` : 'NO CLEAR TIME YET - GO SET ONE');
-      // resubmit the existing best so the rename reaches the board now
-      if (myBest) {
-        submitScore(this.levelIndex, myBest);
-        this.time.delayedCall(1500, () => void this.refresh());
-      }
+      // sweep the rename across every board this device sits on, then refetch
+      const levels = Object.keys(this.save.data.bestTimes).map(Number);
+      await announceName(levels);
+      if (this.scene.isActive()) void this.refresh();
     });
   }
 
