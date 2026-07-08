@@ -14,6 +14,7 @@ import { isMobile } from '../systems/platform';
 import { SaveManager } from '../systems/save';
 import { audio } from '../audio/engine';
 import { LEVELS, worldOf, levelLabel } from '../data/levels';
+import { fetchTop, leaderboardEnabled } from '../systems/leaderboard';
 import { themeOf } from '../gfx/themes';
 import { TUNING } from '../data/tuning';
 import { VIEW } from '../gfx/viewport';
@@ -43,6 +44,7 @@ export class WorldMapScene extends Phaser.Scene {
   private moving = false;
   private headerTitle!: PixelText;
   private headerSub!: PixelText;
+  private headerWorld!: PixelText;
   private gemText!: PixelText;
   private prompt!: PixelText;
   private prev = { left: false, right: false, up: false };
@@ -79,6 +81,7 @@ export class WorldMapScene extends Phaser.Scene {
     this.add.rectangle(W / 2, 16, W, 32, 0x2a1f1b, 0.55).setScrollFactor(0).setDepth(30);
     this.headerTitle = new PixelText(this, 12, 7, '', { scale: 2, color: 'O', shadow: true }).setScrollFactor(0).setDepth(31);
     this.headerSub = new PixelText(this, 12, 23, '', { scale: 1, color: 'c', shadow: true }).setScrollFactor(0).setDepth(31);
+    this.headerWorld = new PixelText(this, 12, 33, '', { scale: 1, color: 'y', shadow: true }).setScrollFactor(0).setDepth(31);
     this.add.image(W - 150, 15, 'pickups', 'gem.0').setScrollFactor(0).setDepth(31);
     this.gemText = new PixelText(this, W - 142, 11, '', { scale: 1, color: 'W', shadow: true }).setScrollFactor(0).setDepth(31);
 
@@ -213,6 +216,18 @@ export class WorldMapScene extends Phaser.Scene {
     this.headerTitle.setColor(available ? 'O' : 'i');
     this.gemText.setText(`${this.save.data.gems}`);
     void w;
+
+    // global best for the selected level — appears only once the worker is
+    // deployed (leaderboardEnabled); the fetch is cached and race-guarded
+    this.headerWorld.setText('');
+    if (available && leaderboardEnabled()) {
+      const forSel = this.sel;
+      void fetchTop(forSel).then((entries) => {
+        if (!this.scene.isActive() || this.sel !== forSel) return;
+        const first = entries?.[0];
+        if (first) this.headerWorld.setText(`WORLD BEST ${(first.timeMs / 1000).toFixed(1)}s - ${first.name}`);
+      });
+    }
   }
 
   private moveSel(dir: -1 | 1): void {

@@ -30,6 +30,7 @@ import { levelLabel, worldOf } from '../data/levels';
 import { STORY } from '../data/story';
 import { earnAchievements } from '../data/achievements';
 import { GHOST_DT, ghostAt, loadGhost, saveGhost, type GhostData } from '../systems/ghosts';
+import { submitScore } from '../systems/leaderboard';
 import { audio } from '../audio/engine';
 import { VIEW } from '../gfx/viewport';
 
@@ -1236,6 +1237,9 @@ export class GameScene extends Phaser.Scene {
     if (this.ghostRec && this.ghostRec.xs.length > 1 && newBest) {
       saveGhost(this.levelIndex, this.ghostRec);
     }
+    // a new best also goes to the global board (a no-op until the worker
+    // URL is configured — see backend/leaderboard/DEPLOY.md)
+    if (newBest) submitScore(this.levelIndex, timeMs);
 
     // record lifetime stats, then earn any achievements the clear unlocked
     this.save.bumpStat('gemsAllTime', this.gemsCollected);
