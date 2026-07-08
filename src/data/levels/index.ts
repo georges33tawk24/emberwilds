@@ -26,6 +26,7 @@ import { LEVEL as FOUNDRY_1 } from './foundry1';
 import { LEVEL as FOUNDRY_2 } from './foundry2';
 import { LEVEL as FOUNDRY_3 } from './foundry3';
 import { LEVEL as FOUNDRY_4 } from './foundry4';
+import { LEVEL as FOUNDRY_5 } from './foundry5';
 
 export const LEVELS: LevelDef[] = [
   THORNWOOD_1 as LevelDef,
@@ -55,6 +56,7 @@ export const LEVELS: LevelDef[] = [
   FOUNDRY_2 as LevelDef,
   FOUNDRY_3 as LevelDef,
   FOUNDRY_4 as LevelDef,
+  FOUNDRY_5 as LevelDef,
 ];
 
 const WORLD_LABELS: Record<string, { label: string; num: number }> = {

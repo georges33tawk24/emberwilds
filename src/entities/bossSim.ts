@@ -23,6 +23,13 @@
  *     the player and impales its beak in the ash — the vertical threat. Bait
  *     the dive, step aside, and punish while it is stuck.
  *
+ *   • BARON COGLAR (Coglar Foundry, the finale) — the clockwork walker
+ *     himself, the stolen Ember Heart burning in his chest. He REMIXES the
+ *     campaign: phase 1 rams like Rustjaw, phase 2 leap-slams like the
+ *     Warden, phase 3 goes into blind OVERDRIVE and ricochets like
+ *     Shiverback — volleying harder the whole way. Every lesson the wilds
+ *     taught is the answer to him.
+ *
  * Pure, deterministic, Phaser-free; stepped at 120 Hz.
  */
 import { STEP_S, TUNING } from '../data/tuning';
@@ -30,7 +37,7 @@ import { TILE } from '../data/levelTypes';
 import { moveY, type Body, type SolidityQuery } from '../systems/physics';
 
 export type BossState = 'intro' | 'walk' | 'telegraph' | 'charge' | 'stun' | 'recover' | 'dead';
-export type BossVariant = 'rustjaw' | 'warden' | 'shrike' | 'shiverback';
+export type BossVariant = 'rustjaw' | 'warden' | 'shrike' | 'shiverback' | 'coglar';
 
 export interface BossShot {
   x: number;
@@ -145,6 +152,30 @@ const SHRIKE: BossConfig = {
   bounces: [0, 0, 0],
 };
 
+const COGLAR: BossConfig = {
+  name: 'BARON COGLAR',
+  prefix: 'coglar',
+  variant: 'coglar',
+  maxHp: 12,
+  bodyW: 44,
+  bodyH: 30,
+  walkSpeed: 42,
+  chargeSpeed: [250, 0, 320], // phase 1 ram / phase 3 overdrive
+  telegraphS: [0.85, 0.7, 0.55],
+  stunS: [2.4, 2.1, 1.8],
+  walkS: [1.7, 1.4, 1.1],
+  recoverS: 0.55,
+  volleyCount: [2, 4, 6],
+  shotSpeed: 150,
+  leapVX: [0, 170, 0], // phase 2 leap
+  leapImpulse: 620,
+  shockSpeed: 160,
+  hoverH: 0,
+  diveSpeed: [0, 0, 0],
+  riseSpeed: 0,
+  bounces: [0, 0, 2], // phase 3 overdrive ricochets twice
+};
+
 const SHIVERBACK: BossConfig = {
   name: 'OLD SHIVERBACK',
   prefix: 'shiverback',
@@ -174,6 +205,7 @@ export const BOSS_CONFIGS: Record<BossVariant, BossConfig> = {
   warden: WARDEN,
   shrike: SHRIKE,
   shiverback: SHIVERBACK,
+  coglar: COGLAR,
 };
 
 export class BossSim {
@@ -200,6 +232,8 @@ export class BossSim {
   private commitTargetX = 0;
   /** Shiverback: wall bounces left in the current roll */
   private bouncesLeft = 0;
+  /** Coglar: which stolen technique the current commit uses */
+  private attackMode: 'ram' | 'leap' | 'roll' = 'ram';
   /** captured each step: did the vertical solver land the body this step? */
   private landedThisStep = false;
 
@@ -303,11 +337,16 @@ export class BossSim {
         if (this.stateTimer <= 0) this.commit();
         break;
 
-      case 'charge':
-        if (this.cfg.variant === 'rustjaw') this.stepCharge();
-        else if (this.cfg.variant === 'shiverback') this.stepRoll();
+      case 'charge': {
+        const mode =
+          this.cfg.variant === 'coglar' ? this.attackMode
+            : this.cfg.variant === 'rustjaw' ? 'ram'
+              : this.cfg.variant === 'shiverback' ? 'roll' : 'leap';
+        if (mode === 'ram') this.stepCharge();
+        else if (mode === 'roll') this.stepRoll();
         else this.stepLeap(); // leapers and divers share the airborne handler
         break;
+      }
 
       case 'stun':
         this.body.vx = 0;
@@ -344,6 +383,17 @@ export class BossSim {
     } else if (this.cfg.variant === 'shiverback') {
       this.bouncesLeft = this.cfg.bounces[this.phaseIndex()];
       this.body.vx = this.facing * this.cfg.chargeSpeed[this.phaseIndex()];
+    } else if (this.cfg.variant === 'coglar') {
+      // the remix: each phase steals a fallen boss's technique
+      this.attackMode = this.phase === 1 ? 'ram' : this.phase === 2 ? 'leap' : 'roll';
+      if (this.attackMode === 'leap') {
+        this.airborneT = 0;
+        this.body.vy = -this.cfg.leapImpulse;
+        this.body.vx = this.facing * this.cfg.leapVX[this.phaseIndex()];
+      } else {
+        this.bouncesLeft = this.attackMode === 'roll' ? this.cfg.bounces[this.phaseIndex()] : 0;
+        this.body.vx = this.facing * this.cfg.chargeSpeed[this.phaseIndex()];
+      }
     } else {
       this.body.vx = this.facing * this.cfg.chargeSpeed[this.phaseIndex()];
     }
@@ -460,7 +510,7 @@ export class BossSim {
       return true;
     }
     // phase transitions
-    const newPhase = this.hp > 6 ? 1 : this.hp > 3 ? 2 : 3;
+    const newPhase = this.hp > (this.maxHp * 2) / 3 ? 1 : this.hp > this.maxHp / 3 ? 2 : 3;
     if (newPhase !== this.phase) {
       this.phase = newPhase as 1 | 2 | 3;
       // a hit that changes phase ends the stun early and re-engages

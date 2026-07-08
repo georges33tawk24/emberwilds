@@ -201,9 +201,15 @@ Build the back half of the game per the original spec (§6/§7 of
    (SLIDE / ICE CLIMB / FRAGILE ICE / GAUNTLET) + OLD SHIVERBACK — a
    hoarfrost bear that ricochets wall to wall on an iced arena floor (the
    player slides too). Fen Hollow (misty marsh) can ship post-launch.
-3. **World 6 — Coglar Foundry** (the Rust's heart): conveyors, piston crushers,
-   everything-combined remix levels, the coldest palette in the game (iron +
-   sullen molten orange — still zero neon).
+3. **World 6 — ✅ SHIPPED as COGLAR FOUNDRY** (the Rust's heart): conveyor
+   belts ('<' '>' tiles with surface drag), everything-combined remix levels
+   (THE TRIALS quotes all five prior worlds in iron), molten-dawn skies over
+   a smokestack skyline — and BARON COGLAR himself: a clockwork-walker
+   finale that REMIXES the campaign (phase 1 rams like Rustjaw, phase 2
+   leap-slams like the Warden, phase 3 overdrive-ricochets like Shiverback)
+   with the stolen Ember Heart blazing in his chest as the stun target.
+   The true ending shipped with him: THE HEART RECLAIMED beat on his fall,
+   then THE EMBER HEART MADE WHOLE — Pip rescued, the wilds warm again.
 - **Each world:** theme-registry entry, bespoke tileset + 4 re-skinned enemy
   archetypes + 1 world-unique enemy, original song (distinct musical identity),
   parallax set with aerial perspective, 4–5 levels to the Phase 2 size bar,
@@ -337,7 +343,9 @@ impact-per-effort:
       parallax), 4 concept levels, The Cinder Shrike boss + eyrie arena
 - [x] Phase 3b — World 5 RIMEFELL complete: ice mechanic + theme + 4 concept
       levels + Old Shiverback (ricochet roll on an iced den floor)
-- [ ] Phase 3c — World 6 Coglar Foundry + the Baron finale fight
+- [x] Phase 3c — World 6 COGLAR FOUNDRY complete: belt mechanic + theme + 4
+      levels + BARON COGLAR (the remix finale) + the TRUE ENDING.
+      **THE CAMPAIGN IS COMPLETE: 28 levels, 6 worlds, 5 bosses.**
 - [ ] Phase 4 — mechanics/power-ups/music/juice depth pass
 - [ ] Phase 5 — compete & share: medals, achievements+scarves, leaderboards
       (replay-validated), daily challenge, ghost racing; Ember Rush optional

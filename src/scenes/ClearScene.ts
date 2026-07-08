@@ -54,7 +54,11 @@ export class ClearScene extends Phaser.Scene {
     this.add.rectangle(W / 2, H / 2, W, H, 0x14100d, 0.66);
     this.add.rectangle(W / 2, H / 2, ui > 1 ? 440 : 288, ui > 1 ? 250 : 178, 0x2a1f1b, 0.95).setStrokeStyle(1, 0x7a5a3e);
 
-    new PixelText(this, W / 2, H / 2 - (ui > 1 ? 92 : 62), isBoss ? STORY.bossFall.title : 'BEACON RELIT!', {
+    // the final boss holds the Heart itself, not a shard — its fall gets
+    // its own beat before the true finale takes over
+    const isFinal = data.levelIndex + 1 >= LEVELS.length;
+    const fallBeat = isBoss && isFinal ? STORY.heartFall : STORY.bossFall;
+    new PixelText(this, W / 2, H / 2 - (ui > 1 ? 92 : 62), isBoss ? fallBeat.title : 'BEACON RELIT!', {
       scale: ui > 1 ? 3 : 2, color: 'O', align: 'center', shadow: true,
     });
     new PixelText(this, W / 2, H / 2 - (ui > 1 ? 64 : 42), data.name.toUpperCase(), { scale: ui, color: 'c', align: 'center' });
@@ -75,7 +79,7 @@ export class ClearScene extends Phaser.Scene {
       });
       // narrative beat — placed just under the level name so it never collides
       // with the tally or the achievement summary below
-      const line = new PixelText(this, W / 2, H / 2 - (ui > 1 ? 44 : 28), STORY.bossFall.lines[1], {
+      const line = new PixelText(this, W / 2, H / 2 - (ui > 1 ? 44 : 28), fallBeat.lines[1], {
         scale: 1, color: 'y', align: 'center', shadow: true,
       });
       line.setAlpha(0);

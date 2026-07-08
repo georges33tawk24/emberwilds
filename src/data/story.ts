@@ -44,16 +44,22 @@ export const STORY = {
     lines: ['A PIECE OF THE EMBER HEART, BURNING AGAIN.', 'SOMEWHERE FAR AWAY, PIP FELT IT.'],
   },
 
-  /** finale after the last existing boss — swaps to the rescue when World 6 ships */
+  /** the FINAL boss-clear beat — the Baron falls, the Heart comes home */
+  heartFall: {
+    title: 'THE HEART RECLAIMED!',
+    lines: ['THE HATCH BURST. THE SHARDS FLEW HOME.', 'AND PIP TUMBLED OUT, LAUGHING.'],
+  },
+
+  /** the TRUE finale — the Baron beaten, the Heart whole, Pip free */
   finale: {
-    title: 'THE BEACONS BURN AGAIN',
+    title: 'THE EMBER HEART MADE WHOLE',
     lines: [
-      'WARMTH FLOODS BACK ACROSS THE WILDS.',
-      'BUT THE TRAIL OF SHARDS LEADS ON -',
-      'TO THE FOUNDRY. TO THE BARON HIMSELF.',
-      'PIP IS WAITING.',
+      'THE LAST SHARD FOUND ITS PLACE.',
+      'PIP RODE HOME ON SORRELS BACK,',
+      'AND THE WILDS TOOK ONE LONG BREATH -',
+      'AND BURNED SOFT AND GOLD, EVERYWHERE AT ONCE.',
     ],
-    continues: 'THE JOURNEY CONTINUES...',
+    continues: 'THE WILDS ARE WARM AGAIN.',
   },
 
   credits: [
