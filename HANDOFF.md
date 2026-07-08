@@ -266,6 +266,14 @@ Gotcha: carve air pits **after** filling soil, or they get floored over.
   `TouchEvent`s on `window`, and Phaser scene input by dispatching
   `MouseEvent`s on the canvas. Synthetic `KeyboardEvent`s never reach Phaser.
   `?mobile=1` forces the mobile experience (camera FOV + UI ×2) on desktop.
+- **The campaign certification sweep** (rerun after any level/engine change):
+  (1) data audit — bundle `src/data/levels/index.ts` with esbuild, assert per
+  level: exactly 4 tokens + 1 P/F (+1 Y for bosses), ≥1 checkpoint, gems
+  40–90, ≥220×40 non-boss, no ragged rows (the levelLint tests enforce all of
+  this in CI too); (2) boot sweep — over CDP, `scene.start('Game', {levelIndex:
+  i})` for every i, wait ~3.5s, read a `window.__errs` collector installed
+  over `window.onerror` + `console.error`, and confirm the scene is active and
+  the boss (if any) is cycling. 28/28 clean as of the campaign-complete commit.
 - **No preview tooling? Drive headless Chrome over raw CDP** — zero deps:
   Node ≥22 has a built-in `WebSocket`. Launch
   `"/Applications/Google Chrome.app/.../Google Chrome" --headless=new
