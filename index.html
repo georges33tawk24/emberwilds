@@ -121,13 +121,23 @@
         ]
       }
     </script>
-    <!-- Google AdSense (async — never blocks the game boot; the service
-         worker passes cross-origin requests straight through, uncached) -->
-    <script
-      async
-      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3282682530093560"
-      crossorigin="anonymous"
-    ></script>
+    <!-- Google AdSense — loaded ONLY on the canonical domain. Portal builds
+         (CrazyGames, Poki, itch.io, GameDistribution) run the game under a
+         different hostname / inside an iframe, so no AdSense script loads
+         there and each portal's own ad SDK is left unobstructed. Async, so it
+         never blocks the game boot; the SW passes it through uncached. -->
+    <script>
+      (function () {
+        var h = location.hostname;
+        if (h === 'emberwilds.fun' || h === 'www.emberwilds.fun') {
+          var s = document.createElement('script');
+          s.async = true;
+          s.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3282682530093560';
+          s.crossOrigin = 'anonymous';
+          document.head.appendChild(s);
+        }
+      })();
+    </script>
     <style>
       html,
       body {
