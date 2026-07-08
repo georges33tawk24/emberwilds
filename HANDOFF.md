@@ -50,8 +50,9 @@ the constraint — quality is the goal.
 
 A warm, hand-crafted momentum platformer. A quick red fox named **Sorrel** runs,
 jumps, stomps, glides, and fires a spring-loaded slingblaster through sunlit
-wilds being drained of warmth by the industrial **Rust**. Three worlds are live;
-the full design targets 6 worlds / ~30 levels / 6 bosses.
+wilds being drained of warmth by the industrial **Rust**. **The campaign is
+complete: 28 levels across 6 worlds, 5 bosses, and a true ending** (Baron
+Coglar falls, Pip is rescued, the Ember Heart is made whole).
 
 **Art direction — the "No-Neon Bible":** a warm, desaturated palette. Light is
 sun, fire, and amber. **Banned:** electric cyan, hot magenta, acid green, LED
@@ -76,7 +77,7 @@ npm install
 npm run dev        # vite dev server — open the printed localhost URL
 npm run build      # tsc --noEmit && vite build → /dist (gitignored)
 npm run preview    # serve the production build
-npm test           # vitest run — MUST stay green (currently 144 passing, 15 skipped)
+npm test           # vitest run — MUST stay green (currently ~480 passing)
 ```
 
 ---
@@ -89,11 +90,14 @@ and Phaser-free** — no rendering, no `Date.now()`/`Math.random()` in sim logic
 - `src/entities/playerSim.ts` — the fox: movement, jump/glide/stomp, combat,
   water/swim, power-ups. Takes a `PlayerConfig` (upgrades) and a `WaterQuery`.
 - `src/entities/bossSim.ts` — **config-driven** bosses. `BOSS_CONFIGS` keyed by
-  `variant` (`'rustjaw'` | `'warden'`). One shared state machine
-  (walk → telegraph → commit → stun → recover, telegraphed attacks, 3 phases,
-  clear damage windows); the *commit* differs per variant (Rustjaw charges into a
-  wall; the Warden leap-slams and cracks a ground shockwave). Add new bosses as
-  new configs, not new classes, where possible.
+  `variant` (`'rustjaw'` | `'warden'` | `'shrike'` | `'shiverback'` |
+  `'coglar'`). One shared state machine (walk → telegraph → commit → stun →
+  recover, telegraphed attacks, 3 phases, clear damage windows); the *commit*
+  differs per variant: Rustjaw charges into a wall, the Warden leap-slams with
+  a ground shockwave, the Shrike hovers and dives (telegraph locks the target
+  as the tell BEGINS), Shiverback ricochet-rolls (bounces escalate per phase),
+  and Baron Coglar REMIXES them — ram, then leap, then overdrive ricochet, by
+  phase. Add new bosses as new configs, not new classes, where possible.
 - `src/entities/enemies.ts` — enemy archetypes.
 - Physics: `src/systems/physics.ts` (AABB, one-way platforms, `Solidity` =
   solid/oneway/water/door/gate/crack). `src/core/pool.ts` (object pools — the hot
@@ -135,8 +139,13 @@ overlay (`index.html #rotate`, gated by `@media (orientation:portrait) and
 (pointer:coarse)`); `main.ts` sleeps the game loop while portrait.
 
 **Theme registry.** `src/gfx/themes.ts` binds tileset + enemy skins + music +
-parallax per world (`thornwood`/`canyon`/`mossgrave`). A new world = one registry
-entry + data modules (tiles, enemy skins, song, levels).
+parallax per world (`thornwood`/`canyon`/`mossgrave`/`cinder`/`rimefell`/
+`foundry`). A new world = one registry entry + data modules (tiles, enemy
+skins, song, levels). World-specific ground: `I` ice (momentum carries —
+TUNING.ice) and `<`/`>` conveyor belts (surface drag — TUNING.belt); any new
+tile must be added to physics `blocks()`, terrain `solidish`, boss
+`wallAhead`, projectile impact, AND the builder/lint `SOLID`+`STANDABLE`
+sets — miss one and the BFS or a sensor silently disagrees with the sim.
 
 **Scenes** (`src/scenes/`): Boot → Title → WorldMap → (Shop | Game) → Hud (overlay)
 → Pause / Clear. Save is versioned (`src/systems/save.ts`).
