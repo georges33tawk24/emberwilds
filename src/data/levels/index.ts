@@ -22,6 +22,10 @@ import { LEVEL as RIME_2 } from './rime2';
 import { LEVEL as RIME_3 } from './rime3';
 import { LEVEL as RIME_4 } from './rime4';
 import { LEVEL as RIME_5 } from './rime5';
+import { LEVEL as FOUNDRY_1 } from './foundry1';
+import { LEVEL as FOUNDRY_2 } from './foundry2';
+import { LEVEL as FOUNDRY_3 } from './foundry3';
+import { LEVEL as FOUNDRY_4 } from './foundry4';
 
 export const LEVELS: LevelDef[] = [
   THORNWOOD_1 as LevelDef,
@@ -47,6 +51,10 @@ export const LEVELS: LevelDef[] = [
   RIME_3 as LevelDef,
   RIME_4 as LevelDef,
   RIME_5 as LevelDef,
+  FOUNDRY_1 as LevelDef,
+  FOUNDRY_2 as LevelDef,
+  FOUNDRY_3 as LevelDef,
+  FOUNDRY_4 as LevelDef,
 ];
 
 const WORLD_LABELS: Record<string, { label: string; num: number }> = {
@@ -55,6 +63,7 @@ const WORLD_LABELS: Record<string, { label: string; num: number }> = {
   mossgrave: { label: 'MOSSGRAVE RUINS', num: 3 },
   cinder: { label: 'THE CINDERPEAKS', num: 4 },
   rimefell: { label: 'RIMEFELL', num: 5 },
+  foundry: { label: 'COGLAR FOUNDRY', num: 6 },
 };
 
 export function worldOf(index: number): { label: string; num: number } {

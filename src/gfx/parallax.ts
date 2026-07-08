@@ -14,7 +14,7 @@ import { VIEW } from './viewport';
 const H = TUNING.view.height;
 
 type Daypart = 'day' | 'dawn' | 'dusk';
-export type ThemeKey = 'thornwood' | 'canyon' | 'mossgrave' | 'cinder' | 'rimefell';
+export type ThemeKey = 'thornwood' | 'canyon' | 'mossgrave' | 'cinder' | 'rimefell' | 'foundry';
 
 interface SkySpec {
   top: string;
@@ -65,6 +65,13 @@ const THEME_TINTS: Record<ThemeKey, Record<Daypart, LayerTints>> = {
     day: { far: '#c2ccd2', mid: '#93a6b2', near: '#5f7484' },
     dawn: { far: '#d2b8ac', mid: '#a08a90', near: '#6a5f70' },
     dusk: { far: '#8a8aa0', mid: '#5f6180', near: '#3d4258' },
+  },
+  foundry: {
+    // the Rust's works: factory silhouettes against the furnace glow
+    // (foundry levels run 'dawn' — the warm sky reads as molten light)
+    day: { far: '#8a8078', mid: '#5a544e', near: '#332f2c' },
+    dawn: { far: '#96705c', mid: '#5e4a40', near: '#33291f' },
+    dusk: { far: '#6a5a60', mid: '#443c44', near: '#28242a' },
   },
 };
 
@@ -191,6 +198,65 @@ function peakStrip(color: string, baseY: number, rng: Rng, count: number, maxH: 
   return c;
 }
 
+/** Factory skyline: block halls, smokestacks, and their drifting plumes. */
+function stackStrip(color: string, baseY: number, rng: Rng, count: number, maxH: number): HTMLCanvasElement {
+  const W = VIEW.w;
+  const [c, ctx] = makeCanvas(W, H);
+  ctx.fillStyle = color;
+  ctx.fillRect(0, baseY, W, H - baseY);
+  for (let i = 0; i < count; i++) {
+    const x = Math.round((i / count) * W + rng.range(-14, 14));
+    for (const ox of [-W, 0, W]) {
+      const bx = mod(x, W) + ox;
+      if (rng.next() < 0.5) {
+        // a block hall with a sawtooth roof
+        const w = rng.range(30, 54);
+        const h = rng.range(maxH * 0.3, maxH * 0.55);
+        ctx.fillRect(bx - w / 2, baseY - h, w, h);
+        for (let t = 0; t < w; t += 8) {
+          ctx.beginPath();
+          ctx.moveTo(bx - w / 2 + t, baseY - h);
+          ctx.lineTo(bx - w / 2 + t + 4, baseY - h - 6);
+          ctx.lineTo(bx - w / 2 + t + 8, baseY - h);
+          ctx.closePath();
+          ctx.fill();
+        }
+      } else {
+        // a smokestack and its leaning plume
+        const h = rng.range(maxH * 0.6, maxH);
+        ctx.fillRect(bx - 3, baseY - h, 7, h);
+        ctx.fillRect(bx - 5, baseY - h, 11, 4);
+        ctx.globalAlpha = 0.5;
+        blob(ctx, bx + 4, baseY - h - 6, 14, 8);
+        blob(ctx, bx + 12, baseY - h - 12, 18, 9);
+        ctx.globalAlpha = 1;
+      }
+    }
+  }
+  return c;
+}
+
+/** Girders and pipework for the foundry near layer. */
+function girderStrip(color: string, baseY: number, rng: Rng, count: number): HTMLCanvasElement {
+  const W = VIEW.w;
+  const [c, ctx] = makeCanvas(W, H);
+  ctx.fillStyle = color;
+  ctx.fillRect(0, baseY, W, H - baseY);
+  // a running pipe with periodic joints
+  ctx.fillRect(0, baseY - 14, W, 4);
+  for (let i = 0; i < count; i++) {
+    const x = Math.round((i / count) * W + rng.range(-10, 10));
+    for (const ox of [-W, 0, W]) {
+      const bx = mod(x, W) + ox;
+      const h = rng.range(18, 34);
+      ctx.fillRect(bx - 2, baseY - h, 5, h);      // upright girder
+      ctx.fillRect(bx - 5, baseY - h, 11, 3);     // its cap
+      if (rng.next() < 0.5) ctx.fillRect(bx - 4, baseY - 18, 9, 8); // pipe joint
+    }
+  }
+  return c;
+}
+
 /** Charred snag trees + slag boulders for the cinder near layer. */
 function snagStrip(color: string, baseY: number, rng: Rng, count: number): HTMLCanvasElement {
   const W = VIEW.w;
@@ -265,7 +331,7 @@ export function buildParallax(
     for (let i = 0; i < 5; i++) {
       const cx = rng.range(0, W);
       const cy = rng.range(16, 90);
-      if (theme === 'canyon' || theme === 'cinder') {
+      if (theme === 'canyon' || theme === 'cinder' || theme === 'foundry') {
         // long thin streaks — desert haze / drifting foundry smoke
         ctx.fillRect(cx - 30, cy, 60, 3);
         ctx.fillRect(cx - 18, cy - 3, 36, 3);
@@ -291,6 +357,10 @@ export function buildParallax(
       scene.textures.addCanvas(`${keyBase}-far`, peakStrip(tints.far, 212, rng, 5, 95));
       scene.textures.addCanvas(`${keyBase}-mid`, peakStrip(tints.mid, 238, rng, 4, 62));
       scene.textures.addCanvas(`${keyBase}-near`, snagStrip(tints.near, 258, rng, 8));
+    } else if (theme === 'foundry') {
+      scene.textures.addCanvas(`${keyBase}-far`, stackStrip(tints.far, 214, rng, 5, 90));
+      scene.textures.addCanvas(`${keyBase}-mid`, stackStrip(tints.mid, 240, rng, 4, 58));
+      scene.textures.addCanvas(`${keyBase}-near`, girderStrip(tints.near, 260, rng, 7));
     } else {
       scene.textures.addCanvas(`${keyBase}-far`, hillStrip(tints.far, 205, 60, rng, 5));
       scene.textures.addCanvas(`${keyBase}-mid`, treeStrip(tints.mid, 232, rng, 9, false));

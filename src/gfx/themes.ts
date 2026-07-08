@@ -10,16 +10,19 @@ import { TILE_FRAMES_CANYON } from './data/tileSpritesCanyon';
 import { TILE_FRAMES_MOSS } from './data/tileSpritesMoss';
 import { TILE_FRAMES_ASH } from './data/tileSpritesAsh';
 import { TILE_FRAMES_RIME } from './data/tileSpritesRime';
+import { TILE_FRAMES_FOUNDRY } from './data/tileSpritesFoundry';
 import { ENEMY_FRAMES } from './data/enemySprites';
 import { ENEMY_FRAMES_CANYON } from './data/enemySpritesCanyon';
 import { ENEMY_FRAMES_MOSS } from './data/enemySpritesMoss';
 import { ENEMY_FRAMES_ASH } from './data/enemySpritesAsh';
 import { ENEMY_FRAMES_RIME } from './data/enemySpritesRime';
+import { ENEMY_FRAMES_FOUNDRY } from './data/enemySpritesFoundry';
 import { THORNWOOD_SONG } from '../audio/songs';
 import { CANYON_SONG } from '../audio/canyonSong';
 import { MOSS_SONG } from '../audio/mossSong';
 import { ASH_SONG } from '../audio/ashSong';
 import { RIME_SONG } from '../audio/rimeSong';
+import { FOUNDRY_SONG } from '../audio/foundrySong';
 
 export interface WorldTheme {
   key: string;
@@ -83,6 +86,16 @@ export const THEMES: Record<string, WorldTheme> = {
     enemies: ENEMY_FRAMES_RIME as FrameGroups,
     enemySheet: 'enemies-rime',
     song: RIME_SONG as Song,
+  },
+  foundry: {
+    key: 'foundry',
+    label: 'COGLAR FOUNDRY',
+    worldNum: 6,
+    tiles: TILE_FRAMES_FOUNDRY as FrameGroups,
+    tileSheet: 'tiles-foundry',
+    enemies: ENEMY_FRAMES_FOUNDRY as FrameGroups,
+    enemySheet: 'enemies-foundry',
+    song: FOUNDRY_SONG as Song,
   },
 };
 
