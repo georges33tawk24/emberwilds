@@ -94,12 +94,16 @@ export class WardrobeScene extends Phaser.Scene {
 
     // the live preview fox — wears the SELECTED row instantly (try before you
     // buy), the rest of the outfit staying as saved
-    this.previewX = W / 2 + (ui > 1 ? 170 : 140);
+    // mobile: 146 not 170 — keeps the fox's head out from under the DOM
+    // fullscreen button on 4:3 tablets, still clear of the price column
+    this.previewX = W / 2 + (ui > 1 ? 146 : 140);
     this.previewY = ui > 1 ? 82 : 84;
     this.previewKey = '';
     this.lastTry = '';
-    // floats above the fox's head — clear of the state column beside his feet
-    this.tryLabel = new PixelText(this, this.previewX, this.previewY - 63, '', {
+    // desktop: floats above the fox's head, clear of the state column beside
+    // his feet. Mobile: below his feet instead — the DOM fullscreen button
+    // overhangs the head zone on 4:3 tablets
+    this.tryLabel = new PixelText(this, this.previewX, ui > 1 ? this.previewY + 6 : this.previewY - 63, '', {
       scale: 1, color: 'y', align: 'center', shadow: true,
     });
     this.refreshPreview();

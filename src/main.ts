@@ -75,9 +75,6 @@ const game = new Phaser.Game({
 
 game.registry.set('save', save);
 
-// dev-only handle for automated preview verification — stripped from builds
-if (import.meta.env.DEV) (window as unknown as { __game?: Phaser.Game }).__game = game;
-
 // The crawlable SEO/no-JS content (index.html #seo-content) has done its job
 // once the canvas is up — hide it so it never sits behind the game.
 document.getElementById('seo-content')?.style.setProperty('display', 'none');

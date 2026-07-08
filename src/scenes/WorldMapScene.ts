@@ -95,12 +95,14 @@ export class WorldMapScene extends Phaser.Scene {
     // carved-wood plaques, GROVE + TOP 10 side by side — top-right on desktop;
     // bottom-centre on mobile, because the DOM pause/fullscreen buttons own the
     // top-right corner and the rocker/jump clusters own the bottom corners
-    const btnW = mobile ? 108 : 80;
+    const btnW = mobile ? 104 : 80;
     const btnH = mobile ? 26 : 22;
     const btnScale = mobile ? 2 : 1;
     const btnY = mobile ? H - 18 : 16;
-    const groveX = mobile ? (lb ? W / 2 - 58 : W / 2) : W - 48;
-    const topX = mobile ? W / 2 + 58 : W - 134;
+    // the mobile pair sits 12px right of centre — the true middle of the free
+    // corridor between the rocker (bottom-left) and jump (bottom-right) pads
+    const groveX = mobile ? (lb ? W / 2 - 44 : W / 2) : W - 48;
+    const topX = mobile ? W / 2 + 68 : W - 134;
     new PixelButton(this, groveX, btnY, {
       w: btnW, h: btnH, label: 'GROVE', scale: btnScale, face: 'green', onTap: () => this.openGrove(),
     }).setScrollFactor(0).setDepth(31);
