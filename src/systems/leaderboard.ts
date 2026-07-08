@@ -6,6 +6,7 @@
  *
  * Render-side only (localStorage + fetch) — never touched by the sim.
  */
+import type { GhostData } from './ghosts';
 
 /** Paste the deployed worker URL here to turn leaderboards on. */
 export const LEADERBOARD_URL = 'https://emberwilds-leaderboard.georges33tawk24.workers.dev';
@@ -13,6 +14,13 @@ export const LEADERBOARD_URL = 'https://emberwilds-leaderboard.georges33tawk24.w
 export interface LeaderboardEntry {
   name: string;
   timeMs: number;
+}
+
+/** The world #1 run for a level: whose it is, its time, and the ghost path. */
+export interface WorldRecordGhost {
+  name: string;
+  timeMs: number;
+  ghost: GhostData;
 }
 
 export function leaderboardEnabled(): boolean {
@@ -60,15 +68,43 @@ export async function announceName(levels: number[]): Promise<void> {
   }
 }
 
-/** Fire-and-forget: submit a new best clear time. Never throws. */
-export function submitScore(level: number, timeMs: number): void {
+/** Fire-and-forget: submit a new best clear time, optionally with the run's
+ *  ghost recording (the worker keeps it only if the run takes rank 1, so it
+ *  becomes the world-record ghost others race). Never throws. */
+export function submitScore(level: number, timeMs: number, ghost?: GhostData | null): void {
   if (!leaderboardEnabled()) return;
   cache.delete(level); // the next fetch should see this submission
+  const body: Record<string, unknown> = { level, timeMs: Math.round(timeMs), name: playerName(), uid: uid() };
+  if (ghost && ghost.xs.length > 1) body.ghost = ghost;
   void fetch(`${LEADERBOARD_URL}/score`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ level, timeMs: Math.round(timeMs), name: playerName(), uid: uid() }),
+    body: JSON.stringify(body),
   }).catch(() => undefined);
+}
+
+const wrCache = new Map<number, { at: number; wr: WorldRecordGhost | null }>();
+
+/** The world-record ghost for a level (60s cache). Null if none / on failure. */
+export async function fetchWrGhost(level: number): Promise<WorldRecordGhost | null> {
+  if (!leaderboardEnabled()) return null;
+  const hit = wrCache.get(level);
+  if (hit && performance.now() - hit.at < 60_000) return hit.wr;
+  try {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 3500);
+    const res = await fetch(`${LEADERBOARD_URL}/wrghost?level=${level}`, { signal: ctl.signal, cache: 'no-store' });
+    clearTimeout(t);
+    if (!res.ok) return null;
+    const body = (await res.json()) as { ghost?: GhostData | null; name?: string; timeMs?: number };
+    const wr = body.ghost && Array.isArray(body.ghost.xs) && body.ghost.xs.length > 1
+      ? { name: body.name ?? 'FOX', timeMs: body.timeMs ?? 0, ghost: body.ghost }
+      : null;
+    wrCache.set(level, { at: performance.now(), wr });
+    return wr;
+  } catch {
+    return null;
+  }
 }
 
 /** Top times for a level (30s client cache, 3s timeout). Null on any failure. */

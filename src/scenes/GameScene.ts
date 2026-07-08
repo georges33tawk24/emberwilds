@@ -31,7 +31,7 @@ import { levelLabel, worldOf } from '../data/levels';
 import { STORY, TALES } from '../data/story';
 import { earnAchievements } from '../data/achievements';
 import { GHOST_DT, ghostAt, loadGhost, saveGhost, type GhostData } from '../systems/ghosts';
-import { submitScore } from '../systems/leaderboard';
+import { submitScore, fetchWrGhost } from '../systems/leaderboard';
 import { track } from '../systems/analytics';
 import { hintSeen, markHintSeen } from '../systems/hints';
 import { audio } from '../audio/engine';
@@ -185,6 +185,9 @@ export class GameScene extends Phaser.Scene {
   private ghostPlay: GhostData | null = null;
   private ghostSpr: Phaser.GameObjects.Sprite | null = null;
   private ghostPrevX = 0;
+  /** set when the raced ghost is the world record (gold + a name label) */
+  private ghostIsWr = false;
+  private ghostLabel: PixelText | null = null;
   // one-time teaching hints (glide, wall-jump)
   private hintText: PixelText | null = null;
   private hintTimer = 0;
@@ -280,7 +283,11 @@ export class GameScene extends Phaser.Scene {
     }
     if (this.ghostPlay && this.ghostSpr) {
       const pos = ghostAt(this.ghostPlay, ms);
-      if (!pos) { this.ghostSpr.setVisible(false); return; }
+      if (!pos) {
+        this.ghostSpr.setVisible(false);
+        this.ghostLabel?.setVisible(false);
+        return;
+      }
       const moving = Math.abs(pos.x - this.ghostPrevX) > 0.5;
       this.ghostPrevX = pos.x;
       const grp = moving ? 'run' : 'idle';
@@ -290,6 +297,7 @@ export class GameScene extends Phaser.Scene {
         .setFrame(`${grp}.${Math.floor(this.t * (moving ? 10 : 5)) % n}`)
         .setPosition(Math.round(pos.x), Math.round(pos.y))
         .setFlipX(pos.facing === -1);
+      this.ghostLabel?.setVisible(true).setPosition(Math.round(pos.x), Math.round(pos.y) - 34);
     }
   }
 
@@ -432,9 +440,26 @@ export class GameScene extends Phaser.Scene {
     this.ghostNextSampleMs = 0;
     this.ghostPlay = this.save.data.settings.ghostRacer ? loadGhost(this.levelIndex) : null;
     this.ghostSpr = null;
+    this.ghostIsWr = false;
+    this.ghostLabel = null;
     if (this.ghostPlay) {
       this.ghostSpr = this.add.sprite(start.x, start.y, PLAYER_TEX, 'idle.0')
         .setOrigin(0.5, 1).setDepth(9).setAlpha(0.42).setTint(0xa9c6d6);
+    }
+    // upgrade to racing the WORLD RECORD ghost when one exists (async fetch)
+    if (this.save.data.settings.ghostRacer && !this.level.boss) {
+      const startX = start.x; const startY = start.y;
+      const forLevel = this.levelIndex;
+      void fetchWrGhost(this.levelIndex).then((wr) => {
+        if (!wr || !this.scene.isActive() || this.levelIndex !== forLevel || this.goalReached) return;
+        this.ghostPlay = wr.ghost;
+        this.ghostIsWr = true;
+        if (!this.ghostSpr) this.ghostSpr = this.add.sprite(startX, startY, PLAYER_TEX, 'idle.0').setOrigin(0.5, 1).setDepth(9);
+        this.ghostSpr.setAlpha(0.5).setTint(0xf2c34e); // warm gold — the champion
+        this.ghostLabel = new PixelText(this, startX, startY - 34, `WR ${wr.name}`, {
+          scale: 1, color: 'O', align: 'center', shadow: true,
+        }).setDepth(9).setAlpha(0.9);
+      });
     }
 
     audio.applySettings(this.save.data.settings);
@@ -1360,9 +1385,10 @@ export class GameScene extends Phaser.Scene {
     if (this.ghostRec && this.ghostRec.xs.length > 1 && newBest) {
       saveGhost(this.levelIndex, this.ghostRec);
     }
-    // a new best also goes to the global board (a no-op until the worker
-    // URL is configured — see backend/leaderboard/DEPLOY.md)
-    if (newBest) submitScore(this.levelIndex, timeMs);
+    // a new best also goes to the global board, with this run's ghost — the
+    // worker keeps the recording only if it takes rank 1, making it the
+    // world-record ghost others race (no-op until the worker URL is set)
+    if (newBest) submitScore(this.levelIndex, timeMs, this.ghostRec);
 
     // record lifetime stats, then earn any achievements the clear unlocked
     this.save.bumpStat('gemsAllTime', this.gemsCollected);

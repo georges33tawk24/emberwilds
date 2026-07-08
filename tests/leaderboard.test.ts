@@ -113,6 +113,34 @@ describe('leaderboard worker', () => {
     expect(again.status).toBe(429);
   });
 
+  it('stores the world-record ghost on a rank-1 run and serves it', async () => {
+    const wrghost = async (level: number) => (await (await handle(new Request(`https://api.test/wrghost?level=${level}`), env)).json());
+    const ghost = { dt: 40, xs: [10, 20, 30], ys: [5, 5, 5], fs: [1, 1, 1] };
+    // empty board -> this is rank 1 -> the ghost is kept
+    const res = await submit({ level: 8, timeMs: 42000, name: 'ACE', uid: UID, ghost });
+    expect(await res.json()).toMatchObject({ ok: true, rank: 1, wr: true });
+    const got = await wrghost(8);
+    expect(got).toMatchObject({ name: 'ACE', timeMs: 42000 });
+    expect(got.ghost.xs).toEqual([10, 20, 30]);
+    // a slower rival (rank 2) with a ghost does NOT overwrite the WR ghost
+    await submit({ level: 8, timeMs: 50000, name: 'RIVAL', uid: 'device-99999999', ghost: { dt: 40, xs: [1, 2], ys: [1, 1], fs: [1, 1] } });
+    expect((await wrghost(8)).name).toBe('ACE');
+  });
+
+  it('rejects a malformed or oversized ghost but still accepts the score', async () => {
+    const wrghost = async (level: number) => (await (await handle(new Request(`https://api.test/wrghost?level=${level}`), env)).json());
+    const bad = { dt: 40, xs: [1, 2, 3], ys: [1, 2], fs: [1] }; // mismatched lengths
+    const res = await submit({ level: 9, timeMs: 42000, name: 'ACE', uid: UID, ghost: bad });
+    expect(await res.json()).toMatchObject({ ok: true, rank: 1, wr: false });
+    expect((await wrghost(9)).ghost).toBeNull();
+  });
+
+  it('serves a null ghost for a level nobody has recorded', async () => {
+    const res = await handle(new Request('https://api.test/wrghost?level=5'), env);
+    expect(res.status).toBe(200);
+    expect((await res.json()).ghost).toBeNull();
+  });
+
   it('sends CORS headers from env and answers preflight', async () => {
     const pre = await handle(new Request('https://api.test/score', { method: 'OPTIONS' }), env);
     expect(pre.status).toBe(204);

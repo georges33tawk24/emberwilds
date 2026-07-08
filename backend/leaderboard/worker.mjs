@@ -1,9 +1,10 @@
 /**
  * EMBERWILDS leaderboard — ONE Cloudflare Worker (GROWTH_ROADMAP Phase 2).
  *
- *   POST /score        {level, timeMs, name, uid}  -> submit a clear time
+ *   POST /score        {level, timeMs, name, uid, ghost?}  -> submit a clear time
  *   POST /name         {uid, name, levels[]}       -> rename across boards
  *   GET  /leaderboard?level=N                      -> top 20 for a level
+ *   GET  /wrghost?level=N                          -> the world #1 run's ghost
  *
  * Design (per the roadmap): KV top-N per level, one entry per device uid
  * (best time wins), sanity caps on times, a KV-TTL rate limit per uid+level,
@@ -36,6 +37,24 @@ const MIN_TIMES = [
 
 function minTimeFor(level) {
   return MIN_TIMES[level] ?? MIN_TIME_MS;
+}
+
+// WR replay ghost: a recorded path (not inputs) so anyone can race the world #1
+const MAX_GHOST_SAMPLES = 20000; // ~13 min at 25 Hz — far past any real run
+
+/** A ghost is { dt, xs[], ys[], fs[] } of equal length, all finite. Reject
+ *  anything malformed or oversized before it ever touches KV. */
+function validGhost(g) {
+  if (!g || typeof g !== 'object') return false;
+  if (typeof g.dt !== 'number' || g.dt < 10 || g.dt > 200) return false;
+  const { xs, ys, fs } = g;
+  if (!Array.isArray(xs) || !Array.isArray(ys) || !Array.isArray(fs)) return false;
+  const n = xs.length;
+  if (n < 2 || n > MAX_GHOST_SAMPLES || ys.length !== n || fs.length !== n) return false;
+  for (let i = 0; i < n; i++) {
+    if (!Number.isFinite(xs[i]) || !Number.isFinite(ys[i]) || !Number.isFinite(fs[i])) return false;
+  }
+  return true;
 }
 
 // conservative and short — anything that trips it just plays as FOX
@@ -86,6 +105,17 @@ export async function handle(request, env) {
     const board = JSON.parse((await env.SCORES.get(`board:${level}`)) ?? '[]');
     return json(env, 200, { level, scores: board.map(({ name, timeMs }) => ({ name, timeMs })) }, {
       'Cache-Control': 'public, max-age=30',
+    });
+  }
+
+  if (request.method === 'GET' && url.pathname === '/wrghost') {
+    const level = Number(url.searchParams.get('level'));
+    if (!Number.isInteger(level) || level < 0 || level > MAX_LEVEL) {
+      return json(env, 400, { error: 'bad level' });
+    }
+    const raw = await env.SCORES.get(`wrghost:${level}`);
+    return json(env, 200, raw ? JSON.parse(raw) : { ghost: null }, {
+      'Cache-Control': 'public, max-age=60',
     });
   }
 
@@ -176,7 +206,15 @@ export async function handle(request, env) {
     board.length = Math.min(board.length, TOP_N);
     await env.SCORES.put(key, JSON.stringify(board));
     const rank = board.findIndex((e) => e.uid === uid) + 1; // 0 = pushed off the board
-    return json(env, 200, { ok: true, improved: true, rank: rank || null });
+
+    // a new world record (rank 1) with a valid recording becomes the ghost
+    // everyone races on this level
+    let wr = false;
+    if (rank === 1 && validGhost(body.ghost)) {
+      await env.SCORES.put(`wrghost:${level}`, JSON.stringify({ name, timeMs, ghost: body.ghost }));
+      wr = true;
+    }
+    return json(env, 200, { ok: true, improved: true, rank: rank || null, wr });
   }
 
   return json(env, 404, { error: 'not found' });
