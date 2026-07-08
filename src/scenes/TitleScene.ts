@@ -93,9 +93,13 @@ export class TitleScene extends Phaser.Scene {
     new PixelButton(this, W / 2 + bw + 8, rowY, {
       w: bw, h: 24, label: 'AWARDS', face: 'wood', onTap: () => this.openAchievements(),
     }).setDepth(4);
-    new PixelButton(this, W / 2, rowY + 28, {
-      w: 122, h: 20, label: `NAME - ${storedName()}`.slice(0, 18), face: 'wood',
+    new PixelButton(this, W / 2 - 63, rowY + 28, {
+      w: 116, h: 20, label: `NAME - ${storedName()}`.slice(0, 16), face: 'wood',
       onTap: () => this.editName(),
+    }).setDepth(4);
+    new PixelButton(this, W / 2 + 63, rowY + 28, {
+      w: 116, h: 20, label: 'HOW TO PLAY', face: 'wood',
+      onTap: () => this.openHowTo(),
     }).setDepth(4);
 
     new PixelText(
@@ -108,13 +112,14 @@ export class TitleScene extends Phaser.Scene {
 
     // one tap still starts the game (mobile-first) — anywhere outside the menu
     this.input.on('pointerup', (p: Phaser.Input.Pointer) => {
-      if (p.y > 132 && p.y < 262) return; // the plaques own this band
+      if (p.y > 132 && p.y < 268) return; // the plaques own this band
       this.begin(false);
     });
     this.input.keyboard?.on('keydown-M', () => this.begin(true));
     this.input.keyboard?.on('keydown-A', () => this.openAchievements());
     this.input.keyboard?.on('keydown-W', () => this.openWardrobe());
     this.input.keyboard?.on('keydown-N', () => this.editName());
+    this.input.keyboard?.on('keydown-H', () => this.openHowTo());
 
     // unlock audio on the very first interaction
     this.input.keyboard?.once('keydown', () => {
@@ -122,6 +127,11 @@ export class TitleScene extends Phaser.Scene {
       audio.applySettings(this.save.data.settings);
       audio.playSong(TITLE_SONG);
     });
+  }
+
+  private openHowTo(): void {
+    audio.sfx('menuSelect');
+    this.scene.start('HowToPlay', { returnTo: 'Title' });
   }
 
   private openWardrobe(): void {

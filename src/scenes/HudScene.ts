@@ -46,12 +46,7 @@ export class HudScene extends Phaser.Scene {
     this.unsub.forEach((u) => u());
     this.unsub = [];
 
-    for (let i = 0; i < data.max; i++) {
-      const img = this.add
-        .image((10 + i * 11) * ui, 10 * ui, 'pickups', i < data.hearts ? 'heart.0' : 'heart_empty.0')
-        .setScale(ui);
-      this.hearts.push(img);
-    }
+    this.buildHearts(data.max, data.hearts);
 
     this.gemIcon = this.add.image(12 * ui, 24 * ui, 'pickups', 'gem.0').setScale(ui);
     this.gemText = new PixelText(this, 20 * ui, 21 * ui, 'x0', { scale: ui, color: 'W', shadow: true });
@@ -90,10 +85,12 @@ export class HudScene extends Phaser.Scene {
     const bus = data.bus;
     this.unsub.push(
       bus.on('hearts:changed', ({ hearts, max }) => {
+        // the max can grow/shrink live (assist mode toggled mid-level) — rebuild
+        // the heart row so the new slots actually show
+        if (max !== this.hearts.length) this.buildHearts(max, hearts);
         for (let i = 0; i < this.hearts.length; i++) {
           this.hearts[i].setFrame(i < hearts ? 'heart.0' : 'heart_empty.0');
         }
-        void max;
         // pulse the last changed heart
         const idx = Math.max(0, Math.min(this.hearts.length - 1, hearts - 1 < 0 ? 0 : hearts - 1));
         const h = this.hearts[idx];
@@ -157,6 +154,18 @@ export class HudScene extends Phaser.Scene {
       this.unsub.forEach((u) => u());
       this.unsub = [];
     });
+  }
+
+  /** (Re)build the heart row for a given max — supports a live max change. */
+  private buildHearts(max: number, hearts: number): void {
+    const ui = uiScale();
+    for (const h of this.hearts) h.destroy();
+    this.hearts = [];
+    for (let i = 0; i < max; i++) {
+      this.hearts.push(
+        this.add.image((10 + i * 11) * ui, 10 * ui, 'pickups', i < hearts ? 'heart.0' : 'heart_empty.0').setScale(ui),
+      );
+    }
   }
 
   update(time: number): void {

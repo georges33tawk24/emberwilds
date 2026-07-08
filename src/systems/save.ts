@@ -18,6 +18,8 @@ export interface Settings {
   speedrunTimer: boolean;
   /** race a translucent ghost of your best-time run (shows once one exists) */
   ghostRacer: boolean;
+  /** assist mode — extra hearts + longer mercy invulnerability (easier) */
+  assistMode: boolean;
 }
 
 /** Persistent upgrades bought in the Grove (each is a small integer level). */
@@ -115,6 +117,7 @@ export const DEFAULT_SETTINGS: Settings = {
   flashReduction: false,
   speedrunTimer: false,
   ghostRacer: true,
+  assistMode: false,
 };
 
 export function defaultSave(): SaveData {

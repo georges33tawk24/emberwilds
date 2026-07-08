@@ -195,7 +195,7 @@ describe('upgrades (shop)', () => {
   it('double-jump grants exactly one mid-air jump, reset on landing', () => {
     const bus = new EventBus();
     const p = new PlayerSim(64, FLOOR_Y, FLAT, bus, {
-      maxHearts: 5, doubleJump: true, glideFallCap: 70, chargeMs: 500,
+      maxHearts: 5, doubleJump: true, glideFallCap: 70, chargeMs: 500, iframeMult: 1,
     });
     settle(p);
     // ground jump
@@ -228,7 +228,7 @@ describe('upgrades (shop)', () => {
   it('extra max-hearts config raises the heart cap', () => {
     const bus = new EventBus();
     const p = new PlayerSim(64, FLOOR_Y, FLAT, bus, {
-      maxHearts: 7, doubleJump: false, glideFallCap: 70, chargeMs: 500,
+      maxHearts: 7, doubleJump: false, glideFallCap: 70, chargeMs: 500, iframeMult: 1,
     });
     expect(p.maxHearts).toBe(7);
     expect(p.hearts).toBe(7);

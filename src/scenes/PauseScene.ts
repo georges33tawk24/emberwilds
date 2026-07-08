@@ -89,6 +89,16 @@ export class PauseScene extends Phaser.Scene {
         set: (v) => { s.ghostRacer = v; this.apply(); },
       },
       {
+        kind: 'toggle', label: 'ASSIST MODE',
+        get: () => s.assistMode,
+        // GameScene re-applies this live on resume (no restart, no lost progress)
+        set: (v) => { s.assistMode = v; this.apply(); },
+      },
+      {
+        kind: 'action', label: 'HOW TO PLAY',
+        act: () => { this.scene.stop(); this.scene.launch('HowToPlay', { returnTo: 'Game' }); },
+      },
+      {
         kind: 'action', label: 'YOUR NAME',
         act: () => void promptName().then((name) => {
           if (name !== null) void announceName(Object.keys(this.save.data.bestTimes).map(Number));

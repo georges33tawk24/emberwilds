@@ -16,6 +16,7 @@ import { SaveManager } from '../systems/save';
 import { buildParallax, type ParallaxLayers } from '../gfx/parallax';
 import { ParticleSystem } from '../gfx/particles';
 import { audio } from '../audio/engine';
+import { track } from '../systems/analytics';
 import { TITLE_SONG as TITLE_SONG_RAW } from '../audio/songs';
 import type { Song } from '../audio/songTypes';
 import { STORY } from '../data/story';
@@ -129,6 +130,10 @@ export class FinaleScene extends Phaser.Scene {
     const totalS = Math.floor(timeMs / 1000);
     const timeText = `${Math.floor(totalS / 60)}M ${String(totalS % 60).padStart(2, '0')}S`;
     const completion = Math.round((cleared / LEVELS.length) * 50 + (tokens / (tokenLevels * 4)) * 50);
+
+    // funnel event: the campaign was finished (the top of the funnel is the
+    // page load; this is the very bottom)
+    track('game_complete', { completion, time_ms: timeMs, tokens });
 
     this.statsBox = this.add.container(0, 0).setDepth(60).setAlpha(0);
     const bg = this.add

@@ -65,12 +65,14 @@ export interface ShotRequest {
   kind: ShotKind;
 }
 
-/** Player tuning modified by shop upgrades. */
+/** Player tuning modified by shop upgrades (and assist mode). */
 export interface PlayerConfig {
   maxHearts: number;
   doubleJump: boolean;
   glideFallCap: number;
   chargeMs: number;
+  /** mercy-invulnerability multiplier after a hit (assist mode > 1) */
+  iframeMult: number;
 }
 
 export const DEFAULT_PLAYER_CONFIG: PlayerConfig = {
@@ -78,6 +80,7 @@ export const DEFAULT_PLAYER_CONFIG: PlayerConfig = {
   doubleJump: false,
   glideFallCap: TUNING.glide.fallCap,
   chargeMs: TUNING.weapons.charge.chargeMs,
+  iframeMult: 1,
 };
 
 const T = TUNING;
@@ -158,7 +161,7 @@ export class PlayerSim {
     this.body.vx = 0;
     this.body.vy = 0;
     this.state = 'normal';
-    this.iframes = T.player.hurtIframesMs / 1000;
+    this.iframes = (T.player.hurtIframesMs / 1000) * this.config.iframeMult;
     this.hearts = this.maxHearts;
     this.power = 'sling';
     this.galeFuel = 0;
@@ -579,7 +582,7 @@ export class PlayerSim {
     if (this.iframes > 0 || this.state === 'dead' || this.state === 'goal') return false;
     const dir = this.body.x < sx ? -1 : 1;
     // knockback + i-frames apply either way
-    this.iframes = T.player.hurtIframesMs / 1000;
+    this.iframes = (T.player.hurtIframesMs / 1000) * this.config.iframeMult;
     this.state = 'hurt';
     this.stateTimer = T.player.hurtLockMs / 1000;
     this.body.h = T.player.bodyH;

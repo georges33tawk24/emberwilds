@@ -32,6 +32,8 @@ import { STORY } from '../data/story';
 import { earnAchievements } from '../data/achievements';
 import { GHOST_DT, ghostAt, loadGhost, saveGhost, type GhostData } from '../systems/ghosts';
 import { submitScore } from '../systems/leaderboard';
+import { track } from '../systems/analytics';
+import { hintSeen, markHintSeen } from '../systems/hints';
 import { audio } from '../audio/engine';
 import { VIEW } from '../gfx/viewport';
 
@@ -183,6 +185,10 @@ export class GameScene extends Phaser.Scene {
   private ghostPlay: GhostData | null = null;
   private ghostSpr: Phaser.GameObjects.Sprite | null = null;
   private ghostPrevX = 0;
+  // one-time teaching hints (glide, wall-jump)
+  private hintText: PixelText | null = null;
+  private hintTimer = 0;
+  private fallTimer = 0;
   private gemsCollected = 0;
   private gemChain = 0;
   private tokensGot: number[] = [];
@@ -202,6 +208,61 @@ export class GameScene extends Phaser.Scene {
    *  scene clock on pause. Read by the HUD's optional speedrun timer. */
   elapsedMs(): number {
     return this.timerStarted ? this.time.now - this.startTime : 0;
+  }
+
+  /** One-time teaching hints for the moveset's hidden verbs. Detects the first
+   *  moment the player COULD use glide or a wall-jump and shows it once ever. */
+  private updateHints(): void {
+    if (!this.hintText) return;
+    const dt = STEP_MS / 1000;
+    if (this.hintTimer > 0) {
+      this.hintTimer -= dt;
+      const t = this.hintTimer;
+      // ease in over the first 0.4s, hold, ease out over the last 0.4s
+      const a = t > 2.4 ? (2.8 - t) / 0.4 : t < 0.4 ? t / 0.4 : 1;
+      this.hintText.setAlpha(Phaser.Math.Clamp(a, 0, 1));
+      return;
+    }
+    if (this.ending || this.player.state === 'dead') return;
+    const p = this.player;
+    const airborne = !p.onGround && p.state !== 'goal';
+    // wall-slide: pressed to a wall, sliding down — teach the wall-jump
+    if (airborne && p.wall !== 0 && p.vy > 20) {
+      this.showHint('wall', 'JUMP AT A WALL TO KICK OFF IT');
+      return;
+    }
+    // a long fall with the scarf idle — teach the glide
+    if (airborne && p.vy > 120 && p.state !== 'glide') {
+      this.fallTimer += dt;
+      if (this.fallTimer > 0.5) this.showHint('glide', 'HOLD JUMP AS YOU FALL TO GLIDE');
+    } else {
+      this.fallTimer = 0;
+    }
+  }
+
+  private showHint(id: string, text: string): void {
+    if (!this.hintText || hintSeen(id)) return;
+    markHintSeen(id);
+    this.hintText.setText(text).setColor('O').setAlpha(0);
+    this.hintTimer = 2.8; // fades in ~0.4s, holds, fades out ~0.4s
+  }
+
+  /** Re-apply assist mode live (called on resume from pause). Idempotent:
+   *  only acts when the setting differs from what the player is running, so
+   *  toggling it mid-level takes effect immediately without a restart. */
+  private applyAssistLive(): void {
+    const assist = this.save.data.settings.assistMode === true;
+    const baseMax = TUNING.player.hearts + this.save.data.upgrades.maxHearts;
+    const newMax = baseMax + (assist ? 3 : 0);
+    this.player.config.iframeMult = assist ? 1.6 : 1;
+    if (newMax === this.player.maxHearts) return;
+    const delta = newMax - this.player.maxHearts;
+    this.player.maxHearts = newMax;
+    // grant the new hearts when turning assist on; clamp when turning it off
+    this.player.hearts = delta > 0
+      ? Math.min(newMax, this.player.hearts + delta)
+      : Math.min(this.player.hearts, newMax);
+    this.bus.emit('hearts:changed', { hearts: this.player.hearts, max: this.player.maxHearts });
   }
 
   /** Record this run's path at a fixed cadence, and play back the best-time
@@ -283,15 +344,24 @@ export class GameScene extends Phaser.Scene {
 
     const start = this.level.playerStart;
     const up = this.save.data.upgrades;
+    // assist mode: +3 hearts and 1.6× mercy-invulnerability — meaningfully
+    // softens enemies/hazards/bosses without any speed advantage, so assisted
+    // runs still post fair leaderboard times
+    const assist = this.save.data.settings.assistMode === true;
     const playerConfig: PlayerConfig = {
-      maxHearts: TUNING.player.hearts + up.maxHearts,
+      maxHearts: TUNING.player.hearts + up.maxHearts + (assist ? 3 : 0),
       doubleJump: up.doubleJump > 0,
       // each glide rank trims 14 px/s off the fall cap (longer, floatier glide)
       glideFallCap: Math.max(30, TUNING.glide.fallCap - up.glide * 14),
       // each charge rank shaves 130 ms off the windup
       chargeMs: Math.max(180, TUNING.weapons.charge.chargeMs - up.charge * 130),
+      iframeMult: assist ? 1.6 : 1,
     };
     this.player = new PlayerSim(start.x, start.y, this.world.solidAt, this.bus, playerConfig, this.waterAt);
+    // assist mode can be toggled in the pause menu — re-apply it when play
+    // resumes, live, without a restart or lost progress
+    this.events.off(Phaser.Scenes.Events.RESUME, this.applyAssistLive, this);
+    this.events.on(Phaser.Scenes.Events.RESUME, this.applyAssistLive, this);
     this.pPrevX = start.x;
     this.pPrevY = start.y;
     this.playerSpr = this.add.sprite(start.x, start.y, PLAYER_TEX, 'idle.0')
@@ -336,6 +406,21 @@ export class GameScene extends Phaser.Scene {
 
     this.wireEvents();
     this.scene.launch('Hud', { bus: this.bus, tokenTotal: 4, hearts: this.player.hearts, max: this.player.maxHearts });
+    // funnel event: a level attempt began (from a fresh start / next-level /
+    // restart). player_death + level_clear complete the funnel.
+    track('level_start', {
+      level_index: this.levelIndex,
+      level: levelLabel(this.levelIndex),
+      assist: this.save.data.settings.assistMode === true,
+    });
+
+    // one-time teaching-hint toast (top-centre, under the tokens)
+    this.hintTimer = 0;
+    this.fallTimer = 0;
+    this.hintText = new PixelText(this, VIEW.w / 2, 44 * uiScale(), '', {
+      scale: uiScale(), color: 'W', align: 'center', shadow: true,
+    }).setScrollFactor(0).setDepth(48).setAlpha(0);
+
     this.showIntroCard();
     // startTime is captured on the first update frame (the Clock reads 0 here)
     this.startTime = 0;
@@ -562,6 +647,12 @@ export class GameScene extends Phaser.Scene {
       this.damagedThisLevel = true;
       this.save.bumpStat('deaths');
       this.save.save(); // deaths are infrequent — persist immediately
+      // funnel event: WHERE players die (the x tells you which obstacle)
+      track('player_death', {
+        level_index: this.levelIndex,
+        level: levelLabel(this.levelIndex),
+        x: Math.round(this.player.x),
+      });
     });
     b.on('enemy:died', ({ x, y }) => {
       audio.sfx('enemyDie');
@@ -824,6 +915,7 @@ export class GameScene extends Phaser.Scene {
   private onBossDefeated(boss: BossSim): void {
     if (this.bossDefeated) return;
     this.bossDefeated = true;
+    track('boss_defeated', { level_index: this.levelIndex, boss: boss.name });
     this.bus.emit('boss:died', { x: boss.body.x, y: boss.coreY });
     audio.sfx('goal');
     this.addTrauma(0.7);
@@ -1216,6 +1308,14 @@ export class GameScene extends Phaser.Scene {
     this.player.enterGoal();
     audio.sfx('goal');
     this.addTrauma(0.28);
+    // funnel event: a level was cleared (the counterpart to level_start /
+    // player_death — the ratio of these is your completion funnel)
+    track('level_clear', {
+      level_index: this.levelIndex,
+      level: levelLabel(this.levelIndex),
+      time_ms: Math.round(this.elapsedMs()),
+      flawless: !this.damagedThisLevel,
+    });
 
     // the beacon relights — warmth floods back (the level's golden payoff)
     const bx = this.beaconPos.x;
@@ -1342,6 +1442,7 @@ export class GameScene extends Phaser.Scene {
     this.playerSpr.setPosition(Math.round(px), Math.round(py));
     this.updateShadow(this.playerShadow, px, py, 1.1);
     this.updateGhost();
+    this.updateHints();
 
     const key = this.player.animKey();
     if (key !== this.animKey) {
