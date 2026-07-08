@@ -84,17 +84,19 @@ export class WorldMapScene extends Phaser.Scene {
     this.headerTitle = new PixelText(this, 12, 7, '', { scale: 2, color: 'O', shadow: true }).setScrollFactor(0).setDepth(31);
     this.headerSub = new PixelText(this, 12, 23, '', { scale: 1, color: 'c', shadow: true }).setScrollFactor(0).setDepth(31);
     this.headerWorld = new PixelText(this, 12, 33, '', { scale: 1, color: 'y', shadow: true }).setScrollFactor(0).setDepth(31);
-    this.add.image(W - 150, 15, 'pickups', 'gem.0').setScrollFactor(0).setDepth(31);
-    this.gemText = new PixelText(this, W - 142, 11, '', { scale: 1, color: 'W', shadow: true }).setScrollFactor(0).setDepth(31);
+    this.add.image(W - 184, 15, 'pickups', 'gem.0').setScrollFactor(0).setDepth(31);
+    this.gemText = new PixelText(this, W - 176, 11, '', { scale: 1, color: 'W', shadow: true }).setScrollFactor(0).setDepth(31);
 
-    // carved-wood plaques — the shop opens on FIRE (keyboard/pad), but the
-    // map hides the FIRE touch button, so mobile needs real on-screen buttons
-    new PixelButton(this, W - 48, 16, {
-      w: 80, h: 22, label: 'GROVE', face: 'green', onTap: () => this.openGrove(),
+    // carved-wood plaques, side by side in the header — the shop opens on
+    // FIRE (keyboard/pad), but the map hides the FIRE touch button, so
+    // mobile needs real on-screen buttons
+    const lb = leaderboardEnabled();
+    new PixelButton(this, lb ? W - 124 : W - 48, 16, {
+      w: 72, h: 22, label: 'GROVE', face: 'green', onTap: () => this.openGrove(),
     }).setScrollFactor(0).setDepth(31);
-    if (leaderboardEnabled()) {
-      new PixelButton(this, W - 48, 42, {
-        w: 80, h: 22, label: 'TOP 10', face: 'wood', onTap: () => this.openLeaderboard(),
+    if (lb) {
+      new PixelButton(this, W - 44, 16, {
+        w: 72, h: 22, label: 'TOP 10', face: 'wood', onTap: () => this.openLeaderboard(),
       }).setScrollFactor(0).setDepth(31);
       this.input.keyboard?.on('keydown-L', () => this.openLeaderboard());
     }

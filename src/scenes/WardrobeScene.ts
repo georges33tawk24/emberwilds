@@ -41,6 +41,7 @@ export class WardrobeScene extends Phaser.Scene {
   private particles!: ParticleSystem;
   private labels: { name: PixelText; desc: PixelText; state: PixelText; cursor: PixelText }[] = [];
   private preview!: Phaser.GameObjects.Sprite;
+  private previewTag!: PixelText;
   private gemText!: PixelText;
   private sel = 0;
   private scroll = 0;
@@ -79,9 +80,14 @@ export class WardrobeScene extends Phaser.Scene {
     this.add.image(W / 2 - 40 * ui * 0.6, ui > 1 ? 74 : 80, 'pickups', 'gem.0').setScale(1.3);
     this.gemText = new PixelText(this, W / 2 - 28 * ui * 0.6, ui > 1 ? 70 : 76, '', { scale: 2, color: 'W', shadow: true });
 
-    // the live preview fox, wearing every choice immediately
+    // the live preview fox — it tries on whatever row is highlighted, owned
+    // or not, so you always see the look before you spend
     this.preview = this.add.sprite(W / 2 + (ui > 1 ? 170 : 140), ui > 1 ? 82 : 84, PLAYER_TEX, 'idle.0')
       .setOrigin(0.5, 1).setScale(2.2);
+    this.previewTag = new PixelText(this, this.preview.x, this.preview.y + 6, '', {
+      scale: 1, color: 'y', align: 'center', shadow: true,
+    });
+    this.rebakePreview();
 
     for (const row of ROWS) {
       const cursor = new PixelText(this, W / 2 - (ui > 1 ? 208 : 172), 0, '', { scale: 2, color: 'O' });
@@ -104,6 +110,7 @@ export class WardrobeScene extends Phaser.Scene {
         if (this.sel !== i) {
           this.sel = i;
           audio.sfx('menuMove');
+          this.rebakePreview();
           this.redraw();
         } else {
           this.activate();
@@ -131,13 +138,39 @@ export class WardrobeScene extends Phaser.Scene {
     else s.hat = id;
   }
 
-  /** Rebuild the styled sheet + preview so the choice shows instantly. */
+  /** The style the preview wears: what's equipped, with the highlighted row
+   *  tried on in its slot (even if unowned). */
+  private previewStyle(): { owned: string[]; character: string | null; scarf: string | null; hat: string | null } {
+    const s = { ...this.save.data.style };
+    const row = ROWS[this.sel];
+    if (row.kind === 'character') s.character = row.item?.id ?? null;
+    else if (row.kind === 'scarf') s.scarf = row.item?.id ?? null;
+    else s.hat = row.item?.id ?? null;
+    return s;
+  }
+
+  /** Re-dress the preview fox for the highlighted row. */
+  private rebakePreview(): void {
+    const style = this.previewStyle();
+    if (this.textures.exists('player-preview')) this.textures.remove('player-preview');
+    registerSheet(this, 'player-preview', buildStyledFrames(style));
+    const { x, y } = this.preview;
+    this.preview.destroy();
+    this.preview = this.add.sprite(x, y, 'player-preview', 'idle.0').setOrigin(0.5, 1).setScale(2.2);
+    // does the tried-on look differ from what's actually worn?
+    const worn = this.save.data.style;
+    const trying =
+      style.character !== worn.character || style.scarf !== worn.scarf || style.hat !== worn.hat;
+    const row = ROWS[this.sel];
+    const owned = row.item === null || this.save.data.style.owned.includes(row.item.id);
+    this.previewTag.setText(trying ? (owned ? 'PREVIEW' : 'PREVIEW - NOT OWNED') : '');
+  }
+
+  /** Rebuild the real styled sheet so the equipped choice shows in game. */
   private refreshStyle(): void {
     if (this.textures.exists(PLAYER_TEX)) this.textures.remove(PLAYER_TEX);
     registerSheet(this, PLAYER_TEX, buildStyledFrames(this.save.data.style));
-    const { x, y } = this.preview;
-    this.preview.destroy();
-    this.preview = this.add.sprite(x, y, PLAYER_TEX, 'idle.0').setOrigin(0.5, 1).setScale(2.2);
+    this.rebakePreview();
   }
 
   private activate(): void {
@@ -235,6 +268,7 @@ export class WardrobeScene extends Phaser.Scene {
       if (y < this.rowTop) this.scroll = this.sel * this.rowH;
       else if (y > H - 40) this.scroll = this.rowTop + this.sel * this.rowH - (H - 40);
       audio.sfx('menuMove');
+      this.rebakePreview();
       this.redraw();
     } else if (f.jumpPressed) {
       this.activate();
