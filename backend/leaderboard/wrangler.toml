@@ -5,7 +5,7 @@ compatibility_date = "2026-01-01"
 # Created by: npx wrangler kv namespace create SCORES
 # Paste the id it prints below, then deploy.
 kv_namespaces = [
-  { binding = "SCORES", id = "PASTE_KV_NAMESPACE_ID_HERE" },
+  { binding = "SCORES", id = "2715bfd599b64d31bd88b7c7b01c1640" },
 ]
 
 [vars]

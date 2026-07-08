@@ -1,7 +1,12 @@
-# Deploying the EMBERWILDS leaderboard (one-time, ~5 minutes)
+# EMBERWILDS leaderboard — DEPLOYED AND LIVE ✅
 
-The client is already integrated and dark: nothing shows in the game until a
-URL is pasted in. Ship it whenever you like.
+Worker: https://emberwilds-leaderboard.georges33tawk24.workers.dev
+KV namespace SCORES: 2715bfd599b64d31bd88b7c7b01c1640 (bound in wrangler.toml)
+Client: LEADERBOARD_URL is set in src/systems/leaderboard.ts — new best
+clears submit automatically; the world map shows WORLD BEST per level.
+
+To redeploy after editing worker.mjs: `npx wrangler deploy` from this
+directory. The steps below are kept for reference / a fresh account.
 
 1. **Create a free Cloudflare account** (the same one that serves
    emberwilds.fun via Pages works fine): https://dash.cloudflare.com/sign-up

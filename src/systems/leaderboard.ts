@@ -8,7 +8,7 @@
  */
 
 /** Paste the deployed worker URL here to turn leaderboards on. */
-export const LEADERBOARD_URL = '';
+export const LEADERBOARD_URL = 'https://emberwilds-leaderboard.georges33tawk24.workers.dev';
 
 export interface LeaderboardEntry {
   name: string;
