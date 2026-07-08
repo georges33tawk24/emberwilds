@@ -101,6 +101,13 @@ export class TitleScene extends Phaser.Scene {
       w: 116, h: 20, label: 'HOW TO PLAY', face: 'wood',
       onTap: () => this.openHowTo(),
     }).setDepth(4);
+    // Boss Rush unlocks once the campaign is beaten — the post-game gauntlet
+    if (cleared >= LEVELS.length) {
+      new PixelButton(this, W / 2, rowY + 56, {
+        w: 190, h: 22, label: 'BOSS RUSH', face: 'green', onTap: () => this.beginBossRush(),
+      }).setDepth(4);
+      this.input.keyboard?.on('keydown-B', () => this.beginBossRush());
+    }
 
     new PixelText(
       this, W / 2, 300,
@@ -132,6 +139,12 @@ export class TitleScene extends Phaser.Scene {
   private openHowTo(): void {
     audio.sfx('menuSelect');
     this.scene.start('HowToPlay', { returnTo: 'Title' });
+  }
+
+  private beginBossRush(): void {
+    audio.sfx('menuSelect');
+    audio.unlock();
+    this.scene.start('Game', { rush: { i: 0, timeMs: 0, deaths: 0 } });
   }
 
   private openWardrobe(): void {

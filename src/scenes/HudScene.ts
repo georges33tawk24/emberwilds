@@ -194,12 +194,15 @@ export class HudScene extends Phaser.Scene {
     // visibility is live from the setting so a pause-menu toggle applies at once
     if (this.timerText) {
       const save = this.registry.get('save') as { data: { settings: { speedrunTimer: boolean } } };
-      const on = save.data.settings.speedrunTimer;
+      const game = this.scene.get('Game') as unknown as { elapsedMs?: () => number; rushTotalMs?: () => number | null } | null;
+      // Boss Rush always shows the cumulative timer; otherwise it's the setting
+      const rush = game?.rushTotalMs?.() ?? null;
+      const on = rush !== null || save.data.settings.speedrunTimer;
       this.timerText.setVisible(on);
       if (on) {
-        const game = this.scene.get('Game') as unknown as { elapsedMs?: () => number } | null;
-        const ms = game?.elapsedMs?.() ?? 0;
+        const ms = rush ?? game?.elapsedMs?.() ?? 0;
         this.timerText.setText(`${(ms / 1000).toFixed(1)}`);
+        this.timerText.setColor(rush !== null ? 'O' : 'W');
         this.timerText.setPosition(W / 2, insetT + (n > 0 ? 28 : 12) * ui);
       }
     }

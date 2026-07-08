@@ -17,6 +17,7 @@ import { AchievementsScene } from './scenes/AchievementsScene';
 import { WardrobeScene } from './scenes/WardrobeScene';
 import { LeaderboardScene } from './scenes/LeaderboardScene';
 import { HowToPlayScene } from './scenes/HowToPlayScene';
+import { BossRushClearScene } from './scenes/BossRushClearScene';
 import { SaveManager } from './systems/save';
 import { audio } from './audio/engine';
 import { initTouchControls } from './systems/touch';
@@ -70,7 +71,7 @@ const game = new Phaser.Game({
   input: {
     gamepad: true,
   },
-  scene: [BootScene, TitleScene, IntroScene, WorldMapScene, ShopScene, WardrobeScene, LeaderboardScene, HowToPlayScene, GameScene, HudScene, PauseScene, ClearScene, FinaleScene, AchievementsScene],
+  scene: [BootScene, TitleScene, IntroScene, WorldMapScene, ShopScene, WardrobeScene, LeaderboardScene, HowToPlayScene, BossRushClearScene, GameScene, HudScene, PauseScene, ClearScene, FinaleScene, AchievementsScene],
 });
 
 game.registry.set('save', save);

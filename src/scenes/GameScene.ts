@@ -32,6 +32,7 @@ import { STORY, TALES } from '../data/story';
 import { earnAchievements } from '../data/achievements';
 import { GHOST_DT, ghostAt, loadGhost, saveGhost, type GhostData } from '../systems/ghosts';
 import { submitScore, fetchWrGhost } from '../systems/leaderboard';
+import { BOSS_RUSH_SEQ, type RushState } from '../systems/bossRush';
 import { track } from '../systems/analytics';
 import { hintSeen, markHintSeen } from '../systems/hints';
 import { audio } from '../audio/engine';
@@ -112,6 +113,8 @@ export class GameScene extends Phaser.Scene {
   private world!: TileWorld;
   private theme!: WorldTheme;
   private levelIndex = 0;
+  /** non-null while in Boss Rush — carries cumulative time + deaths */
+  private rush: RushState | null = null;
 
   private player!: PlayerSim;
   private playerSpr!: Phaser.GameObjects.Sprite;
@@ -202,8 +205,10 @@ export class GameScene extends Phaser.Scene {
     super('Game');
   }
 
-  init(data: { levelIndex?: number }): void {
-    this.levelIndex = data.levelIndex ?? 0;
+  init(data: { levelIndex?: number; rush?: RushState }): void {
+    this.rush = data.rush ?? null;
+    // in Boss Rush the level is dictated by the sequence, not the caller
+    this.levelIndex = this.rush ? BOSS_RUSH_SEQ[this.rush.i] : (data.levelIndex ?? 0);
     this.registry.set('lastLevel', this.levelIndex);
   }
 
@@ -211,6 +216,29 @@ export class GameScene extends Phaser.Scene {
    *  scene clock on pause. Read by the HUD's optional speedrun timer. */
   elapsedMs(): number {
     return this.timerStarted ? this.time.now - this.startTime : 0;
+  }
+
+  /** Cumulative boss-rush time (all arenas so far + this one), or null when
+   *  not in a rush. The HUD shows this as the run timer. */
+  rushTotalMs(): number | null {
+    return this.rush ? this.rush.timeMs + this.elapsedMs() : null;
+  }
+
+  /** A boss fell in Boss Rush — advance to the next arena or the results. */
+  private finishRushBoss(arenaMs: number): void {
+    if (!this.rush) return;
+    const total = this.rush.timeMs + arenaMs;
+    const deaths = this.rush.deaths;
+    const nextI = this.rush.i + 1;
+    this.time.delayedCall(1400, () => {
+      this.scene.stop('Hud');
+      if (nextI < BOSS_RUSH_SEQ.length) {
+        this.scene.start('Game', { rush: { i: nextI, timeMs: total, deaths } });
+      } else {
+        audio.stopSong();
+        this.scene.start('BossRushClear', { timeMs: total, deaths });
+      }
+    });
   }
 
   /** One-time teaching hints for the moveset's hidden verbs. Detects the first
@@ -674,6 +702,7 @@ export class GameScene extends Phaser.Scene {
       this.respawnTimer = 1.1;
       this.damagedThisLevel = true;
       this.save.bumpStat('deaths');
+      if (this.rush) this.rush.deaths++; // deaths cost you on the rush results
       this.save.save(); // deaths are infrequent — persist immediately
       // funnel event: WHERE players die (the x tells you which obstacle)
       track('player_death', {
@@ -707,6 +736,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private showIntroCard(): void {
+    if (this.rush) return; // no per-level cards between boss-rush arenas
     // first steps into a new world get the full storybook interstitial
     const w = worldOf(this.levelIndex);
     if (!this.save.data.worldsSeen.includes(w.num)) {
@@ -1378,6 +1408,13 @@ export class GameScene extends Phaser.Scene {
     this.time.delayedCall(300, () => { this.particles.sparks(bx, by - 12, 8); this.particles.gemPop(bx, by - 4); });
 
     const timeMs = this.time.now - this.startTime;
+
+    // Boss Rush: skip the per-level tally/best/ghost/achievements entirely —
+    // it has its own cumulative scoring. Advance to the next boss or finish.
+    if (this.rush) {
+      this.finishRushBoss(timeMs);
+      return;
+    }
 
     // a faster run replaces the ghost for this level
     const prevBest = this.save.data.bestTimes[this.levelIndex];
