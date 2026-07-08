@@ -11,6 +11,9 @@
  *   'w'  water (passable; the player swims through it)
  *   'D'  locked door (solid until opened with a key)
  *   'H'  switch gate (solid until its switch is struck)
+ *   'I'  ice block (solid; slippery top — momentum carries)
+ *   '<'  conveyor belt, leftward (solid; the surface drags riders left)
+ *   '>'  conveyor belt, rightward
  *
  * ENTITY characters (extracted from the grid at parse time; the tile
  * underneath becomes '.'):
@@ -64,7 +67,9 @@ export interface LevelDef {
 
 export const TILE = 16;
 
-export type Solidity = 'empty' | 'solid' | 'oneway' | 'spike' | 'crack' | 'water' | 'door' | 'gate' | 'ice';
+export type Solidity =
+  | 'empty' | 'solid' | 'oneway' | 'spike' | 'crack' | 'water' | 'door' | 'gate' | 'ice'
+  | 'beltL' | 'beltR';
 
 export const TILE_SOLIDITY: Readonly<Record<string, Solidity>> = {
   '.': 'empty',
@@ -79,6 +84,9 @@ export const TILE_SOLIDITY: Readonly<Record<string, Solidity>> = {
   // 'I' ice block (Rimefell): solid in every collision sense, but ground
   // friction/accel drop hard while standing on it — momentum carries
   I: 'ice',
+  // conveyor belts (Coglar Foundry): solid; the top surface drags riders
+  '<': 'beltL',
+  '>': 'beltR',
 };
 
 export const ENTITY_CHARS = new Set([

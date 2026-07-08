@@ -365,6 +365,15 @@ export class PlayerSim {
     return this.solidAt(tx, ty) === 'ice';
   }
 
+  /** Belt drag under the feet: -1 leftward, 1 rightward, 0 none. */
+  private beltDir(): -1 | 0 | 1 {
+    if (!this.onGround) return 0;
+    const tx = Math.floor(this.body.x / 16);
+    const ty = Math.floor((this.body.y + 1) / 16);
+    const s = this.solidAt(tx, ty);
+    return s === 'beltL' ? -1 : s === 'beltR' ? 1 : 0;
+  }
+
   private horizontalControl(input: InputFrame, dt: number, inAir: boolean): void {
     if (this.wallInputLock > 0) return;
     const dir = (input.right ? 1 : 0) - (input.left ? 1 : 0);
@@ -502,6 +511,10 @@ export class PlayerSim {
 
   private integrate(dt: number, allowCorner: boolean): void {
     const solid = this.solidAt;
+    // conveyor drag: the surface itself moves you (position drag through the
+    // collision solver, so walls still stop you); control stays yours on top
+    const belt = this.beltDir();
+    if (belt !== 0) moveX(this.body, belt * T.belt.speed * dt, solid);
     moveX(this.body, this.body.vx * dt, solid) && (this.body.vx = 0);
 
     this.prevVy = this.body.vy;

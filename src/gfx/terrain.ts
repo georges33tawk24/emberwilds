@@ -39,7 +39,7 @@ export function bakeTerrain(
     if (tx < 0 || ty < 0 || tx >= level.width || ty >= level.height) return 'X';
     return level.grid[ty][tx];
   };
-  const solidish = (ch: string): boolean => ch === '#' || ch === 'X' || ch === 'C' || ch === 'I';
+  const solidish = (ch: string): boolean => '#XCI<>'.includes(ch);
 
   const pick = (group: string, tx: number, ty: number): PixelFrame => {
     const frames = tiles[group];
@@ -86,6 +86,13 @@ export function bakeTerrain(
             // ice blocks — only Rimefell's sheet carries the group
             drawFrame(ctx, pick(tiles.ice ? 'ice' : 'stone', tx, ty), px, py);
             break;
+          case '>':
+          case '<': {
+            // conveyor belts — only the Foundry's sheet carries the groups
+            const grp = ch === '>' ? 'belt_r' : 'belt_l';
+            drawFrame(ctx, pick(tiles[grp] ? grp : 'stone', tx, ty), px, py);
+            break;
+          }
           case '=':
             drawFrame(ctx, tiles.oneway[0], px, py);
             break;

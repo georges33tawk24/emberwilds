@@ -36,9 +36,13 @@ const EPS = 0.0001;
 const MAX_STEP = 4;
 
 /** Full-tile blockers: never-pass terrain plus closed doors and gates.
- *  Ice collides exactly like stone — the slip lives in ground control. */
+ *  Ice and belts collide exactly like stone — their character lives in
+ *  ground control (slip) and surface drag (belts), not in collision. */
 function blocks(s: Solidity): boolean {
-  return s === 'solid' || s === 'crack' || s === 'door' || s === 'gate' || s === 'ice';
+  return (
+    s === 'solid' || s === 'crack' || s === 'door' || s === 'gate' ||
+    s === 'ice' || s === 'beltL' || s === 'beltR'
+  );
 }
 
 export function left(b: Body): number {

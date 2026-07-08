@@ -857,7 +857,7 @@ export class GameScene extends Phaser.Scene {
       h.y += h.vy * STEP_MS / 1000;
       h.life -= STEP_MS / 1000;
       const tileSolid = this.world.solidAt(Math.floor(h.x / TILE), Math.floor(h.y / TILE));
-      if (h.life <= 0 || tileSolid === 'solid' || tileSolid === 'crack' || tileSolid === 'ice') {
+      if (h.life <= 0 || tileSolid === 'solid' || tileSolid === 'crack' || tileSolid === 'ice' || tileSolid === 'beltL' || tileSolid === 'beltR') {
         this.particles.sparks(h.x, h.y, 2);
         dead.push(i);
         continue;
