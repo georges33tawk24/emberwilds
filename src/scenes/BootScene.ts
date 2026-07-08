@@ -20,6 +20,8 @@ import { EXTRA_PICKUP_FRAMES } from '../gfx/data/extraSprites';
 import { BOSS_FRAMES } from '../gfx/data/bossSprites';
 import { STORY_FRAMES } from '../gfx/data/storySprites';
 import { FONT_4x6 } from '../gfx/data/fontData';
+import { buildStyledFrames, PLAYER_TEX } from '../systems/cosmetics';
+import type { SaveManager } from '../systems/save';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -44,6 +46,9 @@ export class BootScene extends Phaser.Scene {
     registerSheet(this, 'boss', BOSS_FRAMES);
     registerSheet(this, 'story', STORY_FRAMES);
     registerFont(this, FONT_4x6);
+    // the wardrobe-styled fox — every fox sprite in the game draws from this
+    const save = this.registry.get('save') as SaveManager;
+    registerSheet(this, PLAYER_TEX, buildStyledFrames(save.data.style));
     this.scene.start('Title');
   }
 }

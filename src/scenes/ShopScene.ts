@@ -45,6 +45,10 @@ export class ShopScene extends Phaser.Scene {
   private continueY = 0;
   private continueBand: Phaser.GameObjects.Rectangle | null = null;
   private continueLabel: PixelText | null = null;
+  // the WARDROBE action — the cosmetics shop
+  private wardrobeY = 0;
+  private wardrobeBand!: Phaser.GameObjects.Rectangle;
+  private wardrobeLabel!: PixelText;
 
   constructor() {
     super('Shop');
@@ -87,11 +91,20 @@ export class ShopScene extends Phaser.Scene {
       this.rows.push({ name, desc, pips, cost, cursor });
     });
 
+    // WARDROBE — the cosmetics shop, one hop away
+    this.wardrobeY = ui > 1 ? 286 : 254;
+    this.wardrobeBand = this.add
+      .rectangle(W / 2, this.wardrobeY, ui > 1 ? 310 : 220, ui > 1 ? 24 : 18, 0x5f7d34, 1)
+      .setStrokeStyle(2, 0x2a1f1b);
+    this.wardrobeLabel = new PixelText(this, W / 2, this.wardrobeY - 3 * ui, 'THE WARDROBE  >', {
+      scale: ui, color: 'W', align: 'center', shadow: true,
+    });
+
     // CONTINUE — leave the Grove straight into the next unfinished level
     this.continueBand = null;
     this.continueLabel = null;
     if (this.save.data.levelUnlocked < LEVELS.length) {
-      this.continueY = ui > 1 ? 314 : 276;
+      this.continueY = ui > 1 ? 316 : 278;
       this.continueBand = this.add
         .rectangle(W / 2, this.continueY, ui > 1 ? 310 : 220, ui > 1 ? 28 : 20, 0x7a5a3e, 1)
         .setStrokeStyle(2, 0x2a1f1b);
@@ -108,13 +121,18 @@ export class ShopScene extends Phaser.Scene {
     // once the list outgrows the screen (touch phones have no up/down rocker)
     attachMenuTouch(this, {
       rowAt: (_x, y) => {
-        if (this.continueBand && Math.abs(y - this.continueY) < (this.rowH > 42 ? 20 : 14)) return SHOP_ITEMS.length;
+        if (Math.abs(y - this.wardrobeY) < (this.rowH > 42 ? 13 : 10)) return SHOP_ITEMS.length;
+        if (this.continueBand && Math.abs(y - this.continueY) < (this.rowH > 42 ? 13 : 10)) return SHOP_ITEMS.length + 1;
         const i = Math.floor((y + this.scroll - (this.rowTop - this.rowH / 2)) / this.rowH);
         return i >= 0 && i < SHOP_ITEMS.length ? i : null;
       },
       onTapRow: (i) => {
         if (i === SHOP_ITEMS.length) {
-          this.goContinue(); // actions fire on a single tap
+          this.goWardrobe(); // actions fire on a single tap
+          return;
+        }
+        if (i === SHOP_ITEMS.length + 1) {
+          this.goContinue();
           return;
         }
         if (this.sel !== i) {
@@ -176,13 +194,24 @@ export class ShopScene extends Phaser.Scene {
       }
     });
 
-    // the CONTINUE band lights up when selected
+    // the action bands light up when selected
+    const wOn = this.sel === SHOP_ITEMS.length;
+    this.wardrobeBand.setStrokeStyle(2, wOn ? 0xf2a03d : 0x2a1f1b);
+    this.wardrobeBand.setFillStyle(wOn ? 0x74954a : 0x5f7d34, 1);
+    this.wardrobeLabel.setColor(wOn ? 'O' : 'W');
     if (this.continueBand && this.continueLabel) {
-      const on = this.sel === SHOP_ITEMS.length;
+      const on = this.sel === SHOP_ITEMS.length + 1;
       this.continueBand.setStrokeStyle(2, on ? 0xf2a03d : 0x2a1f1b);
       this.continueBand.setFillStyle(on ? 0x8a6a48 : 0x7a5a3e, 1);
       this.continueLabel.setColor(on ? 'O' : 'W');
     }
+  }
+
+  /** Into the cosmetics shop. */
+  private goWardrobe(): void {
+    audio.sfx('menuSelect');
+    this.scene.stop();
+    this.scene.start('Wardrobe', { returnTo: this.returnTo });
   }
 
   /** Straight from the Grove into the next unfinished level. */
@@ -229,13 +258,14 @@ export class ShopScene extends Phaser.Scene {
     const down = f.down && !this.prev.down;
     this.prev = { up: f.up, down: f.down };
 
-    const selCount = SHOP_ITEMS.length + (this.continueBand ? 1 : 0);
+    const selCount = SHOP_ITEMS.length + 1 + (this.continueBand ? 1 : 0);
     if (up || down) {
       this.sel = (this.sel + (down ? 1 : selCount - 1)) % selCount;
       audio.sfx('menuMove');
       this.redraw();
     } else if (f.jumpPressed) {
-      if (this.sel === SHOP_ITEMS.length) this.goContinue();
+      if (this.sel === SHOP_ITEMS.length) this.goWardrobe();
+      else if (this.sel === SHOP_ITEMS.length + 1) this.goContinue();
       else this.buy();
     } else if (f.pause) {
       audio.sfx('menuSelect');

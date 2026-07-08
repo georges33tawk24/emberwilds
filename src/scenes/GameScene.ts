@@ -4,6 +4,7 @@
  * particles, squash & stretch), and all entity interactions.
  */
 import Phaser from 'phaser';
+import { PLAYER_TEX } from '../systems/cosmetics';
 import { EventBus } from '../core/events';
 import { Pool } from '../core/pool';
 import { Rng } from '../core/rng';
@@ -293,7 +294,7 @@ export class GameScene extends Phaser.Scene {
     this.player = new PlayerSim(start.x, start.y, this.world.solidAt, this.bus, playerConfig, this.waterAt);
     this.pPrevX = start.x;
     this.pPrevY = start.y;
-    this.playerSpr = this.add.sprite(start.x, start.y, 'player', 'idle.0')
+    this.playerSpr = this.add.sprite(start.x, start.y, PLAYER_TEX, 'idle.0')
       .setOrigin(0.5, 1)
       .setDepth(10);
     this.playerShadow = this.add.image(start.x, start.y, 'pickups', 'shadow.0').setDepth(3).setAlpha(0.26);
@@ -347,7 +348,7 @@ export class GameScene extends Phaser.Scene {
     this.ghostPlay = this.save.data.settings.ghostRacer ? loadGhost(this.levelIndex) : null;
     this.ghostSpr = null;
     if (this.ghostPlay) {
-      this.ghostSpr = this.add.sprite(start.x, start.y, 'player', 'idle.0')
+      this.ghostSpr = this.add.sprite(start.x, start.y, PLAYER_TEX, 'idle.0')
         .setOrigin(0.5, 1).setDepth(9).setAlpha(0.42).setTint(0xa9c6d6);
     }
 

@@ -1,5 +1,6 @@
 /** Animated title / attract screen — routes to the world-map hub. */
 import Phaser from 'phaser';
+import { PLAYER_TEX } from '../systems/cosmetics';
 import { PixelText } from '../gfx/text';
 import { buildParallax, type ParallaxLayers } from '../gfx/parallax';
 import { ParticleSystem } from '../gfx/particles';
@@ -52,7 +53,7 @@ export class TitleScene extends Phaser.Scene {
     g.fillStyle(0x5f7d34).fillRect(0, H - 30, W, 5);
     g.fillStyle(0x8fa84a).fillRect(0, H - 31, W, 2);
 
-    this.fox = this.add.sprite(W / 2, H - 30, 'player', 'idle.0').setOrigin(0.5, 1).setDepth(2);
+    this.fox = this.add.sprite(W / 2, H - 30, PLAYER_TEX, 'idle.0').setOrigin(0.5, 1).setDepth(2);
 
     this.logo = new PixelText(this, W / 2, 52, 'EMBERWILDS', {
       scale: 4, color: 'O', align: 'center', shadow: true,

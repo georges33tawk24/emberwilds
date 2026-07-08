@@ -8,6 +8,7 @@
  * When World 6 ships, beat A swaps to the Pip rescue (STORY.finale).
  */
 import Phaser from 'phaser';
+import { PLAYER_TEX } from '../systems/cosmetics';
 import { PixelText } from '../gfx/text';
 import { InputSystem } from '../systems/input';
 import { setTouchContext } from '../systems/touch';
@@ -82,7 +83,7 @@ export class FinaleScene extends Phaser.Scene {
     g.fillStyle(0x8fa84a).fillRect(0, H - 31, W, 2);
 
     this.beacon = this.add.image(W / 2, GROUND_Y, 'pickups', 'beacon_lit.0').setOrigin(0.5, 1).setScale(2).setDepth(3);
-    this.fox = this.add.sprite(W / 2 - 44, GROUND_Y, 'player', 'idle.0').setOrigin(0.5, 1).setDepth(4);
+    this.fox = this.add.sprite(W / 2 - 44, GROUND_Y, PLAYER_TEX, 'idle.0').setOrigin(0.5, 1).setDepth(4);
     const bosses = LEVELS.filter((l) => l.boss).length;
     for (let i = 0; i < bosses; i++) {
       this.shards.push(this.add.image(W / 2, GROUND_Y - 60, 'story', 'shard.0').setDepth(4).setScale(1.4));

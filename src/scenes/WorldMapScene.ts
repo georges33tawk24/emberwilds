@@ -5,6 +5,7 @@
  * and the gateway to the Grove (shop). Keyboard, gamepad, and touch navigable.
  */
 import Phaser from 'phaser';
+import { PLAYER_TEX } from '../systems/cosmetics';
 import { PixelText } from '../gfx/text';
 import { buildParallax, type ParallaxLayers, type ThemeKey } from '../gfx/parallax';
 import { ParticleSystem } from '../gfx/particles';
@@ -75,7 +76,7 @@ export class WorldMapScene extends Phaser.Scene {
 
     // fox avatar
     const n0 = this.nodes[this.sel];
-    this.fox = this.add.sprite(n0.x, n0.y - 16, 'player', 'idle.0').setOrigin(0.5, 1).setDepth(20);
+    this.fox = this.add.sprite(n0.x, n0.y - 16, PLAYER_TEX, 'idle.0').setOrigin(0.5, 1).setDepth(20);
 
     // fixed header + prompts
     this.add.rectangle(W / 2, 16, W, 32, 0x2a1f1b, 0.55).setScrollFactor(0).setDepth(30);
@@ -97,6 +98,22 @@ export class WorldMapScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(32);
     groveBtn.on('pointerup', () => this.openGrove());
+
+    // TOP 10 — the world leaderboard for the selected level (live only once
+    // the worker is configured)
+    if (leaderboardEnabled()) {
+      const lbBtn = this.add
+        .rectangle(W - 46, 41, 76, 20, 0x7a5a3e, 0.96)
+        .setStrokeStyle(2, 0xb58b5e)
+        .setScrollFactor(0)
+        .setDepth(31)
+        .setInteractive({ useHandCursor: true });
+      new PixelText(this, W - 46, 37, 'TOP 10', { scale: 1, color: 'W', align: 'center', shadow: true })
+        .setScrollFactor(0)
+        .setDepth(32);
+      lbBtn.on('pointerup', () => this.openLeaderboard());
+      this.input.keyboard?.on('keydown-L', () => this.openLeaderboard());
+    }
 
     this.add.rectangle(W / 2, H - 12, W, 24, 0x2a1f1b, 0.55).setScrollFactor(0).setDepth(30);
     this.prompt = new PixelText(this, W / 2, H - 17,
@@ -260,6 +277,13 @@ export class WorldMapScene extends Phaser.Scene {
       },
     });
     this.refreshHeader();
+  }
+
+  private openLeaderboard(): void {
+    if (this.sel > this.save.data.levelUnlocked) return;
+    audio.sfx('menuSelect');
+    this.scene.pause();
+    this.scene.launch('Leaderboard', { levelIndex: this.sel });
   }
 
   private openGrove(): void {

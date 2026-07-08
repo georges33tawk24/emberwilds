@@ -42,17 +42,18 @@ export function playerName(): string {
   }
 }
 
+const cache = new Map<number, { at: number; entries: LeaderboardEntry[] }>();
+
 /** Fire-and-forget: submit a new best clear time. Never throws. */
 export function submitScore(level: number, timeMs: number): void {
   if (!leaderboardEnabled()) return;
+  cache.delete(level); // the next fetch should see this submission
   void fetch(`${LEADERBOARD_URL}/score`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ level, timeMs: Math.round(timeMs), name: playerName(), uid: uid() }),
   }).catch(() => undefined);
 }
-
-const cache = new Map<number, { at: number; entries: LeaderboardEntry[] }>();
 
 /** Top times for a level (30s client cache, 3s timeout). Null on any failure. */
 export async function fetchTop(level: number): Promise<LeaderboardEntry[] | null> {

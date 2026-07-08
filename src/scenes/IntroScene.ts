@@ -8,6 +8,7 @@
  * Plays once (save.introSeen), then hands off to the first level.
  */
 import Phaser from 'phaser';
+import { PLAYER_TEX } from '../systems/cosmetics';
 import { PixelText } from '../gfx/text';
 import { InputSystem } from '../systems/input';
 import { setTouchContext } from '../systems/touch';
@@ -94,7 +95,7 @@ export class IntroScene extends Phaser.Scene {
       .setScale(3.5)
       .setDepth(5);
     this.fox = this.add
-      .sprite(-30, GROUND_Y, 'player', 'idle.0')
+      .sprite(-30, GROUND_Y, PLAYER_TEX, 'idle.0')
       .setOrigin(0.5, 1)
       .setDepth(5);
 

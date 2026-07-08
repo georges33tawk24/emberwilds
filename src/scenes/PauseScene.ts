@@ -9,6 +9,7 @@ import { TUNING } from '../data/tuning';
 import { VIEW } from '../gfx/viewport';
 import { uiScale } from '../systems/platform';
 import { attachMenuTouch } from '../systems/menuTouch';
+import { promptName } from '../systems/nameEntry';
 
 const H = TUNING.view.height;
 
@@ -86,6 +87,7 @@ export class PauseScene extends Phaser.Scene {
         get: () => s.ghostRacer,
         set: (v) => { s.ghostRacer = v; this.apply(); },
       },
+      { kind: 'action', label: 'YOUR NAME', act: () => void promptName() },
       { kind: 'action', label: 'QUIT TO MAP', act: () => this.quit() },
     ];
 

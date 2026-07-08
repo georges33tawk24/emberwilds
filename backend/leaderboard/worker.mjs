@@ -105,6 +105,12 @@ export async function handle(request, env) {
     const mine = board.find((e) => e.uid === uid);
     if (mine) {
       if (timeMs >= mine.timeMs) {
+        // not an improvement, but keep the display name fresh (renames
+        // propagate to old entries on the next submission)
+        if (mine.name !== name) {
+          mine.name = name;
+          await env.SCORES.put(key, JSON.stringify(board));
+        }
         return json(env, 200, { ok: true, improved: false, rank: board.indexOf(mine) + 1 });
       }
       mine.timeMs = timeMs;

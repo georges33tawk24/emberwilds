@@ -90,11 +90,22 @@ export interface SaveData {
   achievements: string[];
   /** level indices cleared without taking a hit (the "flawless" medal) */
   flawless: number[];
+  /** cosmetics — owned ids + what's currently worn (see systems/cosmetics.ts) */
+  style: StyleData;
 }
+
+export interface StyleData {
+  owned: string[];
+  character: string | null;
+  scarf: string | null;
+  hat: string | null;
+}
+
+export const DEFAULT_STYLE: StyleData = { owned: [], character: null, scarf: null, hat: null };
 
 const KEY = 'emberwilds.save';
 const BACKUP_KEY = 'emberwilds.save.bak';
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 export const DEFAULT_SETTINGS: Settings = {
   musicVol: 0.8,
@@ -120,6 +131,7 @@ export function defaultSave(): SaveData {
     stats: { ...DEFAULT_STATS },
     achievements: [],
     flawless: [],
+    style: { ...DEFAULT_STYLE, owned: [] },
   };
 }
 
@@ -146,6 +158,8 @@ const MIGRATIONS: Record<number, (d: SaveData) => SaveData> = {
   3: (d) => ({ ...d, version: 4, stats: { ...DEFAULT_STATS }, achievements: [] }),
   // v5: per-level flawless (no-hit) medals. Not retroactive — earned going forward.
   4: (d) => ({ ...d, version: 5, flawless: [] }),
+  // v6: cosmetics (the Wardrobe). Everyone starts in Sorrel's own fur.
+  5: (d) => ({ ...d, version: 6, style: { owned: [], character: null, scarf: null, hat: null } }),
 };
 
 export function migrate(d: SaveData): SaveData {
@@ -164,6 +178,7 @@ export function migrate(d: SaveData): SaveData {
   cur.stats = { ...DEFAULT_STATS, ...cur.stats };
   cur.achievements = cur.achievements ?? [];
   cur.flawless = cur.flawless ?? [];
+  cur.style = { ...DEFAULT_STYLE, ...(cur.style ?? {}), owned: cur.style?.owned ?? [] };
   return cur;
 }
 

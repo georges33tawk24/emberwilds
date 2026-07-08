@@ -40,10 +40,11 @@ describe('leaderboard worker', () => {
     env.SCORES.store.delete('rl:0:' + UID); // step past the rate limit
     await submit({ level: 0, timeMs: 40000, name: 'FOX A', uid: UID });
     env.SCORES.store.delete('rl:0:' + UID);
-    const worse = await submit({ level: 0, timeMs: 45000, name: 'FOX A', uid: UID });
+    const worse = await submit({ level: 0, timeMs: 45000, name: 'FOX B', uid: UID });
     expect((await worse.json()).improved).toBe(false);
     const { body } = await top(0);
-    expect(body.scores).toEqual([{ name: 'FOX A', timeMs: 40000 }]);
+    // the time kept the best run, but the rename still propagated
+    expect(body.scores).toEqual([{ name: 'FOX B', timeMs: 40000 }]);
   });
 
   it('sorts ascending and trims to the top 20', async () => {
