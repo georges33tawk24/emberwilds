@@ -26,6 +26,9 @@ function gateyards() {
   c.ground(1, 206, FLOOR);
   c.ground(207, 238, 32);           // the works shelf
 
+  // a lethal gap under the return line — its belt drags you toward the drop
+  c.carve(140, FLOOR, 143, H - 1); c.gemArc(139, 34, 5);
+
   // ---- walk-in + the two teaches: with the belt, then against it -------------
   c.onFloor(6, 'P');
   c.gems(10, 35, 4, 2);
@@ -65,6 +68,7 @@ function gateyards() {
   c.run(168, FLOOR, 2, 'C');
   c.carve(165, 37, 172, 40);
   c.set(170, 39, 'M');              // cellar token
+  c.set(168, 39, 'L');              // the keeper's lantern in the machine dark
   c.gems(166, 39, 2, 1);
   c.set(171, 40, 'S');
   c.onFloor(178, 'T');
@@ -107,6 +111,9 @@ function assembly() {
   c.rect(W - 1, 0, W - 1, H - 1, '#');
 
   c.ground(1, 226, FLOOR);
+  // lethal gaps: the approach and the dispatch yard bite now
+  c.carve(24, FLOOR, 27, H - 1); c.gemArc(23, 42, 5);
+  c.carve(190, FLOOR, 193, H - 1); c.gemArc(189, 42, 5);
 
   // ---- approach ---------------------------------------------------------------
   c.onFloor(6, 'P');
@@ -209,6 +216,8 @@ function trials() {
   c.rect(W - 1, 0, W - 1, H - 1, '#');
 
   c.ground(1, 246, FLOOR);
+  // a lethal gap before the trials proper
+  c.carve(20, FLOOR, 23, H - 1); c.gemArc(19, 38, 5);
 
   c.onFloor(6, 'P');
   c.gems(10, 39, 4, 2);
@@ -312,6 +321,9 @@ function lastMarch() {
   c.onFloor(38, 'E');
   c.gems(44, 37, 3, 1);
   c.set(54, 37, 'B');
+  // a lethal pit gnaws the backward-belt road (carved AFTER the belt so it
+  // truly opens) — clear it rightward while the belt drags you back west
+  c.carve(46, FLOOR, 49, H - 1); c.gemArc(45, 35, 5);
 
   // ---- the grate channel: spikes under, one gap in the deck --------------------
   c.rect(62, 34, 77, 34, 'X');
