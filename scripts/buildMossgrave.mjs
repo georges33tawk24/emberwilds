@@ -37,6 +37,11 @@ function sunkenCloister() {
   // climb-out stair
   c.ground(169, 176, 37);
 
+  // lethal dry gaps between the pools — the new commitment (water is safe,
+  // the dry floor between it is not)
+  c.carve(22, FLOOR, 25, H - 1); c.gemArc(21, 34, 5);
+  c.carve(178, FLOOR, 182, H - 1); c.gemArc(177, 34, 6);
+
   // teach pool dressing: gems below, berry on the far rim
   c.gems(34, 37, 4, 3);
   c.gems(40, 39, 3, 3);
@@ -92,6 +97,7 @@ function sunkenCloister() {
   c.carve(212, 37, 213, 37);
   c.carve(209, 38, 216, 40);
   c.set(214, 39, 'M');              // the cellar token
+  c.set(209, 39, 'L');              // the keeper's lantern in the drowned dark
   c.gems(210, 39, 2, 2);
   c.set(215, 40, 'S');
   c.onFloor(230, 'F');
@@ -134,6 +140,9 @@ function keybearersWalk() {
   c.rect(W - 1, 0, W - 1, H - 1, '#');
 
   c.ground(1, 246, FLOOR);
+  // lethal dry gaps flanking the procession
+  c.carve(28, FLOOR, 31, H - 1); c.gemArc(27, 36, 5);
+  c.carve(206, FLOOR, 209, H - 1); c.gemArc(205, 36, 5);
 
   // ---- intro ------------------------------------------------------------------
   c.onFloor(6, 'P');
@@ -231,6 +240,9 @@ function switchworks() {
   c.rect(W - 1, 0, W - 1, H - 1, '#');
 
   c.ground(1, 250, FLOOR);
+  // lethal dry gaps (the spike moat is no longer the only way to fall)
+  c.carve(24, FLOOR, 27, H - 1); c.gemArc(23, 36, 5);
+  c.carve(176, FLOOR, 179, H - 1); c.gemArc(175, 36, 5);
 
   // ---- intro -------------------------------------------------------------------
   c.onFloor(6, 'P');
@@ -335,6 +347,9 @@ function sealedVault() {
   c.rect(W - 1, 0, W - 1, H - 1, '#');
 
   c.ground(1, 254, FLOOR);
+  // lethal dry gaps bracketing the drowned vault
+  c.carve(18, FLOOR, 21, H - 1); c.gemArc(17, 38, 5);
+  c.carve(198, FLOOR, 201, H - 1); c.gemArc(197, 38, 5);
 
   // ---- act 1: the approach (recap at speed) --------------------------------------
   c.gems(10, 39, 4, 2);
