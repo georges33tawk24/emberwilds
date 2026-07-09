@@ -32,7 +32,7 @@ import { STORY, TALES } from '../data/story';
 import { earnAchievements } from '../data/achievements';
 import { GHOST_DT, ghostAt, loadGhost, saveGhost, type GhostData } from '../systems/ghosts';
 import { submitScore, fetchWrGhost } from '../systems/leaderboard';
-import { BOSS_RUSH_SEQ, type RushState } from '../systems/bossRush';
+import { runSeq, type RunState } from '../systems/runs';
 import { track } from '../systems/analytics';
 import { hintSeen, markHintSeen } from '../systems/hints';
 import { audio } from '../audio/engine';
@@ -113,8 +113,8 @@ export class GameScene extends Phaser.Scene {
   private world!: TileWorld;
   private theme!: WorldTheme;
   private levelIndex = 0;
-  /** non-null while in Boss Rush — carries cumulative time + deaths */
-  private rush: RushState | null = null;
+  /** non-null during a run mode (boss / time / hardcore) — carries progress */
+  private run: RunState | null = null;
 
   private player!: PlayerSim;
   private playerSpr!: Phaser.GameObjects.Sprite;
@@ -205,10 +205,10 @@ export class GameScene extends Phaser.Scene {
     super('Game');
   }
 
-  init(data: { levelIndex?: number; rush?: RushState }): void {
-    this.rush = data.rush ?? null;
-    // in Boss Rush the level is dictated by the sequence, not the caller
-    this.levelIndex = this.rush ? BOSS_RUSH_SEQ[this.rush.i] : (data.levelIndex ?? 0);
+  init(data: { levelIndex?: number; run?: RunState }): void {
+    this.run = data.run ?? null;
+    // in a run the level is dictated by the mode's sequence, not the caller
+    this.levelIndex = this.run ? runSeq(this.run.mode)[this.run.i] : (data.levelIndex ?? 0);
     this.registry.set('lastLevel', this.levelIndex);
   }
 
@@ -218,26 +218,45 @@ export class GameScene extends Phaser.Scene {
     return this.timerStarted ? this.time.now - this.startTime : 0;
   }
 
-  /** Cumulative boss-rush time (all arenas so far + this one), or null when
-   *  not in a rush. The HUD shows this as the run timer. */
-  rushTotalMs(): number | null {
-    return this.rush ? this.rush.timeMs + this.elapsedMs() : null;
+  /** Cumulative run time (finished levels + this one), or null when not in a
+   *  run. The HUD shows this as the run timer (gold, or red in hardcore). */
+  runTotalMs(): number | null {
+    return this.run ? this.run.timeMs + this.elapsedMs() : null;
   }
 
-  /** A boss fell in Boss Rush — advance to the next arena or the results. */
-  private finishRushBoss(arenaMs: number): void {
-    if (!this.rush) return;
-    const total = this.rush.timeMs + arenaMs;
-    const deaths = this.rush.deaths;
-    const nextI = this.rush.i + 1;
+  /** The active run's mode, for the HUD (null when not in a run). */
+  runMode(): RunState['mode'] | null {
+    return this.run ? this.run.mode : null;
+  }
+
+  /** A run level was cleared — advance to the next, or show the results. */
+  private finishRunLevel(levelMs: number): void {
+    if (!this.run) return;
+    const run = this.run;
+    const total = run.timeMs + levelMs;
+    const nextI = run.i + 1;
+    const seq = runSeq(run.mode);
     this.time.delayedCall(1400, () => {
       this.scene.stop('Hud');
-      if (nextI < BOSS_RUSH_SEQ.length) {
-        this.scene.start('Game', { rush: { i: nextI, timeMs: total, deaths } });
+      if (nextI < seq.length) {
+        this.scene.start('Game', { run: { mode: run.mode, i: nextI, timeMs: total, deaths: run.deaths } });
       } else {
         audio.stopSong();
-        this.scene.start('BossRushClear', { timeMs: total, deaths });
+        this.scene.start('RunClear', { mode: run.mode, timeMs: total, deaths: run.deaths, depth: seq.length, completed: true });
       }
+    });
+  }
+
+  /** Hardcore: a death ends the run at the depth reached. */
+  private endHardcoreRun(): void {
+    if (!this.run) return;
+    const run = this.run;
+    this.ending = true;
+    this.respawnTimer = 999; // no checkpoint respawn — the run is over
+    this.time.delayedCall(1400, () => {
+      audio.stopSong();
+      this.scene.stop('Hud');
+      this.scene.start('RunClear', { mode: 'hardcore', timeMs: run.timeMs + this.elapsedMs(), deaths: run.deaths, depth: run.i, completed: false });
     });
   }
 
@@ -702,7 +721,11 @@ export class GameScene extends Phaser.Scene {
       this.respawnTimer = 1.1;
       this.damagedThisLevel = true;
       this.save.bumpStat('deaths');
-      if (this.rush) this.rush.deaths++; // deaths cost you on the rush results
+      if (this.run) {
+        this.run.deaths++; // deaths cost you on the run results
+        // HARDCORE is one life — the run ends here (at the depth reached)
+        if (this.run.mode === 'hardcore') this.endHardcoreRun();
+      }
       this.save.save(); // deaths are infrequent — persist immediately
       // funnel event: WHERE players die (the x tells you which obstacle)
       track('player_death', {
@@ -736,7 +759,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private showIntroCard(): void {
-    if (this.rush) return; // no per-level cards between boss-rush arenas
+    if (this.run) return; // no per-level cards during a timed/hardcore run
     // first steps into a new world get the full storybook interstitial
     const w = worldOf(this.levelIndex);
     if (!this.save.data.worldsSeen.includes(w.num)) {
@@ -1409,10 +1432,10 @@ export class GameScene extends Phaser.Scene {
 
     const timeMs = this.time.now - this.startTime;
 
-    // Boss Rush: skip the per-level tally/best/ghost/achievements entirely —
-    // it has its own cumulative scoring. Advance to the next boss or finish.
-    if (this.rush) {
-      this.finishRushBoss(timeMs);
+    // Run modes skip the per-level tally/best/ghost/achievements entirely —
+    // they have their own cumulative scoring. Advance or finish.
+    if (this.run) {
+      this.finishRunLevel(timeMs);
       return;
     }
 

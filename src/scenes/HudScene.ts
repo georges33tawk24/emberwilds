@@ -194,15 +194,18 @@ export class HudScene extends Phaser.Scene {
     // visibility is live from the setting so a pause-menu toggle applies at once
     if (this.timerText) {
       const save = this.registry.get('save') as { data: { settings: { speedrunTimer: boolean } } };
-      const game = this.scene.get('Game') as unknown as { elapsedMs?: () => number; rushTotalMs?: () => number | null } | null;
-      // Boss Rush always shows the cumulative timer; otherwise it's the setting
-      const rush = game?.rushTotalMs?.() ?? null;
-      const on = rush !== null || save.data.settings.speedrunTimer;
+      const game = this.scene.get('Game') as unknown as {
+        elapsedMs?: () => number; runTotalMs?: () => number | null; runMode?: () => string | null;
+      } | null;
+      // a run always shows the cumulative timer; otherwise it's the setting
+      const runMs = game?.runTotalMs?.() ?? null;
+      const on = runMs !== null || save.data.settings.speedrunTimer;
       this.timerText.setVisible(on);
       if (on) {
-        const ms = rush ?? game?.elapsedMs?.() ?? 0;
+        const ms = runMs ?? game?.elapsedMs?.() ?? 0;
         this.timerText.setText(`${(ms / 1000).toFixed(1)}`);
-        this.timerText.setColor(rush !== null ? 'O' : 'W');
+        // gold for a timed run, red for hardcore (one life), white otherwise
+        this.timerText.setColor(runMs === null ? 'W' : game?.runMode?.() === 'hardcore' ? 'R' : 'O');
         this.timerText.setPosition(W / 2, insetT + (n > 0 ? 28 : 12) * ui);
       }
     }

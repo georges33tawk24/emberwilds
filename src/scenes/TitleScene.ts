@@ -101,12 +101,21 @@ export class TitleScene extends Phaser.Scene {
       w: 116, h: 20, label: 'HOW TO PLAY', face: 'wood',
       onTap: () => this.openHowTo(),
     }).setDepth(4);
-    // Boss Rush unlocks once the campaign is beaten — the post-game gauntlet
+    // the post-game challenge modes unlock once the campaign is beaten
     if (cleared >= LEVELS.length) {
-      new PixelButton(this, W / 2, rowY + 56, {
-        w: 190, h: 22, label: 'BOSS RUSH', face: 'green', onTap: () => this.beginBossRush(),
+      new PixelText(this, W / 2, rowY + 48, 'CHALLENGE THE WILDS', { scale: 1, color: 'y', align: 'center', shadow: true }).setDepth(3);
+      new PixelButton(this, W / 2 - 98, rowY + 62, {
+        w: 92, h: 20, label: 'BOSS RUSH', face: 'green', onTap: () => this.beginRun('boss'),
       }).setDepth(4);
-      this.input.keyboard?.on('keydown-B', () => this.beginBossRush());
+      new PixelButton(this, W / 2, rowY + 62, {
+        w: 92, h: 20, label: 'TIME ATTACK', face: 'green', onTap: () => this.beginRun('time'),
+      }).setDepth(4);
+      new PixelButton(this, W / 2 + 98, rowY + 62, {
+        w: 92, h: 20, label: 'HARDCORE', face: 'wood', onTap: () => this.beginRun('hardcore'),
+      }).setDepth(4);
+      this.input.keyboard?.on('keydown-B', () => this.beginRun('boss'));
+      this.input.keyboard?.on('keydown-T', () => this.beginRun('time'));
+      this.input.keyboard?.on('keydown-K', () => this.beginRun('hardcore'));
     }
 
     new PixelText(
@@ -119,7 +128,7 @@ export class TitleScene extends Phaser.Scene {
 
     // one tap still starts the game (mobile-first) — anywhere outside the menu
     this.input.on('pointerup', (p: Phaser.Input.Pointer) => {
-      if (p.y > 132 && p.y < 268) return; // the plaques own this band
+      if (p.y > 132 && p.y < 288) return; // the plaques own this band
       this.begin(false);
     });
     this.input.keyboard?.on('keydown-M', () => this.begin(true));
@@ -141,10 +150,10 @@ export class TitleScene extends Phaser.Scene {
     this.scene.start('HowToPlay', { returnTo: 'Title' });
   }
 
-  private beginBossRush(): void {
+  private beginRun(mode: 'boss' | 'time' | 'hardcore'): void {
     audio.sfx('menuSelect');
     audio.unlock();
-    this.scene.start('Game', { rush: { i: 0, timeMs: 0, deaths: 0 } });
+    this.scene.start('Game', { run: { mode, i: 0, timeMs: 0, deaths: 0 } });
   }
 
   private openWardrobe(): void {
