@@ -27,6 +27,7 @@ export class PauseScene extends Phaser.Scene {
   private sel = 0;
   private scroll = 0;
   private layoutW = 0;
+  private from: 'game' | 'title' = 'game';
   private prev = { up: false, down: false, left: false, right: false };
   private grace = 0;
   // ui-scaled layout, set in create (×2 on touch devices for readability)
@@ -38,8 +39,9 @@ export class PauseScene extends Phaser.Scene {
     super('Pause');
   }
 
-  create(): void {
+  create(data: { from?: 'game' | 'title' } = {}): void {
     setTouchContext('ui');
+    this.from = data.from ?? 'game';
     const W = VIEW.w;
     const ui = uiScale();
     this.layoutW = W;
@@ -51,61 +53,38 @@ export class PauseScene extends Phaser.Scene {
     this.sel = 0;
     this.grace = 0.25;
 
-    this.add.rectangle(W / 2, H / 2, W, H, 0x14100d, 0.72);
-    new PixelText(this, W / 2, ui > 1 ? 34 : 46, 'PAUSED', { scale: ui > 1 ? 4 : 3, color: 'O', align: 'center', shadow: true });
+    this.add.rectangle(W / 2, H / 2, W, H, 0x14100d, this.from === 'title' ? 0.92 : 0.72);
+    new PixelText(this, W / 2, ui > 1 ? 34 : 46, this.from === 'title' ? 'SETTINGS' : 'PAUSED', {
+      scale: ui > 1 ? 4 : 3, color: 'O', align: 'center', shadow: true,
+    });
 
     const s = this.save.data.settings;
-    this.items = [
-      { kind: 'action', label: 'RESUME', act: () => this.resume() },
-      { kind: 'action', label: 'RESTART LEVEL', act: () => this.restart() },
-      {
-        kind: 'slider', label: 'MUSIC',
-        get: () => s.musicVol,
-        set: (v) => { s.musicVol = v; this.apply(); },
-      },
-      {
-        kind: 'slider', label: 'SOUND',
-        get: () => s.sfxVol,
-        set: (v) => { s.sfxVol = v; this.apply(); },
-      },
-      {
-        kind: 'toggle', label: 'SCREEN SHAKE',
-        get: () => s.screenShake,
-        set: (v) => { s.screenShake = v; this.apply(); },
-      },
-      {
-        kind: 'toggle', label: 'REDUCE FLASHES',
-        get: () => s.flashReduction,
-        set: (v) => { s.flashReduction = v; this.apply(); },
-      },
-      {
-        kind: 'toggle', label: 'SPEEDRUN TIMER',
-        get: () => s.speedrunTimer,
-        set: (v) => { s.speedrunTimer = v; this.apply(); },
-      },
-      {
-        kind: 'toggle', label: 'RACE GHOST',
-        get: () => s.ghostRacer,
-        set: (v) => { s.ghostRacer = v; this.apply(); },
-      },
-      {
-        kind: 'toggle', label: 'ASSIST MODE',
-        get: () => s.assistMode,
-        // GameScene re-applies this live on resume (no restart, no lost progress)
-        set: (v) => { s.assistMode = v; this.apply(); },
-      },
-      {
-        kind: 'action', label: 'HOW TO PLAY',
-        act: () => { this.scene.stop(); this.scene.launch('HowToPlay', { returnTo: 'Game' }); },
-      },
-      {
-        kind: 'action', label: 'YOUR NAME',
-        act: () => void promptName().then((name) => {
-          if (name !== null) void announceName(Object.keys(this.save.data.bestTimes).map(Number));
-        }),
-      },
-      { kind: 'action', label: 'QUIT TO MAP', act: () => this.quit() },
+    // the shared settings block — the same in-game and from the title menu
+    const settings: Item[] = [
+      { kind: 'slider', label: 'MUSIC', get: () => s.musicVol, set: (v) => { s.musicVol = v; this.apply(); } },
+      { kind: 'slider', label: 'SOUND', get: () => s.sfxVol, set: (v) => { s.sfxVol = v; this.apply(); } },
+      { kind: 'toggle', label: 'SCREEN SHAKE', get: () => s.screenShake, set: (v) => { s.screenShake = v; this.apply(); } },
+      { kind: 'toggle', label: 'REDUCE FLASHES', get: () => s.flashReduction, set: (v) => { s.flashReduction = v; this.apply(); } },
+      { kind: 'toggle', label: 'SPEEDRUN TIMER', get: () => s.speedrunTimer, set: (v) => { s.speedrunTimer = v; this.apply(); } },
+      { kind: 'toggle', label: 'RACE GHOST', get: () => s.ghostRacer, set: (v) => { s.ghostRacer = v; this.apply(); } },
+      // GameScene re-applies assist live on resume (no restart, no lost progress)
+      { kind: 'toggle', label: 'ASSIST MODE', get: () => s.assistMode, set: (v) => { s.assistMode = v; this.apply(); } },
     ];
+    this.items = this.from === 'title'
+      ? [{ kind: 'action', label: 'BACK', act: () => this.resume() }, ...settings]
+      : [
+        { kind: 'action', label: 'RESUME', act: () => this.resume() },
+        { kind: 'action', label: 'RESTART LEVEL', act: () => this.restart() },
+        ...settings,
+        { kind: 'action', label: 'HOW TO PLAY', act: () => { this.scene.stop(); this.scene.launch('HowToPlay', { returnTo: 'Game' }); } },
+        {
+          kind: 'action', label: 'YOUR NAME',
+          act: () => void promptName().then((name) => {
+            if (name !== null) void announceName(Object.keys(this.save.data.bestTimes).map(Number));
+          }),
+        },
+        { kind: 'action', label: 'QUIT TO MAP', act: () => this.quit() },
+      ];
 
     this.scroll = 0;
     this.labels = this.items.map(
@@ -188,6 +167,11 @@ export class PauseScene extends Phaser.Scene {
   }
 
   private resume(): void {
+    if (this.from === 'title') {
+      this.scene.stop();
+      this.scene.resume('Title');
+      return;
+    }
     setTouchContext('game');
     this.scene.stop();
     this.scene.resume('Game');
@@ -211,7 +195,7 @@ export class PauseScene extends Phaser.Scene {
   update(_time: number, delta: number): void {
     // live width change (rotation, URL-bar collapse) — rebuild the layout
     if (VIEW.w !== this.layoutW) {
-      this.scene.restart();
+      this.scene.restart({ from: this.from });
       return;
     }
     const f = this.inputSys.sample();

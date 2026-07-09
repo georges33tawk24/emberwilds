@@ -1445,10 +1445,13 @@ export class GameScene extends Phaser.Scene {
     if (this.ghostRec && this.ghostRec.xs.length > 1 && newBest) {
       saveGhost(this.levelIndex, this.ghostRec);
     }
-    // a new best also goes to the global board, with this run's ghost — the
-    // worker keeps the recording only if it takes rank 1, making it the
-    // world-record ghost others race (no-op until the worker URL is set)
-    if (newBest) submitScore(this.levelIndex, timeMs, this.ghostRec);
+    // submit the player's BEST time to the global board on EVERY clear (not
+    // just new bests) — that way a device that fell off due to a failed first
+    // submit gets retried and lands on the board; the worker keeps best-per-
+    // device so a slower resubmit is a harmless no-op. The ghost rides only a
+    // new best (to become the world-record ghost others race).
+    const bestMs = Math.min(timeMs, prevBest ?? timeMs);
+    submitScore(this.levelIndex, bestMs, newBest ? this.ghostRec : null);
 
     // record lifetime stats, then earn any achievements the clear unlocked
     this.save.bumpStat('gemsAllTime', this.gemsCollected);

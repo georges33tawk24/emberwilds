@@ -15,6 +15,7 @@ import { TUNING } from '../data/tuning';
 import { VIEW } from '../gfx/viewport';
 import { uiScale } from '../systems/platform';
 import { attachMenuTouch } from '../systems/menuTouch';
+import { PixelButton } from '../gfx/ui';
 
 const H = TUNING.view.height;
 
@@ -41,14 +42,9 @@ export class ShopScene extends Phaser.Scene {
   // ui-scaled layout, set in create (×2 text on touch devices)
   private rowTop = 128;
   private rowH = 42;
-  // the CONTINUE action under the wares — straight to the next level
-  private continueY = 0;
-  private continueBand: Phaser.GameObjects.Rectangle | null = null;
-  private continueLabel: PixelText | null = null;
-  // the WARDROBE action — the cosmetics shop
-  private wardrobeY = 0;
-  private wardrobeBand!: Phaser.GameObjects.Rectangle;
-  private wardrobeLabel!: PixelText;
+  // the action plaques below the wares — carved-wood buttons like everywhere
+  private wardrobeBtn!: PixelButton;
+  private continueBtn: PixelButton | null = null;
 
   constructor() {
     super('Shop');
@@ -59,8 +55,9 @@ export class ShopScene extends Phaser.Scene {
     const W = VIEW.w;
     const ui = uiScale();
     this.layoutW = W;
-    this.rowTop = ui > 1 ? 116 : 128;
-    this.rowH = ui > 1 ? 56 : 42;
+    // tighter rows so the four wares clear the action plaques below them
+    this.rowTop = ui > 1 ? 108 : 106;
+    this.rowH = ui > 1 ? 40 : 32;
     this.returnTo = data.returnTo ?? 'WorldMap';
     this.save = this.registry.get('save') as SaveManager;
     this.inputSys = new InputSystem(this);
@@ -91,25 +88,18 @@ export class ShopScene extends Phaser.Scene {
       this.rows.push({ name, desc, pips, cost, cursor });
     });
 
-    // WARDROBE — the cosmetics shop, one hop away
-    this.wardrobeY = ui > 1 ? 286 : 254;
-    this.wardrobeBand = this.add
-      .rectangle(W / 2, this.wardrobeY, ui > 1 ? 310 : 220, ui > 1 ? 24 : 18, 0x5f7d34, 1)
-      .setStrokeStyle(2, 0x2a1f1b);
-    this.wardrobeLabel = new PixelText(this, W / 2, this.wardrobeY - 3 * ui, 'THE WARDROBE  >', {
-      scale: ui, color: 'W', align: 'center', shadow: true,
+    // action plaques, clearly below the four wares (no more overlap)
+    const btnW = ui > 1 ? Math.min(W - 40, 300) : 210;
+    const btnH = ui > 1 ? 24 : 18;
+    const wardrobeY = ui > 1 ? 268 : 230;
+    const continueY = ui > 1 ? 302 : 254;
+    this.wardrobeBtn = new PixelButton(this, W / 2, wardrobeY, {
+      w: btnW, h: btnH, label: 'THE WARDROBE', scale: ui, face: 'green', onTap: () => this.goWardrobe(),
     });
-
-    // CONTINUE — leave the Grove straight into the next unfinished level
-    this.continueBand = null;
-    this.continueLabel = null;
+    this.continueBtn = null;
     if (this.save.data.levelUnlocked < LEVELS.length) {
-      this.continueY = ui > 1 ? 316 : 278;
-      this.continueBand = this.add
-        .rectangle(W / 2, this.continueY, ui > 1 ? 310 : 220, ui > 1 ? 28 : 20, 0x7a5a3e, 1)
-        .setStrokeStyle(2, 0x2a1f1b);
-      this.continueLabel = new PixelText(this, W / 2, this.continueY - 3 * ui, 'CONTINUE  >', {
-        scale: ui, color: 'W', align: 'center', shadow: true,
+      this.continueBtn = new PixelButton(this, W / 2, continueY, {
+        w: btnW, h: btnH, label: 'CONTINUE', scale: ui, face: 'wood', onTap: () => this.goContinue(),
       });
     }
 
@@ -120,21 +110,13 @@ export class ShopScene extends Phaser.Scene {
     // tap a row to select it, tap the selection to buy; drag/wheel scrolls
     // once the list outgrows the screen (touch phones have no up/down rocker)
     attachMenuTouch(this, {
+      // the action plaques are real PixelButtons now — they handle their own
+      // taps; here we only map taps onto the ware rows
       rowAt: (_x, y) => {
-        if (Math.abs(y - this.wardrobeY) < (this.rowH > 42 ? 13 : 10)) return SHOP_ITEMS.length;
-        if (this.continueBand && Math.abs(y - this.continueY) < (this.rowH > 42 ? 13 : 10)) return SHOP_ITEMS.length + 1;
         const i = Math.floor((y + this.scroll - (this.rowTop - this.rowH / 2)) / this.rowH);
         return i >= 0 && i < SHOP_ITEMS.length ? i : null;
       },
       onTapRow: (i) => {
-        if (i === SHOP_ITEMS.length) {
-          this.goWardrobe(); // actions fire on a single tap
-          return;
-        }
-        if (i === SHOP_ITEMS.length + 1) {
-          this.goContinue();
-          return;
-        }
         if (this.sel !== i) {
           this.sel = i;
           audio.sfx('menuMove');
@@ -194,17 +176,9 @@ export class ShopScene extends Phaser.Scene {
       }
     });
 
-    // the action bands light up when selected
-    const wOn = this.sel === SHOP_ITEMS.length;
-    this.wardrobeBand.setStrokeStyle(2, wOn ? 0xf2a03d : 0x2a1f1b);
-    this.wardrobeBand.setFillStyle(wOn ? 0x74954a : 0x5f7d34, 1);
-    this.wardrobeLabel.setColor(wOn ? 'O' : 'W');
-    if (this.continueBand && this.continueLabel) {
-      const on = this.sel === SHOP_ITEMS.length + 1;
-      this.continueBand.setStrokeStyle(2, on ? 0xf2a03d : 0x2a1f1b);
-      this.continueBand.setFillStyle(on ? 0x8a6a48 : 0x7a5a3e, 1);
-      this.continueLabel.setColor(on ? 'O' : 'W');
-    }
+    // the action plaques light their amber rim when keyboard-selected
+    this.wardrobeBtn.setLit(this.sel === SHOP_ITEMS.length);
+    this.continueBtn?.setLit(this.sel === SHOP_ITEMS.length + 1);
   }
 
   /** Into the cosmetics shop. */
@@ -258,7 +232,7 @@ export class ShopScene extends Phaser.Scene {
     const down = f.down && !this.prev.down;
     this.prev = { up: f.up, down: f.down };
 
-    const selCount = SHOP_ITEMS.length + 1 + (this.continueBand ? 1 : 0);
+    const selCount = SHOP_ITEMS.length + 1 + (this.continueBtn ? 1 : 0);
     if (up || down) {
       this.sel = (this.sel + (down ? 1 : selCount - 1)) % selCount;
       audio.sfx('menuMove');

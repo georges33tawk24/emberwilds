@@ -35,6 +35,7 @@ export class TitleScene extends Phaser.Scene {
   private logo!: PixelText;
   private started = false;
   private layoutW = 0;
+  private pausePrev = false;
 
   constructor() {
     super('Title');
@@ -150,6 +151,16 @@ export class TitleScene extends Phaser.Scene {
     this.scene.start('HowToPlay', { returnTo: 'Title' });
   }
 
+  /** The menu / pause button on the main menu opens settings (PauseScene in
+   *  its title mode: the settings block + BACK). */
+  private openSettings(): void {
+    if (this.started) return;
+    audio.unlock();
+    audio.sfx('menuSelect');
+    this.scene.launch('Pause', { from: 'title' });
+    this.scene.pause();
+  }
+
   private beginRun(mode: 'boss' | 'time' | 'hardcore'): void {
     audio.sfx('menuSelect');
     audio.unlock();
@@ -210,7 +221,12 @@ export class TitleScene extends Phaser.Scene {
     this.t += dt;
     const frame = this.input2.sample();
 
-    if (!this.started && frame.jumpPressed) this.begin(false);
+    if (!this.started) {
+      if (frame.jumpPressed) this.begin(false);
+      // the menu / pause button opens settings from the main menu
+      if (frame.pause && !this.pausePrev) this.openSettings();
+    }
+    this.pausePrev = frame.pause;
 
     // gentle attract motion
     this.logo.y = 52 + Math.round(Math.sin(this.t * 1.4) * 2);

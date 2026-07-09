@@ -19,6 +19,8 @@ function clean(raw: string): string {
   return raw.toUpperCase().replace(/[^A-Z0-9 _-]/g, '').trimStart().slice(0, 12);
 }
 
+const FONT = "'Courier New', ui-monospace, monospace";
+
 /** Open the overlay. Resolves the saved name, or null if cancelled. */
 export function promptName(): Promise<string | null> {
   return new Promise((resolve) => {
@@ -26,17 +28,26 @@ export function promptName(): Promise<string | null> {
     wrap.id = 'name-entry';
     wrap.style.cssText =
       'position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;' +
-      'background:rgba(20,16,13,0.82);font-family:monospace;';
+      `background:rgba(20,16,13,0.9);font-family:${FONT};`;
+
+    // carved-wood plaque, matching the in-canvas panels: K outline, a lit bevel
+    // along the top and a carved shadow along the bottom
     const panel = document.createElement('div');
     panel.style.cssText =
-      'background:#2a1f1b;border:2px solid #7a5a3e;padding:22px 26px;text-align:center;' +
-      'box-shadow:0 8px 40px rgba(0,0,0,0.6);max-width:86vw;';
+      'background:#4a362b;border:4px solid #2a1f1b;padding:22px 28px 24px;text-align:center;' +
+      'box-shadow:inset 0 3px 0 #7a5a3e, inset 0 -4px 0 #2a1f1b, 0 10px 44px rgba(0,0,0,0.65);' +
+      'max-width:86vw;image-rendering:pixelated;';
+
     const title = document.createElement('div');
     title.textContent = 'YOUR NAME';
-    title.style.cssText = 'color:#f2a03d;font-size:20px;font-weight:bold;letter-spacing:3px;margin-bottom:6px;';
+    title.style.cssText =
+      'color:#f2a03d;font-size:22px;font-weight:bold;letter-spacing:4px;margin-bottom:6px;' +
+      'text-shadow:2px 2px 0 #2a1f1b;';
+
     const hint = document.createElement('div');
     hint.textContent = 'SHOWN ON THE WORLD LEADERBOARDS';
-    hint.style.cssText = 'color:#e6c79a;font-size:10px;letter-spacing:1px;margin-bottom:14px;';
+    hint.style.cssText = 'color:#e6c79a;font-size:10px;letter-spacing:1px;margin-bottom:16px;';
+
     const input = document.createElement('input');
     input.type = 'text';
     input.maxLength = 12;
@@ -44,34 +55,52 @@ export function promptName(): Promise<string | null> {
     input.placeholder = 'FOX';
     input.autocomplete = 'off';
     input.style.cssText =
-      'display:block;width:200px;margin:0 auto 16px;padding:10px 12px;background:#14100d;color:#f7e6c4;' +
-      'border:2px solid #b58b5e;font-family:monospace;font-size:18px;letter-spacing:2px;text-align:center;' +
-      'text-transform:uppercase;outline:none;';
+      'display:block;width:210px;margin:0 auto 18px;padding:11px 12px;background:#14100d;color:#f7e6c4;' +
+      `border:3px solid #b58b5e;font-family:${FONT};font-size:20px;font-weight:bold;letter-spacing:3px;` +
+      'text-align:center;text-transform:uppercase;outline:none;caret-color:#f2a03d;';
+    input.addEventListener('focus', () => { input.style.borderColor = '#f2a03d'; });
+    input.addEventListener('blur', () => { input.style.borderColor = '#b58b5e'; });
     input.addEventListener('input', () => {
       const c = clean(input.value);
       if (input.value !== c) input.value = c;
     });
+
     const btnRow = document.createElement('div');
-    btnRow.style.cssText = 'display:flex;gap:12px;justify-content:center;';
-    const mkBtn = (label: string, bg: string): HTMLButtonElement => {
+    btnRow.style.cssText = 'display:flex;gap:14px;justify-content:center;';
+    const mkBtn = (label: string, face: string, hi: string, dark: string): HTMLButtonElement => {
       const b = document.createElement('button');
       b.textContent = label;
       b.style.cssText =
-        `background:${bg};color:#f7e6c4;border:2px solid #2a1f1b;padding:10px 22px;font-family:monospace;` +
-        'font-size:14px;font-weight:bold;letter-spacing:2px;cursor:pointer;';
+        `background:${face};color:#f7e6c4;border:3px solid #2a1f1b;padding:11px 26px;font-family:${FONT};` +
+        `font-size:15px;font-weight:bold;letter-spacing:2px;cursor:pointer;` +
+        `box-shadow:inset 0 2px 0 ${hi}, inset 0 -3px 0 ${dark};text-shadow:1px 1px 0 #2a1f1b;`;
+      // press-sink, like the carved plaques in-game
+      b.addEventListener('pointerdown', () => { b.style.transform = 'translateY(1px)'; });
+      b.addEventListener('pointerup', () => { b.style.transform = 'none'; });
       return b;
     };
-    const ok = mkBtn('SAVE', '#5f7d34');
-    const cancel = mkBtn('CANCEL', '#5a5450');
+    const ok = mkBtn('SAVE', '#5f7d34', '#74954a', '#3e5a2e');
+    const cancel = mkBtn('CANCEL', '#7a5a3e', '#8a6a48', '#4a362b');
     btnRow.append(cancel, ok);
     panel.append(title, hint, input, btnRow);
     wrap.append(panel);
+
+    // Stop every pointer/touch event from bubbling to window — Phaser attaches
+    // its pointer listeners there, so without this the SAME tap that hits SAVE
+    // also fires on whatever canvas button sits behind the overlay (that was
+    // the "clicking SAVE also opens HOW TO PLAY" bug).
+    for (const t of ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click', 'touchstart', 'touchend']) {
+      wrap.addEventListener(t, (e) => e.stopPropagation());
+    }
+
     document.body.append(wrap);
     input.focus();
 
     const done = (value: string | null): void => {
       wrap.remove();
-      resolve(value);
+      // resolve on the next tick so the tap that closed the overlay is fully
+      // dissipated before any scene it hands back to reads input
+      setTimeout(() => resolve(value), 0);
     };
     ok.addEventListener('click', () => {
       const name = clean(input.value).trim() || 'FOX';

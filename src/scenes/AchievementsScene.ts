@@ -17,6 +17,7 @@ import { ACHIEVEMENTS } from '../data/achievements';
 import { uiScale } from '../systems/platform';
 import { TUNING } from '../data/tuning';
 import { VIEW } from '../gfx/viewport';
+import { PixelButton } from '../gfx/ui';
 
 const H = TUNING.view.height;
 
@@ -63,8 +64,11 @@ export class AchievementsScene extends Phaser.Scene {
     const statLine = `CLEARED ${s.levelsCleared}   FOES ${s.enemiesDefeated}   FALLS ${s.deaths}   PLAYED ${mins}M`;
     new PixelText(this, W / 2, ui > 1 ? 62 : 58, statLine, { scale: 1, color: 't', align: 'center' });
 
-    // BACK button (top-left) + hint
-    new PixelText(this, 8, 8, '< BACK', { scale: ui, color: 'W', shadow: true });
+    // BACK plaque (top-left) — same carved-wood button as every other screen
+    const bw = ui > 1 ? 88 : 64;
+    new PixelButton(this, VIEW.insetL + 10 + bw / 2, ui > 1 ? 24 : 18, {
+      w: bw, h: ui > 1 ? 26 : 20, label: 'BACK', scale: ui, face: 'wood', onTap: () => this.back(),
+    });
     new PixelText(this, W / 2, H - (ui > 1 ? 12 : 12), 'DRAG TO SCROLL     II / ESC  BACK', {
       scale: 1, color: 'c', align: 'center', shadow: true,
     });
@@ -85,8 +89,8 @@ export class AchievementsScene extends Phaser.Scene {
     this.layoutRows();
 
     attachMenuTouch(this, {
-      rowAt: (_x, y) => (y < 22 ? -1 : null), // tapping the BACK row returns
-      onTapRow: (i) => { if (i === -1) this.back(); },
+      rowAt: () => null, // rows are display-only; the BACK plaque handles exit
+      onTapRow: () => undefined,
       onScroll: (dy) => {
         this.scroll = Phaser.Math.Clamp(this.scroll + dy, 0, this.maxScroll());
         this.layoutRows();
