@@ -4,6 +4,10 @@ Copy this whole file as your opening prompt. It is the fast on-ramp; the
 authoritative detail lives in the repo docs it points to. Hold the bar — this
 is a real shipping game, not a prototype.
 
+> **CURRENT MISSION (read first): `PHASE3_LEVELS.md` — the level revamp.**
+> World 1 is rebuilt to the three-lane bar; worlds 2–6 follow its pattern.
+> That file carries the full brief, the proven workflow, and every gotcha.
+
 ---
 
 ## 0. Who you are and the standard
