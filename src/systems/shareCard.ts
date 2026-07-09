@@ -35,12 +35,14 @@ function glyphOf(ch: string): string[] | undefined {
   return FONT[ch] ?? FONT[ch.toUpperCase()];
 }
 
-/** Draw text in the 4×6 font. Returns nothing; measures like PixelText. */
+/** Draw text in the 4×6 font. Returns nothing; measures like PixelText.
+ *  ADVANCE = 5 (4px glyph + 1px tracking) to match gfx/text.ts's readability. */
+const ADVANCE = 5;
 function drawText(
   ctx: CanvasRenderingContext2D, x: number, y: number, text: string,
   s: number, color: string, align: 'left' | 'center' = 'left', shadow = false,
 ): void {
-  const total = text.length * 4 * s;
+  const total = Math.max(0, text.length * ADVANCE - 1) * s;
   let x0 = align === 'center' ? Math.round(x - total / 2) : x;
   const off = Math.max(1, Math.floor(s / 2));
   for (const ch of text) {
@@ -56,7 +58,7 @@ function drawText(
         ctx.fillRect(x0 + gx * s, y + gy * s, s, s);
       }
     }
-    x0 += 4 * s;
+    x0 += ADVANCE * s;
   }
 }
 
@@ -124,7 +126,7 @@ export function renderClearCard(o: ClearCardOpts): HTMLCanvasElement {
   // stats
   const secs = (o.timeMs / 1000).toFixed(1);
   const rows: Array<[string, string, string]> = [
-    ['TIME', `${secs}s${o.newBest ? '  NEW BEST!' : ''}`, o.newBest ? PALETTE.O : PALETTE.y],
+    ['TIME', `${secs}s${o.newBest ? '  BEST!' : ''}`, o.newBest ? PALETTE.O : PALETTE.y],
     ['GEMS', `${o.gems}/${o.gemTotal}`, PALETTE.y],
     ['EMBER TOKENS', `${o.tokens}/4`, PALETTE.y],
   ];
