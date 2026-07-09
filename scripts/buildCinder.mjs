@@ -32,6 +32,9 @@ function ashfallRoad() {
   c.ground(163, 200, 32);           // saddle down
   c.ground(201, 242, 30);           // beacon rise
 
+  // an extra lethal gap in the saddle — the mountain bites back
+  c.carve(184, 32, 187, H - 1); c.gemArc(183, 30, 5);
+
   // ---- trailhead teach: one vent, one ledge you cannot jump to --------------
   c.onFloor(24, 'S');               // first vent
   c.oneway(21, 29, 7);              // ledge 7 above the floor — vent-only
@@ -63,6 +66,7 @@ function ashfallRoad() {
   c.carve(120, 33, 121, 33);
   c.carve(117, 34, 124, 37);        // the cellar pocket
   c.set(122, 36, 'M');              // cellar token
+  c.set(119, 36, 'L');              // the keeper's lantern in the slag dark
   c.gems(118, 36, 2, 2);
   c.set(123, 37, 'S');              // vent back out
 
@@ -132,6 +136,10 @@ function clinkerSteps() {
   c.ground(101, 160, 24);           // the high plateau
   c.ground(161, 190, 29);           // descent ridge
   c.ground(191, 230, 34);           // beacon spur
+
+  // lethal gaps: the valley and the descent ridge now kill
+  c.carve(22, FLOOR, 25, H - 1); c.gemArc(21, 40, 5);
+  c.carve(178, 29, 181, H - 1); c.gemArc(177, 27, 5);
 
   // valley walk-in
   c.gems(8, 41, 4, 2);
@@ -238,6 +246,9 @@ function smeltworks() {
   c.rect(W - 1, 0, W - 1, H - 1, '#');
 
   c.ground(1, 222, FLOOR);
+  // lethal gaps on the approach road and in the far yard
+  c.carve(24, FLOOR, 27, H - 1); c.gemArc(23, 44, 5);
+  c.carve(146, FLOOR, 149, H - 1); c.gemArc(145, 44, 5);
 
   // ---- approach road ---------------------------------------------------------
   c.onFloor(6, 'P');
@@ -357,6 +368,9 @@ function baronsRoad() {
 
   c.ground(1, 208, FLOOR);
   c.ground(209, 238, 34);           // the gate rampart
+  // extra lethal gaps between the setpieces
+  c.carve(32, FLOOR, 35, H - 1); c.gemArc(31, 36, 5);
+  c.carve(154, FLOOR, 157, H - 1); c.gemArc(153, 36, 5);
 
   // ---- opening march: burr convoy on the flats -------------------------------
   c.onFloor(6, 'P');
