@@ -19,14 +19,16 @@ const STANDABLE = new Set(['#', 'X', 'C', '=', 'I', '<', '>']);
  */
 function goalReachable(level: ReturnType<typeof parseLevel>, springs: Set<string>): boolean {
   const { width, height, grid } = level;
+  // below the map is OPEN void — a carved pit is bottomless and lethal, so it is
+  // never standable; the reachability BFS must jump across pits, not walk them
   const at = (x: number, y: number): string =>
-    x < 0 || x >= width || y < 0 || y >= height ? 'X' : grid[y][x];
+    y >= height ? '.' : x < 0 || x >= width || y < 0 ? 'X' : grid[y][x];
   // doors 'D' and gates 'H' are not in SOLID → treated as open (openable)
   const open = (x: number, y: number): boolean => !SOLID.has(at(x, y)) && at(x, y) !== '^';
   // water is a region (level.waterSet), not a tile — a swimmable foothold
   const inWater = (x: number, y: number): boolean => level.waterSet.has(y * width + x);
   const standing = (x: number, y: number): boolean =>
-    open(x, y) && (STANDABLE.has(at(x, y + 1)) || inWater(x, y) || y + 1 >= height);
+    open(x, y) && (STANDABLE.has(at(x, y + 1)) || inWater(x, y));
 
   const start = {
     x: Math.floor(level.playerStart.x / 16),

@@ -123,10 +123,12 @@ function parse(rows, water = []) {
 
 function reachable(level, fromE, toE, springs) {
   const { width, height, grid } = level;
-  const at = (x, y) => (x < 0 || x >= width || y < 0 || y >= height ? 'X' : grid[y][x]);
+  // below the map is OPEN void (a carved pit is bottomless and lethal), so it is
+  // never standable — the BFS must jump across pits, not walk their floor
+  const at = (x, y) => (y >= height ? '.' : x < 0 || x >= width || y < 0 ? 'X' : grid[y][x]);
   const open = (x, y) => !SOLID.has(at(x, y)) && at(x, y) !== '^';
   const inWater = (x, y) => level.waterSet.has(y * width + x);
-  const standing = (x, y) => open(x, y) && (STANDABLE.has(at(x, y + 1)) || inWater(x, y) || y + 1 >= height);
+  const standing = (x, y) => open(x, y) && (STANDABLE.has(at(x, y + 1)) || inWater(x, y));
 
   const seen = new Set([`${fromE.tx},${fromE.ty}`]);
   const queue = [[fromE.tx, fromE.ty]];

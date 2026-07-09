@@ -106,7 +106,8 @@ export class TileWorld {
   charAt(tx: number, ty: number): string {
     if (ty < 0) return '.'; // open sky above
     if (tx < 0 || tx >= this.level.width) return 'X'; // solid walls at level edges
-    if (ty >= this.level.height) return 'X'; // solid floor below (pits are authored)
+    if (ty >= this.level.height) return '.'; // OPEN void below — a carved pit is
+    // bottomless, so falling into one is lethal (fall-death at height+2 fires)
     return this.level.grid[ty][tx];
   }
 
