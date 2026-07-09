@@ -179,7 +179,7 @@ export class TitleScene extends Phaser.Scene {
     if (this.started) return;
     audio.unlock();
     audio.sfx('menuSelect');
-    void promptName().then((name) => {
+    void promptName(this).then((name) => {
       if (name !== null) {
         void announceName(Object.keys(this.save.data.bestTimes).map(Number));
         this.scene.restart(); // the NAME plaque re-reads the stored name

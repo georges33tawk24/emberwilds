@@ -119,7 +119,7 @@ export class LeaderboardScene extends Phaser.Scene {
     if (this.busy) return;
     this.busy = true;
     audio.sfx('menuSelect');
-    void promptName().then(async (name) => {
+    void promptName(this).then(async (name) => {
       this.busy = false;
       if (!this.scene.isActive() || name === null) return;
       this.nameBtn.setLabel('SAVED!').setLit(true);

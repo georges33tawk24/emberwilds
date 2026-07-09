@@ -79,7 +79,7 @@ export class PauseScene extends Phaser.Scene {
         { kind: 'action', label: 'HOW TO PLAY', act: () => { this.scene.stop(); this.scene.launch('HowToPlay', { returnTo: 'Game' }); } },
         {
           kind: 'action', label: 'YOUR NAME',
-          act: () => void promptName().then((name) => {
+          act: () => void promptName(this).then((name) => {
             if (name !== null) void announceName(Object.keys(this.save.data.bestTimes).map(Number));
           }),
         },
