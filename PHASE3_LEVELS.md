@@ -114,4 +114,8 @@ before and after so test saves don't linger.
 - Pushing `main` auto-deploys to emberwilds.fun via Cloudflare Pages. Push
   only with the user's explicit go-ahead.
 - Status: W1 rebuilt (`d059695`) ✅ · in-canvas name entry (`d69a18f`) ✅ ·
-  W2–W6 ☐ · min-times + worker ☐ · leaderboard wipe decision ☐
+  lethal pits engine-wide (`180b6e6`) ✅ · W2–W6 rebuilt/hardened
+  (`e1405d2`..`66f6b2a`) ✅ · min-time floors regenerated in worker source
+  (`d4730d8`) ✅ · **REMAINING: user decisions only** — wipe-or-keep the
+  leaderboards, then push main (auto-deploys the site) + `wrangler deploy`
+  the worker from `backend/leaderboard/` so floors land with the new maps.
