@@ -32,6 +32,9 @@ function longSlide() {
   c.ground(183, 214, 33);           // bench
   c.ground(215, 238, 31);           // beacon rise
 
+  // an extra lethal gap at the bench's end — slide off it and you're gone
+  c.carve(208, 33, 211, H - 1); c.gemArc(207, 31, 5);
+
   // ---- walk-in: earth underfoot, a vole, the first gems ---------------------
   c.gems(8, 35, 4, 2);
   c.gems(24, 34, 3, 2);
@@ -72,6 +75,7 @@ function longSlide() {
   c.run(188, 33, 2, 'C');           // fragile ice plate IS the floor here
   c.carve(185, 34, 192, 37);
   c.set(190, 36, 'M');              // cellar token
+  c.set(187, 36, 'L');              // the keeper's lantern under the frost
   c.gems(186, 36, 2, 2);
   c.set(191, 37, 'S');              // spring back out
   c.onFloor(196, 'T');
@@ -122,6 +126,10 @@ function frostfangSpires() {
   c.ground(121, 150, 34);           // mid mesa
   c.ground(151, 180, 30);           // the high field
   c.ground(181, 226, 34);           // beacon field
+
+  // lethal gaps: the walk-in and the beacon field bite now
+  c.carve(24, FLOOR, 27, H - 1); c.gemArc(23, 40, 5);
+  c.carve(184, 34, 187, H - 1); c.gemArc(183, 32, 5);
 
   // walk-in + bench
   c.gems(8, 41, 4, 2);
@@ -213,6 +221,9 @@ function frozenMere() {
   c.rect(W - 1, 0, W - 1, H - 1, '#');
 
   c.ground(1, 234, FLOOR);
+  // lethal dry gaps on the shores (the mere itself is a safe swim)
+  c.carve(18, FLOOR, 21, H - 1); c.gemArc(17, 38, 5);
+  c.carve(198, FLOOR, 201, H - 1); c.gemArc(197, 38, 5);
 
   // ---- west shore -------------------------------------------------------------
   c.onFloor(6, 'P');
