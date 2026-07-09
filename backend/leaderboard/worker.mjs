@@ -30,7 +30,7 @@ const RATE_TTL_S = 60; // one submission per uid+level per minute (KV TTL floor)
 // impossible fakes a raw-API cheater would POST. Boss arenas are tiny -> 3s.
 // Regenerate with scripts/genMinTimes.mjs if levels change.
 const MIN_TIMES = [
-  5689, 5790, 5892, 6197, 5994, 6298, 6095, 3000, 6197, 6298,
+  5790, 5790, 5892, 6095, 5994, 6298, 6095, 3000, 6197, 6298,
   6400, 6502, 3000, 6197, 5892, 5689, 6095, 3000, 6095, 5790,
   5994, 6095, 3000, 6095, 5790, 6298, 6400, 3000,
 ];
