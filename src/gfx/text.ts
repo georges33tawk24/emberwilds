@@ -9,6 +9,12 @@ export const FONT_SHEET = 'font4x6';
 export const GLYPH_W = 4;
 export const GLYPH_H = 6;
 
+/** Extra px of air between glyphs. The 4×6 letterforms are only 3px wide, so
+ *  packed edge-to-edge they crowd — 1px of tracking makes the same glyphs read
+ *  markedly cleaner without changing a single pixel of their design. */
+const TRACK = 1;
+const ADVANCE = GLYPH_W + TRACK;
+
 /** Bake the font sheet. Call once at boot. */
 export function registerFont(scene: Phaser.Scene, font: Record<string, string[]>): void {
   const entries = Object.entries(font);
@@ -66,7 +72,8 @@ export class PixelText extends Phaser.GameObjects.Container {
   }
 
   get textWidth(): number {
-    return this.content.length * GLYPH_W * this.opts.scale;
+    // last glyph carries no trailing tracking
+    return Math.max(0, this.content.length * ADVANCE - TRACK) * this.opts.scale;
   }
 
   setColor(color: string): this {
@@ -81,7 +88,7 @@ export class PixelText extends Phaser.GameObjects.Container {
     const s = this.opts.scale;
     const tint = tintOf(this.opts.color);
     const shadowTint = tintOf('K');
-    const total = text.length * GLYPH_W * s;
+    const total = Math.max(0, text.length * ADVANCE - TRACK) * s;
     const x0 = this.opts.align === 'center' ? -total / 2 : this.opts.align === 'right' ? -total : 0;
 
     const shadowOff = Math.max(1, Math.round(s / 2));
@@ -105,7 +112,7 @@ export class PixelText extends Phaser.GameObjects.Container {
       if (!visible) continue;
       const ch = text[i];
       const frame = this.scene.textures.get(FONT_SHEET).has(glyphFrame(ch)) ? glyphFrame(ch) : glyphFrame('?');
-      const gx = x0 + i * GLYPH_W * s;
+      const gx = x0 + i * ADVANCE * s;
       g.setTexture(FONT_SHEET, frame).setScale(s).setPosition(gx, 0).setTint(tint);
       if (sh) sh.setTexture(FONT_SHEET, frame).setScale(s).setPosition(gx + shadowOff, shadowOff).setTint(shadowTint);
     }
