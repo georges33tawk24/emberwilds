@@ -1,21 +1,34 @@
 /**
- * THE CINDERPEAKS (World 4) — ash-grey volcanic highlands under the foundry
- * smoke, the last wild country before the Baron's own ground. The world's
- * identity is VERTICALITY + the Rust's machinery, escalating level by level:
- *   4-1 THE ASHFALL ROAD  — VENTS.  Setpiece: THE VENTFIELD.
- *   4-2 (next)            — CLIMB switchbacks
- *   4-3 (next)            — FOUNDRY LOCKS (keys/gates as machinery)
- *   4-4 (next)            — THE BARONS ROAD gauntlet
- * Movement law honored: jump 4 up / 6 across; pits ≤5 wide; springs lift 8;
- * carve pits AFTER ground fills. Run: node scripts/buildCinder.mjs
+ * THE CINDERPEAKS (World 4) rebuilt to the Phase-3 bar: FULL-HEIGHT three-lane
+ * anatomy (ground road / one-way rafter mid lane / ashen sky road) across the
+ * whole midsection of every level. The world's identity is VENTS — ember
+ * geysers (springs, 8 lift) are the vertical arteries that throw you between
+ * the lanes and up ledges no jump can reach. Pits below the map are OPEN VOID
+ * now, so every carved gap is LETHAL: a real hazard on the ground road.
+ *
+ * Gimmick escalation 1->4:
+ *   4-1 THE ASHFALL ROAD  — VENTS taught pure.  Setpiece: THE VENTFIELD.
+ *   4-2 THE CLINKER STEPS — the vertical CLIMB.  Setpiece: THE STAIR OF EMBERS.
+ *   4-3 THE SMELTWORKS    — FOUNDRY LOCKS.       Setpiece: THE GREAT CHUTE.
+ *   4-4 THE BARONS ROAD   — GAUNTLET, combines VENTS+SWIM+the Rust key/gate.
+ *                            Setpiece: THE IRON GATE.
+ *
+ * Movement law (validate() enforces): walk +-1; jump 4 up / 6 across (only 3
+ * across when climbing >2 rows); fall any depth with +-3 drift; springs AND
+ * water grant 8 lift; pits <=5 wide are jumpable; doors 'D'/gates 'H' openable.
+ * A spring launches from the cell STOOD IN — a caught ledge must be <=8 rows
+ * above it. Carve pits AFTER ground fills. Water must keep a solid floor row
+ * (carve to <=H-2, never H-1) and never overlap a lethal pit.
+ * Run: node scripts/buildCinder.mjs   (validates, then writes the .ts files)
  */
 import { Canvas, validate, writeLevel } from './levelBuilder.mjs';
 
 const out = (f) => new URL(`../src/data/levels/${f}`, import.meta.url).pathname;
 
 // ---------------------------------------------------------------------------
-// 4-1 THE ASHFALL ROAD — learn the mountain. Ember vents (springs) throw you
-// up ledges a jump can't reach; ash falls, kites circle, the road climbs.
+// 4-1 THE ASHFALL ROAD — VENTS taught pure. Ground road with lethal ash pits,
+// a broken rafter road over it fed by the vents, and an ashen sky road over
+// THAT. THE VENTFIELD is the setpiece: a vent chain across three killing pits.
 // ---------------------------------------------------------------------------
 function ashfallRoad() {
   const W = 244, H = 42, FLOOR = 36;
@@ -23,221 +36,250 @@ function ashfallRoad() {
   c.rect(0, 0, 0, H - 1, '#');
   c.rect(W - 1, 0, W - 1, H - 1, '#');
 
-  // ---- terrain: a mountain road that only ever climbs -----------------------
-  c.ground(1, 36, FLOOR);           // trailhead
-  c.ground(37, 60, 33);             // first rise
-  c.ground(61, 100, FLOOR);         // THE VENTFIELD flats (pits punched below)
-  c.ground(101, 130, 32);           // bench above the field
-  c.ground(131, 162, 28);           // the shoulder
-  c.ground(163, 200, 32);           // saddle down
-  c.ground(201, 242, 30);           // beacon rise
+  // ---- GROUND ROAD: a mountain trail with lethal ash pits -------------------
+  c.ground(1, 60, FLOOR);            // trailhead flats
+  c.ground(61, 104, FLOOR);          // THE VENTFIELD floor (pits punched below)
+  c.ground(105, 138, 34);            // the ash bench (checkpoint + cellar)
+  c.ground(139, 200, FLOOR);         // the long shoulder
+  c.ground(201, 242, 33);            // beacon rise
 
-  // an extra lethal gap in the saddle — the mountain bites back
-  c.carve(184, 32, 187, H - 1); c.gemArc(183, 30, 5);
+  // ---- beat 1, TEACH (x1-60): one vent, one ledge no jump reaches -----------
+  c.gems(9, 35, 4, 2);              // walk-in gem line
+  c.carve(30, FLOOR, 33, H - 1);    // first lethal pit — 4 wide, forgiving
+  c.gemArc(29, 34, 6);              // the arc shows the jump
+  c.onFloor(46, 'S');              // the first vent
+  c.oneway(43, 28, 5);             // a rafter ledge 8 above — vent-only
+  c.gems(44, 26, 3, 2);            // reward for riding the vent
+  c.set(54, 34, 'B');
 
-  // ---- trailhead teach: one vent, one ledge you cannot jump to --------------
-  c.onFloor(24, 'S');               // first vent
-  c.oneway(21, 29, 7);              // ledge 7 above the floor — vent-only
-  c.gems(22, 27, 4, 2);             // reward for riding it
-  c.gems(10, 35, 4, 2);             // walk-in gem line
-  c.set(44, 32, 'B');
-
-  // ---- THE VENTFIELD: three vents chain across three pits -------------------
-  c.carve(66, FLOOR, 70, H - 1);    // pit I  (5 wide)
-  c.carve(78, FLOOR, 82, H - 1);    // pit II
-  c.carve(90, FLOOR, 94, H - 1);    // pit III
+  // ---- beat 2, THE VENTFIELD (x61-104): vent chain across three pits --------
+  // GROUND: three lethal pits, a vent standing before each throws you across
+  c.carve(66, FLOOR, 70, H - 1);   // pit I  (5 wide)
+  c.carve(80, FLOOR, 84, H - 1);   // pit II
+  c.carve(94, FLOOR, 98, H - 1);   // pit III
   c.onFloor(63, 'S');
-  c.onFloor(75, 'S');
-  c.onFloor(87, 'S');
-  c.gemArc(68, 29, 5);
-  c.gemArc(80, 29, 5);
-  c.gemArc(92, 29, 5);
-  c.set(80, 28, 'M');               // the flight token, riding arc two
-  // high rafter over the field — vent up, walk the sky road
-  c.oneway(72, 26, 4);
-  c.oneway(84, 26, 4);
-  c.gems(73, 24, 2, 2);
-  c.gems(85, 24, 2, 2);
+  c.onFloor(77, 'S');
+  c.onFloor(91, 'S');
+  c.gemArc(67, 33, 5);
+  c.gemArc(81, 33, 5);
+  c.gemArc(95, 33, 5);
+  // MID: the rafter road — one-ways the vents feed, over the pits (y27)
+  c.oneway(62, 27, 6);
+  c.oneway(74, 27, 6);
+  c.oneway(86, 27, 6);
+  c.oneway(98, 27, 6);
+  c.gems(64, 25, 2, 2);
+  c.gems(88, 25, 2, 2);
+  c.set(76, 26, 'M');              // TOKEN — the rafter road (route mastery)
+  // SKY: an ashen road of pads over the field, entered by a rafter vent (y19)
+  c.set(75, 26, 'S');              // rafter vent -> the sky road
+  c.oneway(72, 19, 3);
+  c.oneway(80, 19, 3);
+  c.oneway(88, 19, 3);
+  c.oneway(96, 19, 5);             // the sky road's landing porch
+  for (let i = 0; i < 5; i++) c.set(73 + i * 6, 17, '*'); // the high line
+  c.set(98, 18, 'M');              // TOKEN — the sky road's end (nerve, high)
 
-  // ---- bench: rest + the ash cellar under a cracked plate --------------------
-  c.onFloor(112, 'K');              // checkpoint
-  c.set(116, 31, 'B');
-  c.run(120, 32, 2, 'C');           // cracked slag plate
-  c.carve(120, 33, 121, 33);
-  c.carve(117, 34, 124, 37);        // the cellar pocket
-  c.set(122, 36, 'M');              // cellar token
-  c.set(119, 36, 'L');              // the keeper's lantern in the slag dark
-  c.gems(118, 36, 2, 2);
-  c.set(123, 37, 'S');              // vent back out
+  // ---- beat 3, THE BENCH (x105-138): rest + the ash cellar ------------------
+  c.onFloor(112, 'K');             // checkpoint
+  c.set(116, 33, 'B');
+  c.run(120, 34, 2, 'C');          // cracked slag lid — pound in
+  c.carve(120, 35, 121, 35);       // the throat
+  c.carve(117, 36, 124, 39);       // the cellar room
+  c.gems(118, 38, 2, 2);
+  c.set(122, 38, 'M');             // TOKEN — ash cellar (pound)
+  c.set(119, 38, 'L');             // the keeper's lantern in the slag dark
+  c.set(123, 39, 'S');             // vent back out through the lid
 
-  // ---- the shoulder: switchback ledges, imps hold the steps ------------------
-  c.oneway(134, 24, 3);
-  c.oneway(140, 20, 3);
-  c.oneway(146, 16, 3);
-  c.set(147, 15, 'M');              // top of the switchbacks
-  c.gems(135, 22, 2, 2);
-  c.gems(141, 18, 2, 2);
-  c.gems(150, 26, 3, 2);            // shoulder road line
+  // ---- beat 4, THE SHOULDER (x139-200): twist — vent-fed switchbacks --------
+  c.carve(150, FLOOR, 154, H - 1); // lethal pit on the shoulder
+  c.gemArc(149, 34, 6);
+  c.onFloor(160, 'S');             // vent onto the switchback stack
+  c.oneway(157, 30, 3);
+  c.oneway(163, 26, 3);
+  c.oneway(169, 22, 3);            // climbing switchbacks (>2 rise = 3 across ok)
+  c.gems(158, 28, 2, 2);
+  c.gems(170, 20, 3, 2);           // switchback-top reward line
+  c.set(180, 34, 'B');
+  c.gems(186, 34, 3, 2);
 
-  // ---- saddle: kites own the open air ----------------------------------------
-  c.gems(170, 30, 3, 2);
-  c.set(178, 31, 'B');
-  c.gemArc(188, 30, 5);
+  // ---- beat 5, PAYOFF (x201-242): the leaning slag chimney + beacon ---------
+  c.rect(214, 24, 216, 32, 'X');   // the chimney stack landmark
+  c.onFloor(210, 'S');             // a vent at its foot
+  c.oneway(212, 22, 4);            // its cap, vent-only
+  c.gems(213, 20, 3, 1);
+  c.set(214, 20, 'M');             // TOKEN — slag chimney cap (route mastery)
+  c.gems(206, 31, 3, 2);
+  c.onFloor(232, 'F');             // the Warmth Beacon
 
-  // ---- beacon rise: the leaning slag chimney (landmark + skill token) --------
-  c.rect(214, 22, 216, 29, 'X');    // the chimney stack
-  c.oneway(213, 21, 5);             // its cap
-  c.set(215, 20, 'M');              // no vent here — wall-kick or glide
-  c.gems(206, 28, 3, 2);
-  c.onFloor(232, 'F');
-
-  // ---- cast --------------------------------------------------------------------
+  // ---- cast: enemies as tempo on all three lanes ----------------------------
   c.onFloor(6, 'P');
-  c.onFloor(16, 'E');               // slag crawler on the walk-in
-  c.onFloor(50, 'E');
-  c.onFloor(98, 'E');               // crawler guards the field's far lip
-  c.onFloor(108, 'T');              // soot imps on the bench
-  c.onFloor(138, 'T');
-  c.onFloor(152, 'T');              // imp holds the shoulder road
-  c.set(168, 24, 'O');              // ash kites ride the saddle updraft
-  c.set(184, 22, 'O');
-  c.onFloor(210, 'A');              // a clinker burr rolls the beacon rise
+  c.onFloor(18, 'E');              // slag-crawler on the walk-in
+  c.onFloor(54, 'E');
+  c.set(64, 26, 'T');             // soot-imp holds the rafter road
+  c.set(90, 26, 'T');
+  c.set(84, 18, 'O');             // ash-kite over the sky road
+  c.onFloor(102, 'E');            // crawler guards the field's far lip
+  c.onFloor(130, 'T');            // imp on the bench
+  c.onFloor(144, 'A');           // clinker-burr rolls the shoulder
+  c.onFloor(190, 'A');
+  c.set(168, 24, 'O');           // kite by the switchbacks
   c.onFloor(224, 'E');
 
   return {
     name: 'The Ashfall Road', theme: 'cinder', daypart: 'day', rows: c.rows(), water: c.water,
-    header: `EMBERWILDS — The Cinderpeaks 4-1: "The Ashfall Road" (244×42, day)
-CONCEPT  VENTS. Ember geysers throw you up ledges no jump can reach — the
-         mountain teaches you to ride its breath.
-SETPIECE THE VENTFIELD — three vents chain across three pits; gem arcs mark
-         each flight, a token rides the middle one, and a one-way sky road
-         waits above for anyone who vents higher than they must.
-ROUTES   floor road with vent hops / the rafter sky road over the field /
-         the ash cellar under a cracked plate on the bench.
-TOKENS   arc two in flight (x80) / ash cellar (x122) / switchback top (x147)
-         / slag chimney cap (x215, skill).`,
+    header: `EMBERWILDS — The Cinderpeaks 4-1: "The Ashfall Road" (244×42, Phase-3 rebuild)
+CONCEPT  VENTS taught pure. Ember geysers throw you up ledges no jump can reach
+         and between three stacked lanes — ground trail, broken rafter road,
+         ashen sky road.
+SETPIECE THE VENTFIELD (x61-104): three vents chain across three LETHAL ash
+         pits; the rafter road runs over them, and a rafter vent lifts to a sky
+         road of pads over the whole field.
+PACING   trailhead vent lesson -> the ventfield weave -> bench checkpoint +
+         cellar -> vent-fed switchbacks (twist) -> slag-chimney beacon rise.
+ROUTES   low: the ground trail, its lethal pits. mid: the vent-fed rafter road.
+         high: the ashen sky road. secret: pound the slag lid (x120) into the
+         ash cellar with the keeper's lantern.
+TOKENS   rafter road (x76, route mastery) / sky road end (x98, nerve) / ash
+         cellar (x122, pound) / slag chimney cap (x214, route mastery).`,
   };
 }
 
 // ---------------------------------------------------------------------------
-// 4-2 THE CLINKER STEPS — the mountain goes vertical. A patient stair or a
-// vent that skips it; the high plateau belongs to the kites.
+// 4-2 THE CLINKER STEPS — the CLIMB. The mountain goes vertical two screens
+// deep. A patient pillar stair OR a vent that skips half of it; a plateau sky
+// road over an undercut gallery. THE STAIR OF EMBERS is the setpiece.
 // ---------------------------------------------------------------------------
 function clinkerSteps() {
-  const W = 232, H = 48, FLOOR = 42;
+  const W = 232, H = 46, FLOOR = 40;
   const c = new Canvas(W, H);
   c.rect(0, 0, 0, H - 1, '#');
   c.rect(W - 1, 0, W - 1, H - 1, '#');
 
-  // ---- terrain: valley, benches, the wall, plateau, descent ridge ----------
+  // ---- terrain: valley -> stair court -> high plateau -> ridge -> beacon ----
   c.ground(1, 40, FLOOR);           // valley floor
-  c.ground(41, 70, 38);             // bench I
-  c.ground(71, 100, 34);            // bench II (stair court)
-  c.ground(101, 160, 24);           // the high plateau
-  c.ground(161, 190, 29);           // descent ridge
-  c.ground(191, 230, 34);           // beacon spur
+  c.ground(41, 70, 37);             // bench I
+  c.ground(71, 104, 34);            // the stair court (base of the wall)
+  c.ground(105, 162, 22);           // the high plateau (two screens up)
+  c.ground(163, 194, 28);           // descent ridge
+  c.ground(195, 230, 33);           // beacon spur
 
-  // lethal gaps: the valley and the descent ridge now kill
-  c.carve(22, FLOOR, 25, H - 1); c.gemArc(21, 40, 5);
-  c.carve(178, 29, 181, H - 1); c.gemArc(177, 27, 5);
+  // ---- beat 1, TEACH (x1-40): valley walk-in, a lethal gap, a vent ----------
+  c.gems(8, 39, 4, 2);
+  c.carve(24, FLOOR, 27, H - 1);   // lethal valley gap
+  c.gemArc(23, 38, 6);
+  c.onFloor(34, 'S');              // a vent lifts onto bench I's lip
+  c.gemArc(35, 34, 4);
+  c.set(30, 39, 'B');
 
-  // valley walk-in
-  c.gems(8, 41, 4, 2);
-  c.onFloor(14, 'E');
-  c.set(30, 41, 'B');
-  c.onFloor(34, 'E');
+  // valley wall pocket — the whisper secret: a hole drops in, a vent breathes out
+  c.carve(14, 41, 18, 42);
+  c.carve(16, 40, 16, 40);          // the entry hole in the floor
+  c.gems(15, 42, 2, 1);
+  c.set(17, 42, 'M');              // TOKEN — valley pocket (nerve, drop blind)
+  c.set(16, 42, 'S');              // the vent directly under the hole, breathes out
 
-  // bench I: teach the burr on a narrow shelf
-  c.gems(48, 37, 3, 2);
-  c.onFloor(56, 'A');
-  c.set(66, 37, 'B');
+  // ---- beat 2, bench I: the burr on a narrow shelf --------------------------
+  c.gems(48, 36, 3, 2);
+  c.set(66, 36, 'B');
 
-  // ---- THE STAIR OF EMBERS: a freestanding stair tower up the wall ---------
-  // pillars with one-way caps step up bench II; a vent at the base skips the
+  // ---- beat 3, THE STAIR OF EMBERS (x71-104): the setpiece ------------------
+  // freestanding pillar steps up the great wall; a vent at the base skips the
   // first half for anyone who trusts the mountain's breath
   const step = (x, capY) => {
     c.rect(x, capY + 1, x + 1, 33, 'X');
     c.oneway(x - 1, capY, 4);
   };
-  step(78, 31);
-  step(84, 28);
-  step(90, 25);
-  step(96, 22);
-  c.onFloor(74, 'S');               // the vent — 8 of lift, onto the mid-stair
-  c.gems(78, 29, 2, 2);
-  c.gems(90, 23, 2, 2);
-  c.gemArc(75, 30, 5);              // the vent's flight arc
-  c.onFloor(88, 'T');               // an imp holds the stair court
-  // stair-top spur: a token on a high cap just past the last step
-  c.rect(100, 19, 101, 21, 'X');
-  c.oneway(99, 18, 4);
-  c.set(100, 17, 'M');              // stair-top token
+  step(80, 30);
+  step(86, 27);
+  step(92, 24);
+  step(98, 21);
+  c.onFloor(74, 'S');              // the base vent -> onto the mid stair
+  c.gemArc(75, 30, 5);            // its flight arc
+  c.gems(81, 28, 2, 2);
+  c.gems(93, 22, 2, 2);
+  // stair-top spur onto the plateau, with a token on a high cap
+  c.rect(102, 18, 103, 21, 'X');
+  c.oneway(100, 17, 4);
+  c.gems(101, 16, 2, 1);
+  c.set(102, 16, 'M');            // TOKEN — stair-top spur (route mastery)
+  c.onFloor(108, 'K');           // checkpoint on arrival at the plateau
 
-  // checkpoint on arrival
-  c.onFloor(106, 'K');
+  // ---- beat 4, THE PLATEAU (x105-162): sky road over an undercut gallery ----
+  // MID/SKY here fuse into the plateau's two levels: the plateau surface is the
+  // sky lane; a slung gallery beneath its lip is the mid lane.
+  c.gems(114, 20, 3, 2);          // plateau running line
+  c.gems(146, 20, 3, 2);
+  c.set(126, 21, 'B');
+  // the undercut gallery below the plateau lip — a cracked lid drops you in
+  c.run(122, 22, 2, 'C');         // the cracked lip
+  c.carve(122, 23, 123, 23);
+  c.carve(118, 24, 134, 27);      // the gallery
+  c.gems(120, 26, 3, 2);
+  c.set(132, 26, 'M');            // TOKEN — plateau gallery (pound to enter)
+  c.set(120, 27, 'S');           // vent back up to the plateau surface
+  // a SKY line of pads OVER the plateau — a vent throws you above the surface
+  c.onFloor(140, 'S');
+  c.oneway(138, 14, 3);
+  c.oneway(146, 14, 3);
+  c.oneway(154, 14, 5);
+  for (let i = 0; i < 4; i++) c.set(139 + i * 6, 12, '*');
+  c.set(156, 13, 'M');           // TOKEN — plateau sky line (nerve)
 
-  // ---- the high plateau: kites own the open sky -----------------------------
-  c.gems(112, 22, 3, 2);
-  c.set(120, 16, 'O');
-  c.gemArc(126, 18, 5);
-  c.set(134, 14, 'O');
-  c.gems(140, 22, 3, 2);
-  c.onFloor(146, 'T');
-  c.set(150, 23, 'B');
-  // the undercut gallery below the plateau lip — risk the drop for the prize
-  c.carve(116, 28, 130, 31);
-  c.set(123, 30, 'M');              // gallery token
-  c.gems(118, 30, 2, 2);
-  c.set(129, 31, 'S');              // vent back out to the plateau
-  c.run(122, 24, 2, 'C');           // the cracked lip that drops you in
+  // ---- beat 5, descent ridge: burr convoy ----------------------------------
+  c.carve(178, 28, 181, H - 1);  // lethal ridge gap
+  c.gemArc(177, 26, 6);
+  c.gems(168, 27, 3, 2);
+  c.set(188, 27, 'B');
 
-  // ---- descent ridge: burr convoy rolls the slope ---------------------------
-  c.onFloor(166, 'A');
-  c.onFloor(174, 'A');
-  c.gems(170, 27, 3, 2);
-  c.set(182, 28, 'B');
+  // ---- beat 6, PAYOFF: one last vent to a sky shelf, then the beacon --------
+  c.onFloor(200, 'S');           // the beacon-spur vent
+  c.oneway(197, 25, 4);          // the sky shelf, vent-only (celebration)
+  c.gems(198, 23, 3, 1);
+  c.gems(208, 31, 3, 2);
+  c.onFloor(222, 'F');
 
-  // ---- beacon spur: one last vent to a sky shelf -----------------------------
-  c.onFloor(198, 'S');
-  c.oneway(195, 27, 7);             // the sky shelf, vent-only
-  c.set(198, 26, 'M');              // shelf token
-  c.gems(196, 25, 2, 1);
-  c.gemArc(210, 32, 5);
-  c.onFloor(206, 'T');
-  c.onFloor(216, 'E');
-  c.onFloor(224, 'F');
+  // dressing lines
+  c.gems(104, 20, 2, 2);
+  c.gems(216, 31, 2, 2);
 
-  // the whisper: a pocket under the valley floor — a hole drops you in, a
-  // vent under the hole breathes you back out
-  c.carve(36, 43, 40, 44);
-  c.carve(38, 42, 38, 42);          // the entry hole in the floor
-  c.set(38, 44, 'S');               // the vent, directly under the hole
-  c.set(37, 44, 'M');               // valley pocket token
-  c.gems(39, 44, 2, 1);
-
+  // ---- cast -----------------------------------------------------------------
   c.onFloor(6, 'P');
-  c.set(108, 18, 'O');              // a kite greets the plateau
-  c.gems(104, 22, 3, 2);            // plateau greeting line
-  c.gems(220, 32, 2, 2);            // beacon-side sparkle
+  c.onFloor(14, 'E');
+  c.onFloor(56, 'A');            // burr on bench I
+  c.set(88, 25, 'T');           // imp on the stair
+  c.set(120, 21, 'O');          // kite over the plateau
+  c.set(148, 21, 'T');          // imp on the plateau
+  c.set(150, 12, 'O');          // kite on the sky line
+  c.onFloor(172, 'A');          // burr convoy on the ridge
+  c.onFloor(186, 'A');
+  c.onFloor(206, 'T');
+  c.onFloor(214, 'E');
 
   return {
     name: 'The Clinker Steps', theme: 'cinder', daypart: 'day', rows: c.rows(), water: c.water,
-    header: `EMBERWILDS — The Cinderpeaks 4-2: "The Clinker Steps" (232×48, day)
-CONCEPT  CLIMB. The mountain goes vertical — a patient pillar stair or one
-         vent that skips half of it. Height is the level's whole language.
-SETPIECE THE STAIR OF EMBERS — four freestanding pillar steps up the great
-         wall, a vent flight arc beside them, kites circling the plateau
-         above; the stair-top spur holds a token.
-ROUTES   stair vs vent up the wall; plateau sky road vs the undercut gallery
-         beneath its lip (cracked entry, vent exit); a valley wall pocket.
-TOKENS   stair-top spur (x100) / plateau gallery (x123) / beacon sky shelf
-         (x198) / valley pocket (x38, whisper).`,
+    header: `EMBERWILDS — The Cinderpeaks 4-2: "The Clinker Steps" (232×46, Phase-3 rebuild)
+CONCEPT  CLIMB. The mountain goes vertical two screens deep — a patient pillar
+         stair or one vent that skips half of it. Height is the whole language.
+SETPIECE THE STAIR OF EMBERS (x71-104): four freestanding pillar steps up the
+         great wall, a vent flight arc that skips the lower half, a stair-top
+         spur onto the high plateau.
+PACING   valley walk-in (lethal gap + wall pocket) -> bench -> the stair (or
+         vent) up the wall -> plateau checkpoint -> gallery + sky line ->
+         descent ridge -> beacon-spur vent.
+ROUTES   low: valley + descent ridge (lethal gaps). mid: the stair pillars /
+         the undercut gallery beneath the plateau lip. high: the plateau
+         surface + a sky line of pads over it.
+TOKENS   valley pocket (x17, nerve/blind drop) / stair-top spur (x102, route
+         mastery) / plateau gallery (x132, pound) / plateau sky line (x156,
+         nerve) — beacon shelf token folded in.`,
   };
 }
 
 // ---------------------------------------------------------------------------
-// 4-3 THE SMELTWORKS — the Rust's machinery in full: climb the smelter tower
-// (keys and doors), throw the master switch, then PLUNGE the opened chute.
+// 4-3 THE SMELTWORKS — FOUNDRY LOCKS. Climb the smelter tower's stairwell
+// rungs (a grade vent skips three), take two keys through two doors, throw the
+// master switch, then PLUNGE the opened chute. THE GREAT CHUTE is the setpiece.
 // ---------------------------------------------------------------------------
 function smeltworks() {
   const W = 224, H = 52, FLOOR = 46;
@@ -247,38 +289,41 @@ function smeltworks() {
 
   c.ground(1, 222, FLOOR);
   // lethal gaps on the approach road and in the far yard
-  c.carve(24, FLOOR, 27, H - 1); c.gemArc(23, 44, 5);
-  c.carve(146, FLOOR, 149, H - 1); c.gemArc(145, 44, 5);
+  c.carve(24, FLOOR, 27, H - 1); c.gemArc(23, 44, 6);
+  c.carve(146, FLOOR, 149, H - 1); c.gemArc(145, 44, 6);
 
-  // ---- approach road ---------------------------------------------------------
+  // ---- beat 1, approach road (x1-52) ----------------------------------------
   c.onFloor(6, 'P');
   c.gems(12, 45, 4, 2);
   c.onFloor(18, 'E');
   c.onFloor(30, 'A');
   c.set(38, 45, 'B');
-  // maintenance undercut before the tower
-  c.run(44, 43, 2, 'C');
-  c.carve(44, 44, 45, 44);
-  c.carve(42, 45, 48, 48);
-  c.set(46, 47, 'M');               // undercut token
-  c.gems(43, 47, 2, 1);
-  c.onFloor(52, 'K');               // checkpoint at the tower door
+  // a mid rafter over the approach, fed by a vent
+  c.onFloor(34, 'S');
+  c.oneway(36, 38, 5);
+  c.gems(37, 36, 2, 2);
+  // maintenance undercut before the tower — the approach secret
+  c.run(44, 45, 2, 'C');
+  c.carve(44, 46, 45, 46);
+  c.carve(42, 47, 48, 49);
+  c.gems(43, 48, 2, 1);
+  c.set(46, 48, 'M');             // TOKEN — approach undercut (pound)
+  c.onFloor(52, 'K');            // checkpoint at the tower door
 
-  // ---- THE SMELTER TOWER (x56..x128) ------------------------------------------
-  // west wall, roof, east wall; five gallery floors; an open stairwell of
-  // one-way rungs up the west side; the sealed chute down the east side
+  // ---- beat 2, THE SMELTER TOWER (x56-128) ----------------------------------
+  // west wall, roof, east wall; five gallery floors; a stairwell of one-way
+  // rungs up the west side; the sealed chute down the east side.
   c.rect(56, 7, 57, 45, 'X');            // west wall
   c.rect(56, 7, 128, 7, 'X');            // roof line
   c.rect(127, 8, 128, 45, 'X');          // east wall
   c.carve(56, 42, 57, 45);               // the tower door (west, at grade)
-  c.rect(66, 40, 119, 41, 'X');          // floor A
+  c.rect(66, 40, 119, 41, 'X');          // floor A (ground gallery)
   c.rect(66, 34, 119, 35, 'X');          // floor B
   c.rect(66, 28, 119, 29, 'X');          // floor C
   c.rect(66, 22, 119, 23, 'X');          // floor D
   c.rect(66, 16, 119, 17, 'X');          // floor E — the switch deck
 
-  // the stairwell (x58..65): one-way rungs zigzag from grade to the top;
-  // rungs pass from below, so the whole column stays climbable
+  // the stairwell (x58-65): one-way rungs zigzag from grade to the top
   c.oneway(58, 43, 3);
   c.oneway(62, 40, 3);
   c.oneway(58, 37, 3);
@@ -289,76 +334,84 @@ function smeltworks() {
   c.oneway(62, 22, 3);
   c.oneway(58, 19, 3);
   c.oneway(62, 16, 3);
-  c.set(59, 45, 'S');               // the grade vent — breath up the well
-  c.set(61, 12, 'O');               // a kite rides the stairwell heat
+  c.set(59, 45, 'S');            // the grade vent — breath up the well, skips 3
+  c.set(61, 12, 'O');            // a kite rides the stairwell heat
 
-  // ground gallery: under floor A, crawlers on the slag floor
+  // ground gallery: crawlers on the slag floor under floor A
   c.set(74, 45, 'E');
   c.gems(70, 44, 3, 2);
   c.set(96, 45, 'E');
   c.gems(100, 44, 3, 2);
   c.set(118, 45, 'B');
-  c.rect(118, 42, 119, 45, 'X');         // divider: gallery sealed off the chute
+  c.rect(118, 42, 119, 45, 'X');         // divider seals the gallery off the chute
 
   // galleries: keys eastward, doors between — the Rust locks its own core
   c.gems(80, 38, 3, 2);
-  c.set(116, 39, 'j');              // KEY I, far end of floor A
+  c.set(116, 39, 'j');           // KEY I, far end of floor A
   c.set(84, 33, 'T');
-  c.rect(94, 30, 94, 33, 'D');      // DOOR I gates floor B's east half
+  c.rect(94, 30, 94, 33, 'D');   // DOOR I gates floor B's east half
   c.gems(104, 32, 3, 2);
-  c.set(116, 33, 'j');              // KEY II, behind door I
+  c.set(116, 33, 'j');           // KEY II, behind door I
   c.set(76, 27, 'T');
   c.gems(84, 26, 3, 2);
   c.set(70, 27, 'B');
   c.set(100, 21, 'T');
   c.gems(96, 20, 3, 2);
-  c.rect(94, 12, 94, 15, 'D');      // DOOR II gates the switch chamber
-  c.set(110, 15, 'M');              // switch-chamber token
-  c.set(116, 15, 'n');              // THE MASTER SWITCH — every gate at once
+  c.rect(94, 12, 94, 15, 'D');   // DOOR II gates the switch chamber
+  c.gems(108, 15, 2, 2);
+  c.set(110, 15, 'M');           // TOKEN — switch chamber (route mastery)
+  c.set(116, 15, 'n');           // THE MASTER SWITCH — every gate at once
 
-  // ---- THE GREAT CHUTE (x120..125): sealed core, thrown open all at once ----
+  // ---- THE GREAT CHUTE (x120-125): sealed core, thrown open all at once -----
   c.rect(120, 24, 125, 24, 'H');         // gate I
   c.rect(120, 32, 125, 32, 'H');         // gate II
   c.rect(120, 40, 125, 40, 'H');         // gate III
-  c.gems(121, 19, 4, 2);                 // gem lines caught in the fall
-  c.gems(121, 27, 4, 2);
-  c.gems(121, 35, 4, 2);
-  c.set(122, 43, 'M');              // the chute token
+  c.gems(121, 19, 4, 1);                 // gem lines caught in the fall
+  c.gems(121, 27, 4, 1);
+  c.gems(121, 35, 4, 1);
+  c.set(122, 43, 'M');           // TOKEN — the chute fall (nerve)
   c.carve(127, 42, 128, 45);             // the east exit, at grade
 
-  // ---- the yard: on to the beacon ---------------------------------------------
+  // ---- beat 3, the yard: on to the beacon -----------------------------------
   c.gems(134, 44, 3, 2);
   c.onFloor(140, 'A');
-  c.gemArc(152, 40, 5);
+  c.gemArc(152, 44, 6);
   c.onFloor(160, 'E');
   c.set(168, 45, 'B');
   c.onFloor(176, 'T');
-  // slag stack landmark with the skill token
-  c.rect(192, 32, 194, 39, 'X');
-  c.oneway(191, 31, 5);
-  c.set(193, 30, 'M');
+  // slag stack landmark with the skill token, fed by a vent
+  c.rect(192, 32, 194, 41, 'X');
+  c.onFloor(188, 'S');
+  c.oneway(190, 30, 4);
+  c.gems(191, 28, 3, 1);
+  c.set(192, 28, 'M');           // TOKEN — slag stack cap (glide off)
   c.onFloor(202, 'E');
   c.onFloor(214, 'F');
 
   return {
     name: 'The Smeltworks', theme: 'cinder', daypart: 'dusk', rows: c.rows(), water: c.water,
-    header: `EMBERWILDS — The Cinderpeaks 4-3: "The Smeltworks" (224×52, dusk)
+    header: `EMBERWILDS — The Cinderpeaks 4-3: "The Smeltworks" (224×52, Phase-3 rebuild)
 CONCEPT  FOUNDRY LOCKS. The Rust built this tower and locked its own core —
-         ride the stairwell rungs up five galleries, take two keys through
-         two doors, throw the master switch, then PLUNGE the opened chute.
-SETPIECE THE GREAT CHUTE — three gates seal the tower's drop shaft; one
-         switch clears the whole column and you fall through three gem lines
+         ride the stairwell rungs up five galleries, take two keys through two
+         doors, throw the master switch, then PLUNGE the opened chute.
+SETPIECE THE GREAT CHUTE (x120-125): three gates seal the tower's drop shaft;
+         one switch clears the whole column and you fall through three gem lines
          to the only door out.
-ROUTES   stairwell rungs (a grade vent skips the first three) / gallery
-         floors east; the approach undercut; the yard's slag stack climb.
-TOKENS   approach undercut (x46) / switch chamber (x110) / the chute fall
-         (x122) / slag stack (x193, skill).`,
+PACING   approach road (rafter + undercut) -> tower-door checkpoint -> the
+         stairwell/gallery lock climb -> master switch -> the chute plunge ->
+         yard + slag-stack beacon.
+ROUTES   low: the ground gallery + yard (lethal gaps). mid: the gallery floors
+         east, keys and doors. high: the stairwell rungs (a grade vent skips
+         three). secret: the approach undercut (x46, pound).
+TOKENS   approach undercut (x46, pound) / switch chamber (x110, route mastery)
+         / the chute fall (x122, nerve) / slag stack cap (x192, glide).`,
   };
 }
 
 // ---------------------------------------------------------------------------
-// 4-4 THE BARONS ROAD — the dusk gauntlet to the Iron Gate. Everything the
-// world taught, at pressure, and the Shrike's eyrie waits beyond the wall.
+// 4-4 THE BARONS ROAD — GAUNTLET. Everything the world taught at pressure, and
+// the combine-with: VENTS + SWIM (cooled coolant pools) + the Rust key/gate.
+// THE IRON GATE is the setpiece and the wall before the Shrike.
 // ---------------------------------------------------------------------------
 function baronsRoad() {
   const W = 240, H = 44, FLOOR = 38;
@@ -367,48 +420,48 @@ function baronsRoad() {
   c.rect(W - 1, 0, W - 1, H - 1, '#');
 
   c.ground(1, 208, FLOOR);
-  c.ground(209, 238, 34);           // the gate rampart
-  // extra lethal gaps between the setpieces
-  c.carve(32, FLOOR, 35, H - 1); c.gemArc(31, 36, 5);
-  c.carve(154, FLOOR, 157, H - 1); c.gemArc(153, 36, 5);
+  c.ground(209, 238, 33);           // the gate rampart
+  // lethal gaps between the setpieces
+  c.carve(32, FLOOR, 35, H - 1); c.gemArc(31, 36, 6);
 
-  // ---- opening march: burr convoy on the flats -------------------------------
+  // ---- beat 1, opening march: burr convoy on the flats ----------------------
   c.onFloor(6, 'P');
   c.gems(12, 37, 4, 2);
   c.onFloor(20, 'A');
   c.onFloor(28, 'A');
-  c.set(36, 37, 'B');
-  c.gems(44, 36, 3, 2);
-  c.onFloor(42, 'E');
+  c.set(38, 37, 'B');
+  // a mid rafter over the march, vent-fed
+  c.onFloor(42, 'S');
+  c.oneway(44, 30, 5);
+  c.gems(45, 28, 2, 2);
 
-  // ---- vent-pit chain under kite patrol (4-1's lesson, at pressure) ----------
+  // ---- beat 2, vent-pit chain under kite patrol (4-1's lesson at pressure) --
   c.carve(52, FLOOR, 56, H - 1);
   c.carve(64, FLOOR, 68, H - 1);
   c.onFloor(49, 'S');
   c.onFloor(61, 'S');
   c.gemArc(54, 31, 5);
   c.gemArc(66, 31, 5);
-  c.set(58, 24, 'O');
-  c.set(70, 22, 'O');
-  c.oneway(58, 28, 4);              // the high line between the arcs
-  c.set(60, 27, 'M');               // token on the high line, under the kites
+  // high line between the arcs, under the kites (the mid lane here)
+  c.oneway(57, 27, 4);
+  c.gems(58, 25, 2, 2);
+  c.set(58, 26, 'M');             // TOKEN — kite high line (nerve)
   c.gems(74, 36, 3, 2);
 
-  // ---- the slag channel: spikes below, a charred deck above, one gap in it --
-  c.rect(84, 34, 99, 34, 'X');           // the span deck, west half (a 4-rise)
-  c.rect(102, 34, 118, 34, 'X');         // east half — the gap is the way in
-  c.run(84, 37, 16, '^');                // slag barbs west of the safe slot
-  c.run(103, 37, 16, '^');               // and east of it
-  c.set(101, 36, 'M');                   // channel token, in the safe slot
-  c.set(100, 37, 'S');                   // the vent breathes you back up the gap
-  c.gems(100, 35, 2, 1);
-  c.onFloor(92, 'T');                    // imps hold the deck
-  c.onFloor(108, 'T');
-  c.gems(94, 31, 3, 2);
-  c.gems(110, 31, 3, 2);
-  c.onFloor(124, 'K');                   // checkpoint after the channel
+  // ---- beat 3, THE COOLANT POOL (combine VENTS + SWIM) ----------------------
+  // a cooled coolant pool: water lifts 8 like a vent. A drowned floor lane, a
+  // charred deck over it, and the water stitches them.
+  c.rect(84, 34, 118, 34, 'X');          // the charred deck (mid lane, a 4-rise)
+  c.carve(86, 35, 116, FLOOR - 1);       // the pool basin — carved to H-2 only, so
+                                         // row FLOOR (H-1) stays SOLID: no void below
+  c.addWater(88, 35, 114, FLOOR - 1);    // the coolant — lifts 8 like a vent, safe
+  c.gems(90, 33, 3, 2);                  // deck running line
+  c.gems(108, 33, 3, 2);
+  c.set(100, 33, 'M');                   // TOKEN — coolant deck (route mastery)
+  c.gems(96, 37, 3, 2);                  // sunken gems in the pool
+  c.onFloor(124, 'K');                   // checkpoint after the pool
 
-  // ---- imp benches: a stepped ambush ------------------------------------------
+  // ---- beat 4, imp benches: a stepped ambush --------------------------------
   c.oneway(132, 33, 3);
   c.oneway(138, 29, 3);
   c.oneway(144, 25, 3);
@@ -417,45 +470,50 @@ function baronsRoad() {
   c.gems(133, 31, 2, 2);
   c.gems(145, 23, 2, 2);
   c.set(150, 37, 'B');
+  c.carve(154, FLOOR, 157, H - 1); c.gemArc(153, 36, 6); // lethal gap after the ambush
 
-  // ---- the key shaft: dive past a kite for the gate key -----------------------
+  // ---- beat 5, THE KEY SHAFT: dive past a kite for the gate key -------------
   c.rect(160, 26, 176, 26, 'X');         // shaft roof
   c.carve(164, 27, 171, 36);             // the shaft
   c.set(167, 35, 'j');                   // THE GATE KEY
   c.set(169, 30, 'O');                   // the kite in the shaft
   c.gems(165, 32, 2, 2);
-  c.set(172, 35, 'M');                   // shaft token beside the key
+  c.set(172, 35, 'M');                   // TOKEN — key shaft (nerve, dive)
   c.set(166, 37, 'S');                   // vent back out, standing on the road
-  c.gemArc(184, 34, 5);
+  c.gemArc(184, 36, 5);
   c.onFloor(190, 'A');
   c.onFloor(198, 'E');
 
-  // ---- THE IRON GATE -----------------------------------------------------------
-  c.rect(209, 22, 212, 29, 'X');         // the arch — rises off the rampart
-  c.rect(210, 30, 210, 33, 'D');         // the door in its mouth, key-locked
-  c.oneway(208, 21, 6);                  // the parapet
-  c.set(211, 20, 'M');                   // parapet token (wall-kick, skill)
-  c.gems(216, 32, 3, 2);
+  // ---- beat 6, THE IRON GATE ------------------------------------------------
+  c.rect(209, 21, 212, 28, 'X');         // the arch — rises off the rampart
+  c.rect(210, 29, 210, 32, 'D');         // the door in its mouth, key-locked
+  c.onFloor(206, 'S');                   // a vent at the wall's foot -> parapet
+  c.oneway(207, 19, 6);                  // the parapet
+  c.gems(216, 31, 3, 2);
+  c.set(208, 18, 'M');                   // TOKEN — gate parapet (route mastery)
   c.onFloor(222, 'E');
-  c.set(226, 33, 'B');
+  c.set(226, 32, 'B');
   c.onFloor(232, 'F');                   // the beacon inside the Baron's line
 
-  c.set(216, 26, 'O');                   // kites over the rampart
+  c.set(216, 25, 'O');                   // kites over the rampart
   c.onFloor(204, 'T');
 
   return {
     name: 'The Barons Road', theme: 'cinder', daypart: 'dusk', rows: c.rows(), water: c.water,
-    header: `EMBERWILDS — The Cinderpeaks 4-4: "The Barons Road" (240×44, dusk)
-CONCEPT  GAUNTLET. Everything the world taught, at pressure: burr convoy,
-         vent-pit chain under kite patrol, the spiked slag channel, an imp
-         ambush stair, and a dive for the gate key.
-SETPIECE THE IRON GATE — the Rust's rampart wall; its locked door needs the
-         key from the kite-guarded shaft, and the parapet holds a skill
-         token for anyone who climbs the wall itself.
-ROUTES   span deck vs the spiked channel beneath it; the key shaft dive;
-         the parapet line over the gate.
-TOKENS   kite high line (x60) / slag channel (x100) / key shaft (x172) /
-         gate parapet (x211, skill).`,
+    header: `EMBERWILDS — The Cinderpeaks 4-4: "The Barons Road" (240×44, Phase-3 rebuild)
+CONCEPT  GAUNTLET + combine-with. Everything the world taught at pressure, now
+         fused with SWIM (a cooled coolant pool that lifts like a vent) and the
+         Rust key/gate machinery.
+SETPIECE THE IRON GATE (x209-238): the Rust's rampart wall; its locked door
+         needs the key from the kite-guarded shaft, and a vent lifts the brave
+         to the parapet over it.
+PACING   burr march -> vent-pit chain under kites -> the coolant pool (combine)
+         -> checkpoint -> imp-bench ambush -> key-shaft dive -> the Iron Gate.
+ROUTES   low: the flats, lethal pits, the drowned pool basin. mid: rafters, the
+         charred coolant deck, imp benches. high: the vent-fed kite line and the
+         gate parapet. water lifts 8 — the pool is a vent you swim.
+TOKENS   kite high line (x58, nerve) / coolant deck (x100, route mastery) / key
+         shaft (x172, dive) / gate parapet (x208, route mastery).`,
   };
 }
 
