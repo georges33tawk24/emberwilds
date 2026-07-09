@@ -27,7 +27,7 @@ export class PauseScene extends Phaser.Scene {
   private sel = 0;
   private scroll = 0;
   private layoutW = 0;
-  private from: 'game' | 'title' = 'game';
+  private from: 'game' | 'title' | 'map' = 'game';
   private prev = { up: false, down: false, left: false, right: false };
   private grace = 0;
   // ui-scaled layout, set in create (×2 on touch devices for readability)
@@ -39,7 +39,7 @@ export class PauseScene extends Phaser.Scene {
     super('Pause');
   }
 
-  create(data: { from?: 'game' | 'title' } = {}): void {
+  create(data: { from?: 'game' | 'title' | 'map' } = {}): void {
     setTouchContext('ui');
     this.from = data.from ?? 'game';
     const W = VIEW.w;
@@ -54,9 +54,10 @@ export class PauseScene extends Phaser.Scene {
     this.grace = 0.25;
 
     this.add.rectangle(W / 2, H / 2, W, H, 0x14100d, this.from === 'title' ? 0.92 : 0.72);
-    new PixelText(this, W / 2, ui > 1 ? 34 : 46, this.from === 'title' ? 'SETTINGS' : 'PAUSED', {
-      scale: ui > 1 ? 4 : 3, color: 'O', align: 'center', shadow: true,
-    });
+    new PixelText(this, W / 2, ui > 1 ? 34 : 46,
+      this.from === 'title' ? 'SETTINGS' : this.from === 'map' ? 'MENU' : 'PAUSED', {
+        scale: ui > 1 ? 4 : 3, color: 'O', align: 'center', shadow: true,
+      });
 
     const s = this.save.data.settings;
     // the shared settings block — the same in-game and from the title menu
@@ -72,6 +73,13 @@ export class PauseScene extends Phaser.Scene {
     ];
     this.items = this.from === 'title'
       ? [{ kind: 'action', label: 'BACK', act: () => this.resume() }, ...settings]
+      : this.from === 'map'
+      ? [
+        { kind: 'action', label: 'BACK TO MAP', act: () => this.resume() },
+        ...settings,
+        // leaving for the title is a deliberate choice now, never an accident
+        { kind: 'action', label: 'QUIT TO TITLE', act: () => this.quitToTitle() },
+      ]
       : [
         { kind: 'action', label: 'RESUME', act: () => this.resume() },
         { kind: 'action', label: 'RESTART LEVEL', act: () => this.restart() },
@@ -172,9 +180,23 @@ export class PauseScene extends Phaser.Scene {
       this.scene.resume('Title');
       return;
     }
+    if (this.from === 'map') {
+      setTouchContext('map');
+      this.scene.stop();
+      this.scene.resume('WorldMap');
+      return;
+    }
     setTouchContext('game');
     this.scene.stop();
     this.scene.resume('Game');
+  }
+
+  /** The map menu's explicit way home — what II used to do by surprise. */
+  private quitToTitle(): void {
+    audio.stopSong();
+    this.scene.stop('WorldMap');
+    this.scene.stop();
+    this.scene.start('Title');
   }
 
   private restart(): void {

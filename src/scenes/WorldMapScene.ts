@@ -49,7 +49,7 @@ export class WorldMapScene extends Phaser.Scene {
   private headerWorld!: PixelText;
   private gemText!: PixelText;
   private prompt!: PixelText;
-  private prev = { left: false, right: false, up: false };
+  private prev = { left: false, right: false, up: false, pause: false };
   private mapWidth = 0;
   private layoutW = 0;
 
@@ -117,9 +117,9 @@ export class WorldMapScene extends Phaser.Scene {
     const barH = mobile ? 36 : 24;
     this.add.rectangle(W / 2, H - barH / 2, W, barH, 0x2a1f1b, 0.55).setScrollFactor(0).setDepth(30);
     this.prompt = new PixelText(this, W / 2, mobile ? H - 46 : H - 17,
-      mobile ? 'JUMP  ENTER      II  BACK'
-        : lb ? 'Z  ENTER      FIRE  THE GROVE      L  TOP 10      ESC  BACK'
-          : 'Z  ENTER      FIRE  THE GROVE      ESC  BACK', {
+      mobile ? 'JUMP  ENTER      II  MENU'
+        : lb ? 'Z  ENTER      FIRE  THE GROVE      L  TOP 10      ESC  MENU'
+          : 'Z  ENTER      FIRE  THE GROVE      ESC  MENU', {
         scale: 1, color: 'W', align: 'center', shadow: true,
       }).setScrollFactor(0).setDepth(31);
 
@@ -342,13 +342,15 @@ export class WorldMapScene extends Phaser.Scene {
         // up or FIRE (keyboard/pad) opens the Grove; touch uses the GROVE button
         this.openGrove();
       } else if (f.jumpPressed) this.enterLevel();
-      else if (f.pause) {
+      else if (f.pause && !this.prev.pause) {
+        // the menu button opens the MENU — going to the title lives inside it
+        // (it used to warp straight to the title, which read as a bug)
         audio.sfx('pause');
-        audio.stopSong();
-        this.scene.start('Title');
+        this.scene.pause();
+        this.scene.launch('Pause', { from: 'map' });
       }
     }
-    this.prev = { left: f.left, right: f.right, up: f.up };
+    this.prev = { left: f.left, right: f.right, up: f.up, pause: f.pause };
 
     // idle fox animation + selected-node pulse
     if (!this.moving) this.fox.setFrame(`idle.${Math.floor(this.t * 5) % 4}`);
