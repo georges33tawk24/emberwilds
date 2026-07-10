@@ -89,6 +89,23 @@ describe('BossSim — Old Rustjaw', () => {
     expect(Math.max(...phases)).toBeGreaterThanOrEqual(2);
   });
 
+  it('resets to the fight start on a player death — HP, phase, position, shots', () => {
+    const boss = makeBoss();
+    // simulate a chipped-down, mid-arena, in-flight state
+    boss.hp = 2;
+    boss.phase = 3;
+    boss.state = 'stun';
+    boss.body.x = 8 * TILE; // rammed against the left wall
+    boss.step(6 * TILE, FLOOR_Y);
+    boss.reset();
+    expect(boss.hp).toBe(boss.maxHp); // back to full — no chipping across deaths
+    expect(boss.phase).toBe(1);
+    expect(boss.state).toBe('intro');
+    expect(boss.alive).toBe(true);
+    expect(boss.body.x).toBe(30 * TILE); // returned to its arena spawn
+    expect(boss.shots.length).toBe(0);
+  });
+
   it('dies after enough core hits and stops being a threat', () => {
     const boss = makeBoss();
     let guard = 0;

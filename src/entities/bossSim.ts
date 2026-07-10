@@ -236,6 +236,8 @@ export class BossSim {
   private attackMode: 'ram' | 'leap' | 'roll' = 'ram';
   /** captured each step: did the vertical solver land the body this step? */
   private landedThisStep = false;
+  /** arena spawn x — the boss returns here when a player death resets the fight. */
+  private readonly startX: number;
 
   constructor(
     x: number,
@@ -247,7 +249,32 @@ export class BossSim {
     this.hp = this.cfg.maxHp;
     this.maxHp = this.cfg.maxHp;
     this.body = { x, y: floorY, w: this.cfg.bodyW, h: this.cfg.bodyH, vx: 0, vy: 0 };
+    this.startX = x;
     this.stateTimer = 1.0;
+  }
+
+  /** Full restore to the fight's opening — HP, phase, position, timers and any
+   *  in-flight shots. Called when the player dies so a boss can never be chipped
+   *  down across deaths: you have to win it clean, in one life. */
+  reset(): void {
+    this.hp = this.maxHp;
+    this.phase = 1;
+    this.state = 'intro';
+    this.facing = -1;
+    this.iframes = 0;
+    this.hurtFlash = 0;
+    this.shots.length = 0;
+    this.slammed = false;
+    this.stateTimer = 1.0;
+    this.didVolley = false;
+    this.airborneT = 0;
+    this.bouncesLeft = 0;
+    this.attackMode = 'ram';
+    this.landedThisStep = false;
+    this.body.x = this.startX;
+    this.body.y = this.floorY;
+    this.body.vx = 0;
+    this.body.vy = 0;
   }
 
   get name(): string {

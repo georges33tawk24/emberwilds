@@ -1498,6 +1498,15 @@ export class GameScene extends Phaser.Scene {
         this.camX = Phaser.Math.Clamp(rp.x - this.vw / 2, 0, Math.max(0, this.level.width * TILE - this.vw));
         this.camY = Phaser.Math.Clamp(rp.y - this.vh * 0.62, 0, Math.max(0, this.level.height * TILE - this.vh));
         this.cameras.main.flash(180, 42, 31, 27);
+        // a boss can't be chipped down across deaths — dying resets it to full
+        // HP and phase 1, so the fight has to be won clean in one life. Assist
+        // mode keeps the boss's progress (it's meant to soften, not punish).
+        if (this.bossSim && this.bossSim.alive && this.save.data.settings.assistMode !== true) {
+          this.bossSim.reset();
+          this.bus.emit('boss:hp', { hp: this.bossSim.hp, max: this.bossSim.maxHp });
+          for (const h of this.hostiles) h.img.destroy();
+          this.hostiles = [];
+        }
       }
     }
   }
