@@ -3,13 +3,30 @@
   <head>
     <meta charset="UTF-8" />
 
-    <!-- Google tag (gtag.js) -->
+    <!-- Google tag (gtag.js) with Consent Mode v2. Analytics + ad cookies stay
+         DENIED until the player accepts via the banner (see the end of <body>).
+         This is the GDPR-compliant default; portals run their own consent, so
+         the banner only shows on our canonical domain. -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-7NLZFVVSHH"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
+      // deny by default until we know the player's choice
+      gtag('consent', 'default', {
+        ad_storage: 'denied', analytics_storage: 'denied',
+        ad_user_data: 'denied', ad_personalization: 'denied',
+        wait_for_update: 500,
+      });
+      // a prior "accept" grants immediately — no re-prompt on return visits
+      try {
+        if (localStorage.getItem('emberwilds.consent') === 'granted') {
+          gtag('consent', 'update', {
+            ad_storage: 'granted', analytics_storage: 'granted',
+            ad_user_data: 'granted', ad_personalization: 'granted',
+          });
+        }
+      } catch (e) {}
       gtag('js', new Date());
-
       gtag('config', 'G-7NLZFVVSHH');
     </script>
 
@@ -350,6 +367,59 @@
       <div class="title">Rotate your device</div>
       <div class="sub">EMBERWILDS plays best in landscape — turn your phone sideways to begin.</div>
     </div>
+
+    <!-- Cookie/analytics consent — self-hosted domain only (portals govern
+         their own). Shows once until a choice is stored; "Accept" grants GA4 +
+         AdSense consent (Consent Mode v2), "Decline" leaves them denied. -->
+    <script>
+      (function () {
+        var h = location.hostname;
+        var mine = h === 'emberwilds.fun' || h === 'www.emberwilds.fun' || h === 'localhost' || h === '127.0.0.1';
+        if (!mine) return; // on a portal — its SDK handles consent
+        try { if (localStorage.getItem('emberwilds.consent')) return; } catch (e) { return; }
+
+        var bar = document.createElement('div');
+        bar.id = 'consent';
+        bar.innerHTML =
+          '<span>We use cookies for anonymous analytics and ads to keep EMBERWILDS free. '
+          + '<a href="/release/PRIVACY_POLICY.md" target="_blank" rel="noopener">Privacy</a>.</span>'
+          + '<span class="btns"><button id="consent-no">Decline</button>'
+          + '<button id="consent-yes">Accept</button></span>';
+        document.body.appendChild(bar);
+
+        function choose(v) {
+          try { localStorage.setItem('emberwilds.consent', v); } catch (e) {}
+          if (v === 'granted' && window.gtag) {
+            gtag('consent', 'update', {
+              ad_storage: 'granted', analytics_storage: 'granted',
+              ad_user_data: 'granted', ad_personalization: 'granted',
+            });
+          }
+          bar.remove();
+        }
+        document.getElementById('consent-yes').onclick = function () { choose('granted'); };
+        document.getElementById('consent-no').onclick = function () { choose('denied'); };
+      })();
+    </script>
+    <style>
+      #consent {
+        position: fixed; left: 0; right: 0; bottom: 0; z-index: 70;
+        display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center;
+        justify-content: center; padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+        background: #1c1712; border-top: 2px solid #4a362b;
+        color: #e6c79a; font: 500 13px/1.4 system-ui, sans-serif; text-align: center;
+      }
+      #consent a { color: #f2a03d; }
+      #consent .btns { display: flex; gap: 10px; }
+      #consent button {
+        font: 600 13px system-ui, sans-serif; cursor: pointer;
+        padding: 8px 18px; border: 2px solid #2a1f1b; border-radius: 4px;
+        color: #f7e6c4;
+      }
+      #consent-yes { background: #5f7d34; }
+      #consent-no { background: #4a362b; }
+    </style>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
