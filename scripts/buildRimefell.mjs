@@ -215,15 +215,21 @@ function frostfangSpires() {
   c.set(100, 30, '*');
   c.set(102, 30, '*');
 
-  // ---- SKY RIDGE (frost pads, y22): the bench spring feeds a high run ----------
-  c.oneway(47, 22, 3);              // spring x44 catches here
+  // ---- SKY RIDGE (frost pads, y22): a spring CHAIN off the bench feeds it -------
+  // one 8-lift from the y37 bench can't reach a y21 ridge (15 rows up), so the
+  // bench spring lands an intermediate pad and a SECOND spring on it climbs the
+  // rest — the verified Thornwood chain, not an impossible single launch.
+  c.oneway(46, 29, 3);              // intermediate landing (8 up from the bench spring)
+  c.set(47, 28, 'S');              // the second spring — 8 more up, onto the ridge
+  c.oneway(47, 22, 3);              // the ridge — pads <=6 apart so it is WALKABLE
   c.oneway(55, 22, 3);
-  c.oneway(64, 22, 3);
-  c.oneway(73, 22, 3);
-  c.oneway(82, 22, 3);
-  c.oneway(91, 22, 3);
+  c.oneway(63, 22, 3);
+  c.oneway(71, 22, 3);
+  c.oneway(79, 22, 3);
+  c.oneway(87, 22, 3);
+  c.oneway(95, 22, 3);
   c.oneway(100, 22, 5);             // the ridge's landing porch over the spires
-  for (let i = 0; i < 6; i++) c.set(48 + i * 9, 20, '*'); // the high line
+  for (let i = 0; i < 6; i++) c.set(48 + i * 8, 20, '*'); // the high line
   c.set(103, 21, 'M');              // TOKEN — glide: the sky ridge's end
   c.gems(107, 24, 3, 2);            // glide-off breadcrumbs toward the mesa
   // owls circle the chasm air between the lanes
