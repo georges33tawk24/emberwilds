@@ -23,9 +23,15 @@ import { SaveManager } from './systems/save';
 import { audio } from './audio/engine';
 import { initTouchControls } from './systems/touch';
 import { VIEW, VIEW_H, widthForAspect, setSafeInsets } from './gfx/viewport';
+import { Platform } from './platform';
 
 const save = new SaveManager();
 audio.applySettings(save.data.settings);
+
+// Boot the platform layer (detects portal SDK; no-op LocalAdapter on our own
+// domain). Fire-and-forget — it never throws and the game must not wait on it.
+void Platform.init();
+if (import.meta.env.DEV) (window as unknown as { __platform: typeof Platform }).__platform = Platform;
 
 /** Live screen size — measured from #app (the fixed, 100dvw/100dvh container
  *  the canvas must cover). visualViewport can be SHORTER than the page on
