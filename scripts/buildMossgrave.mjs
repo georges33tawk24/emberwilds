@@ -348,10 +348,14 @@ function switchworks() {
   c.onFloor(224, 'A');
   c.gems(236, 37, 2, 2);
   c.set(64, 33, 'B');              // east-bank welcome
-  // the last token watches from a slab above the beacon road
-  c.run(238, 30, 3, 'X');
-  c.gems(237, 28, 2, 2);
-  c.set(239, 29, 'M');             // TOKEN — glide: the beacon watch-slab
+  // the beacon-road cellar — pound the cracked flagstone in (the 4th token,
+  // pound-reachable now instead of stranded on a floating glide slab)
+  c.run(235, FLOOR, 2, 'C');       // cracked lid (x235-236)
+  c.carve(235, 39, 236, 39);       // the throat
+  c.carve(234, 40, 240, 42);       // the cellar room
+  c.set(238, 41, 'M');             // TOKEN — pound: the beacon cellar secret
+  c.gems(235, 41, 2, 2);
+  c.set(239, 42, 'S');             // spring back out through the lid
   c.onFloor(242, 'F');
 
   return {
@@ -400,6 +404,14 @@ function sealedVault() {
   c.onFloor(46, 'T');
   c.run(52, 39, 3, '^');
   c.gemArc(58, 38, 5);
+  // the approach cellar — pound the cracked flagstone (the 4th token, replacing
+  // the borderline spring-fed high-ledge token with a pound-reachable one)
+  c.run(60, FLOOR, 2, 'C');        // cracked lid (x60-61)
+  c.carve(60, 41, 61, 41);         // the throat
+  c.carve(58, 42, 64, 44);         // the cellar room
+  c.gems(59, 43, 2, 2);            // gems FIRST (they overwrite same-cell entities)
+  c.set(61, 43, 'M');              // TOKEN — pound: the approach cellar
+  c.set(63, 44, 'S');              // spring back out through the lid
 
   // ---- act 2: THE DROWNED VAULT (the deepest water in the game) -------------
   c.carve(66, 24, 140, H - 2);
@@ -427,7 +439,8 @@ function sealedVault() {
   c.oneway(124, 18, 6);
   c.gems(72, 16, 3, 2);
   c.gems(126, 16, 3, 2);
-  c.set(114, 15, 'M');             // TOKEN — glide: the spring-fed high ledge
+  c.set(114, 15, '*');             // breadcrumb on the spring-fed high ledge
+  c.set(116, 17, 'B');             // (a berry rewards the swim-lift chain instead)
   // treasure rows in the deep
   c.gems(74, 30, 4, 3);
   c.gems(86, 37, 3, 3);
