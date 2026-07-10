@@ -198,6 +198,10 @@ export interface StorageLike {
 
 export class SaveManager {
   data: SaveData;
+  /** Optional mirror hook — main.ts sets this to push each save to the platform
+   *  cloud (portals only). Kept as a callback so this class stays pure and its
+   *  unit tests need no Platform/browser dependency. */
+  onSave?: (data: SaveData) => void;
 
   constructor(private storage: StorageLike = safeLocalStorage()) {
     this.data = this.load();
@@ -227,6 +231,7 @@ export class SaveManager {
     } catch {
       // storage full/unavailable — the game keeps running on in-memory state
     }
+    this.onSave?.(this.data); // mirror to platform cloud when wired
   }
 
   collectToken(level: number, index: number): void {

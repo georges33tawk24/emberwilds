@@ -10,6 +10,7 @@ import { STORY } from '../data/story';
 import { uiScale } from '../systems/platform';
 import { attachMenuTouch } from '../systems/menuTouch';
 import { shareClearCard } from '../systems/shareCard';
+import { AdManager } from '../systems/adManager';
 import { TUNING } from '../data/tuning';
 import { VIEW } from '../gfx/viewport';
 
@@ -35,6 +36,7 @@ export class ClearScene extends Phaser.Scene {
   private data2!: ClearData;
   private grace = 0;
   private layoutW = 0;
+  private advancing = false;
 
   constructor() {
     super('Clear');
@@ -181,19 +183,12 @@ export class ClearScene extends Phaser.Scene {
       return;
     }
     this.grace -= delta / 1000;
-    if (this.grace > 0) return;
+    if (this.grace > 0 || this.advancing) return;
     const f = this.inputSys.sample();
     const hasNext = this.data2.levelIndex + 1 < LEVELS.length;
     if (f.jumpPressed) {
       audio.sfx('menuSelect');
-      this.scene.stop('Game');
-      this.scene.stop('Hud');
-      this.scene.stop();
-      if (hasNext) this.scene.start('Game', { levelIndex: this.data2.levelIndex + 1 });
-      else {
-        // last existing boss down — the full victory sequence
-        this.scene.start('Finale');
-      }
+      void this.advance(hasNext);
     } else if (f.firePressed) {
       audio.sfx('menuSelect');
       audio.stopSong();
@@ -202,5 +197,18 @@ export class ClearScene extends Phaser.Scene {
       this.scene.stop();
       this.scene.start('WorldMap');
     }
+  }
+
+  /** Advance to the next level (or the finale), showing an interstitial at the
+   *  between-levels break first. The ad is a no-op off-portal, so this is an
+   *  instant transition on emberwilds.fun and a natural ad moment on a portal. */
+  private async advance(hasNext: boolean): Promise<void> {
+    this.advancing = true;
+    if (hasNext) await AdManager.showInterstitial('between-levels');
+    this.scene.stop('Game');
+    this.scene.stop('Hud');
+    this.scene.stop();
+    if (hasNext) this.scene.start('Game', { levelIndex: this.data2.levelIndex + 1 });
+    else this.scene.start('Finale'); // last boss down — the victory sequence
   }
 }

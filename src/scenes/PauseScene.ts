@@ -5,6 +5,7 @@ import { InputSystem } from '../systems/input';
 import { setTouchContext } from '../systems/touch';
 import { SaveManager } from '../systems/save';
 import { audio } from '../audio/engine';
+import { track } from '../systems/analytics';
 import { TUNING } from '../data/tuning';
 import { VIEW } from '../gfx/viewport';
 import { uiScale } from '../systems/platform';
@@ -153,6 +154,7 @@ export class PauseScene extends Phaser.Scene {
   private apply(): void {
     audio.applySettings(this.save.data.settings);
     this.save.save();
+    track('settings_changed');
     this.redraw();
   }
 
@@ -201,6 +203,7 @@ export class PauseScene extends Phaser.Scene {
 
   private restart(): void {
     const levelIndex = (this.registry.get('lastLevel') as number) ?? 0;
+    track('level_replayed', { level_index: levelIndex });
     this.scene.stop();
     this.scene.stop('Game');
     this.scene.launch('Game', { levelIndex });

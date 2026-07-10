@@ -105,3 +105,44 @@ for (const size of [192, 512]) {
   writeFileSync(join(root, 'public', `icon-${size}.png`), makePng(size));
   console.log(`icon-${size}.png written`);
 }
+
+// Transparent-background logo (the fox mark, RGBA) for press kits / portal
+// logo slots — same mark and encoder as the icons, alpha where the art is empty.
+function makeLogoPng(size) {
+  const scale = Math.floor(size / 16);
+  const off = Math.floor((size - 16 * scale) / 2);
+  const rows = [];
+  for (let y = 0; y < size; y++) {
+    const row = Buffer.alloc(1 + size * 4);
+    row[0] = 0; // filter: none
+    for (let x = 0; x < size; x++) {
+      let r = 0, g = 0, b = 0, a = 0;
+      const mx = Math.floor((x - off) / scale);
+      const my = Math.floor((y - off) / scale);
+      if (mx >= 0 && mx < 16 && my >= 0 && my < 16) {
+        const hex = PAL[MARK[my][mx]];
+        if (hex) { [r, g, b] = hexRgb(hex); a = 255; }
+      }
+      const p = 1 + x * 4;
+      row[p] = r; row[p + 1] = g; row[p + 2] = b; row[p + 3] = a;
+    }
+    rows.push(row);
+  }
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(size, 0);
+  ihdr.writeUInt32BE(size, 4);
+  ihdr[8] = 8; // bit depth
+  ihdr[9] = 6; // color type: truecolor + alpha
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk('IHDR', ihdr),
+    chunk('IDAT', deflateSync(Buffer.concat(rows))),
+    chunk('IEND', Buffer.alloc(0)),
+  ]);
+}
+
+mkdirSync(join(root, 'release', 'logo'), { recursive: true });
+for (const size of [256, 512]) {
+  writeFileSync(join(root, 'release', 'logo', `emberwilds-mark-${size}.png`), makeLogoPng(size));
+  console.log(`release/logo/emberwilds-mark-${size}.png written`);
+}

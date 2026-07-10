@@ -30,7 +30,21 @@ audio.applySettings(save.data.settings);
 
 // Boot the platform layer (detects portal SDK; no-op LocalAdapter on our own
 // domain). Fire-and-forget — it never throws and the game must not wait on it.
-void Platform.init();
+// When the platform offers cloud save, mirror every save to it and hydrate a
+// fresh device from the cloud once.
+void Platform.init().then(async () => {
+  if (!Platform.hasCloudSave()) return; // localStorage-only platforms: nothing to do
+  save.onSave = (d) => void Platform.save('emberwilds', d);
+  // ponytail: naive freshness check (no timestamp merge) — only adopt the cloud
+  // save when this device shows no progress, so we never clobber a local run.
+  const fresh = save.data.levelUnlocked === 0 && save.data.gems === 0 && !save.data.introSeen;
+  if (!fresh) return;
+  const cloud = await Platform.load<typeof save.data>('emberwilds');
+  if (cloud.success && cloud.data) {
+    save.data = cloud.data;
+    audio.applySettings(save.data.settings);
+  }
+});
 if (import.meta.env.DEV) (window as unknown as { __platform: typeof Platform }).__platform = Platform;
 
 /** Live screen size — measured from #app (the fixed, 100dvw/100dvh container

@@ -12,6 +12,7 @@ import { COSMETICS, buildStyledFrames, PLAYER_TEX, type Cosmetic, type CosmeticK
 import { registerSheet } from '../gfx/textures';
 import { ParticleSystem } from '../gfx/particles';
 import { audio } from '../audio/engine';
+import { track } from '../systems/analytics';
 import { TUNING } from '../data/tuning';
 import { VIEW } from '../gfx/viewport';
 import { uiScale } from '../systems/platform';
@@ -166,6 +167,7 @@ export class WardrobeScene extends Phaser.Scene {
     if (kind === 'character') s.character = id;
     else if (kind === 'scarf') s.scarf = id;
     else s.hat = id;
+    track('character_selected', { slot: kind, item: id ?? 'default' });
   }
 
   /** Rebuild the real styled sheet so the game wears the saved choice. */
