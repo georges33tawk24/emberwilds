@@ -11,8 +11,9 @@ _Status as of 2026-07-10. ✅ done · ☐ open · ⚠️ needs a real portal acc
 - ☐ Confirm the name is free of trademark conflict on each target portal before submitting
 
 ## Legal
-- ✅ Privacy Policy — `release/PRIVACY_POLICY.md`
-- ✅ Terms of Service — `release/TERMS_OF_SERVICE.md`
+- ✅ Privacy Policy — hosted at `/privacy.html` (site-styled; source of record `release/PRIVACY_POLICY.md`)
+- ✅ Terms of Service — hosted at `/terms.html` (site-styled; source of record `release/TERMS_OF_SERVICE.md`)
+- ✅ Legal pages linked from the consent banner and the page footer — portal forms get `https://emberwilds.fun/privacy.html`
 - ✅ Asset & dependency license audit — `release/ASSET_LICENSES.md` (all original + Phaser/MIT; clean)
 - ✅ Cookie-consent banner (`index.html`) — Google Consent Mode v2: analytics/ad cookies default to **denied** until the player accepts; the banner shows only on the self-hosted domain (portals govern their own). Verified present in the production build.
 - ☐ Replace `contact@emberwilds.fun` with a real monitored inbox in both legal docs

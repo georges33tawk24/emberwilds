@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Privacy Policy — EMBERWILDS</title>
+  <link rel="icon" href="./icon-192.png" />
+  <style>
+    /* the game's own palette: warm dark ground, carved wood, amber embers */
+    :root {
+      --bg: #14100d; --panel: #1c1712; --wood: #4a362b; --wood-hi: #7a5a3e;
+      --ink: #2a1f1b; --tan: #e6c79a; --cream: #f7e6c4; --amber: #f2a03d;
+      --green: #5f7d34;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--tan);
+      font: 500 15px/1.65 "Courier New", ui-monospace, monospace;
+      padding: 24px 16px calc(40px + env(safe-area-inset-bottom, 0px));
+    }
+    .wrap { max-width: 760px; margin: 0 auto; }
+    header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+    header img { width: 44px; height: 44px; image-rendering: pixelated; }
+    header .word {
+      color: var(--amber); font-weight: bold; font-size: 22px; letter-spacing: 5px;
+      text-shadow: 2px 2px 0 var(--ink);
+    }
+    .panel {
+      background: var(--panel); border: 3px solid var(--ink); padding: 22px 26px;
+      box-shadow: inset 0 3px 0 var(--wood), inset 0 -4px 0 #000,
+        0 10px 44px rgba(0, 0, 0, 0.65);
+    }
+    h1 {
+      color: var(--amber); font-size: 19px; letter-spacing: 3px; margin: 0 0 4px;
+      text-shadow: 2px 2px 0 var(--ink); text-transform: uppercase;
+    }
+    .date { color: var(--wood-hi); font-size: 12px; margin-bottom: 18px; }
+    h2 {
+      color: var(--cream); font-size: 14px; letter-spacing: 2px; margin: 26px 0 6px;
+      text-transform: uppercase; border-bottom: 2px solid var(--wood); padding-bottom: 5px;
+    }
+    a { color: var(--amber); }
+    ul { padding-left: 20px; margin: 8px 0; }
+    li { margin: 4px 0; }
+    .back {
+      display: inline-block; margin: 22px 4px 0 0; padding: 10px 22px;
+      background: var(--green); color: var(--cream); text-decoration: none;
+      font-weight: bold; letter-spacing: 2px; border: 3px solid var(--ink);
+      box-shadow: inset 0 2px 0 #74954a, inset 0 -3px 0 #3e5a2e;
+      text-shadow: 1px 1px 0 var(--ink);
+    }
+    .back.alt { background: var(--wood); box-shadow: inset 0 2px 0 var(--wood-hi), inset 0 -3px 0 var(--ink); }
+    .back:active { transform: translateY(1px); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <img src="./icon-192.png" alt="Emberwilds fox mark" />
+      <span class="word">EMBERWILDS</span>
+    </header>
+    <div class="panel">
+      <h1>Privacy Policy</h1>
+      <div class="date">Last updated: 2026-07-10</div>
+
+      <p>This policy explains what data Emberwilds ("the Game", "we") handles. It is
+      written to satisfy GDPR (EU), CCPA (California), and general international
+      expectations. Emberwilds is a browser game with no account system — it collects
+      no personally identifying information beyond an optional display name you choose
+      yourself.</p>
+
+      <h2>What we store</h2>
+      <ul>
+        <li><strong>On your device (localStorage):</strong> your progress, best times,
+        unlocked cosmetics, achievements, settings, and a randomly generated anonymous
+        device id. Clearing your browser storage erases it.</li>
+        <li><strong>On our leaderboard</strong> (when you set a clear-time record): your
+        chosen display name, your clear time, the level, and the anonymous device id —
+        sent to a first-party Cloudflare Worker so global leaderboards work. No IP
+        address, email, or account is stored with it. Pick any display name you like.</li>
+      </ul>
+
+      <h2>Analytics</h2>
+      <p>The self-hosted version at <strong>emberwilds.fun</strong> uses
+      <strong>Google Analytics 4</strong> to count anonymous gameplay events (game
+      started, level started/completed/failed, session length), so we can see where
+      players get stuck. GA4 may set cookies and process data per
+      <a href="https://policies.google.com/privacy" rel="noopener">Google's privacy
+      policy</a> — but only after you accept the consent banner; until then analytics
+      cookies are disabled (Google Consent Mode v2). We never send GA4 any name or
+      identifier you provide.</p>
+
+      <h2>Advertising</h2>
+      <p>The emberwilds.fun build may show ads via <strong>Google AdSense</strong>,
+      which can use cookies to serve and measure ads per Google's policies — likewise
+      only after consent. Ads are never shown during active gameplay.</p>
+      <p>When you play Emberwilds <strong>on a game portal</strong>, advertising,
+      analytics, and any cloud save are provided by that portal's own SDK, governed by
+      that portal's privacy policy:</p>
+      <ul>
+        <li>CrazyGames — <a href="https://www.crazygames.com/privacy" rel="noopener">crazygames.com/privacy</a></li>
+        <li>Poki — <a href="https://poki.com/en/c/privacy-policy" rel="noopener">poki.com/en/c/privacy-policy</a></li>
+        <li>Yandex Games — <a href="https://yandex.com/legal/confidential/" rel="noopener">yandex.com/legal/confidential</a></li>
+        <li>GameDistribution — <a href="https://gamedistribution.com/privacy-policy/" rel="noopener">gamedistribution.com/privacy-policy</a></li>
+      </ul>
+
+      <h2>Cookies &amp; tracking</h2>
+      <ul>
+        <li><strong>Self-hosted (emberwilds.fun):</strong> cookies from Google Analytics
+        and, if shown, Google AdSense — both gated behind the consent banner. Game
+        progress uses localStorage, not cookies.</li>
+        <li><strong>On portals:</strong> any cookies/tracking are set by the portal's
+        SDK, not by us.</li>
+      </ul>
+
+      <h2>Children</h2>
+      <p>Emberwilds is family-friendly and contains no user-to-user communication. On
+      portals, ad delivery to minors is handled by the portal per COPPA / GDPR-K.</p>
+
+      <h2>Your rights</h2>
+      <p>Because we hold no account and no contact data, there is nothing to look up by
+      identity. You can:</p>
+      <ul>
+        <li><strong>Delete your local data</strong> — clear your browser storage for this site.</li>
+        <li><strong>Remove a leaderboard entry</strong> — email us the display name and
+        level, and we will remove it.</li>
+        <li>Under GDPR/CCPA, request deletion of the leaderboard record tied to your device id.</li>
+      </ul>
+
+      <h2>Contact</h2>
+      <p><a href="mailto:contact@emberwilds.fun">contact@emberwilds.fun</a></p>
+
+      <h2>Changes</h2>
+      <p>We may update this policy; the "Last updated" date reflects the latest version.</p>
+
+      <a class="back" href="/">&larr; BACK TO THE GAME</a>
+      <a class="back alt" href="/terms.html">TERMS OF SERVICE</a>
+    </div>
+  </div>
+</body>
+</html>

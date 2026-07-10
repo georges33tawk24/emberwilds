@@ -104,14 +104,16 @@ export class TitleScene extends Phaser.Scene {
     }).setDepth(4);
     // the post-game challenge modes unlock once the campaign is beaten
     if (cleared >= LEVELS.length) {
-      new PixelText(this, W / 2, rowY + 48, 'CHALLENGE THE WILDS', { scale: 1, color: 'y', align: 'center', shadow: true }).setDepth(3);
-      new PixelButton(this, W / 2 - 98, rowY + 62, {
+      // label is top-anchored (bottom ≈ rowY+55 with shadow); buttons are
+      // centre-anchored h20 (+ press slack), so y must be ≥ rowY+70 to clear it
+      new PixelText(this, W / 2, rowY + 46, 'CHALLENGE THE WILDS', { scale: 1, color: 'y', align: 'center', shadow: true }).setDepth(3);
+      new PixelButton(this, W / 2 - 98, rowY + 72, {
         w: 92, h: 20, label: 'BOSS RUSH', face: 'green', onTap: () => this.beginRun('boss'),
       }).setDepth(4);
-      new PixelButton(this, W / 2, rowY + 62, {
+      new PixelButton(this, W / 2, rowY + 72, {
         w: 92, h: 20, label: 'TIME ATTACK', face: 'green', onTap: () => this.beginRun('time'),
       }).setDepth(4);
-      new PixelButton(this, W / 2 + 98, rowY + 62, {
+      new PixelButton(this, W / 2 + 98, rowY + 72, {
         w: 92, h: 20, label: 'HARDCORE', face: 'wood', onTap: () => this.beginRun('hardcore'),
       }).setDepth(4);
       this.input.keyboard?.on('keydown-B', () => this.beginRun('boss'));
