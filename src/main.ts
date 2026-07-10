@@ -24,9 +24,14 @@ import { audio } from './audio/engine';
 import { initTouchControls } from './systems/touch';
 import { VIEW, VIEW_H, widthForAspect, setSafeInsets } from './gfx/viewport';
 import { Platform } from './platform';
+import { initNative, hideSplash, isNative } from './systems/native';
 
 const save = new SaveManager();
 audio.applySettings(save.data.settings);
+
+// native shell (Capacitor): fullscreen immersive, splash, hardware Back.
+// No-op on the web build.
+void initNative();
 
 // Boot the platform layer (detects portal SDK; no-op LocalAdapter on our own
 // domain). Fire-and-forget — it never throws and the game must not wait on it.
@@ -165,7 +170,10 @@ document.addEventListener('fullscreenchange', () => {
 document.addEventListener('webkitfullscreenchange', () => {
   [80, 300, 800].forEach((ms) => setTimeout(refit, ms));
 });
-game.events.once(Phaser.Core.Events.READY, refit);
+game.events.once(Phaser.Core.Events.READY, () => {
+  refit();
+  void hideSplash(); // dismiss the native launch splash now the canvas is up
+});
 
 // While a touch device is held in portrait the #rotate prompt (index.html)
 // covers the screen; sleep the game loop so no gameplay runs behind it and the
@@ -255,7 +263,8 @@ let autoFsDone = false;
 window.addEventListener(
   'touchend',
   () => {
-    if (autoFsDone || fsElement()) return;
+    // native is already immersive fullscreen — the web fullscreen API is a no-op there
+    if (isNative() || autoFsDone || fsElement()) return;
     autoFsDone = true;
     if (fsAvailable() && !isStandalone()) toggleFullscreen();
   },
@@ -280,7 +289,9 @@ window.addEventListener('keydown', unlockAudio, { once: true });
 // the player gets the fresh shell and assets immediately — without this,
 // updates only apply on some later visit. hadController guards the very first
 // install (fresh content is already showing; a reload would just flicker).
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
+// Skip the service worker on native: Capacitor already bundles every asset
+// locally, so the SW is redundant and its controllerchange→reload could loop.
+if ('serviceWorker' in navigator && import.meta.env.PROD && !isNative()) {
   window.addEventListener('load', () => {
     void navigator.serviceWorker.register(new URL('sw.js', window.location.href).pathname);
     let hadController = !!navigator.serviceWorker.controller;
