@@ -17,6 +17,7 @@ import type { Song } from '../audio/songTypes';
 import { LEVELS } from '../data/levels';
 import { TUNING } from '../data/tuning';
 import { VIEW } from '../gfx/viewport';
+import { Platform } from '../platform';
 
 const TITLE_SONG = TITLE_SONG_RAW as Song;
 
@@ -104,14 +105,16 @@ export class TitleScene extends Phaser.Scene {
     }).setDepth(4);
     // the post-game challenge modes unlock once the campaign is beaten
     if (cleared >= LEVELS.length) {
-      new PixelText(this, W / 2, rowY + 48, 'CHALLENGE THE WILDS', { scale: 1, color: 'y', align: 'center', shadow: true }).setDepth(3);
-      new PixelButton(this, W / 2 - 98, rowY + 62, {
+      // label is top-anchored (bottom ≈ rowY+55 with shadow); buttons are
+      // centre-anchored h20 (+ press slack), so y must be ≥ rowY+70 to clear it
+      new PixelText(this, W / 2, rowY + 46, 'CHALLENGE THE WILDS', { scale: 1, color: 'y', align: 'center', shadow: true }).setDepth(3);
+      new PixelButton(this, W / 2 - 98, rowY + 72, {
         w: 92, h: 20, label: 'BOSS RUSH', face: 'green', onTap: () => this.beginRun('boss'),
       }).setDepth(4);
-      new PixelButton(this, W / 2, rowY + 62, {
+      new PixelButton(this, W / 2, rowY + 72, {
         w: 92, h: 20, label: 'TIME ATTACK', face: 'green', onTap: () => this.beginRun('time'),
       }).setDepth(4);
-      new PixelButton(this, W / 2 + 98, rowY + 62, {
+      new PixelButton(this, W / 2 + 98, rowY + 72, {
         w: 92, h: 20, label: 'HARDCORE', face: 'wood', onTap: () => this.beginRun('hardcore'),
       }).setDepth(4);
       this.input.keyboard?.on('keydown-B', () => this.beginRun('boss'));
@@ -127,9 +130,25 @@ export class TitleScene extends Phaser.Scene {
       { scale: 1, color: 't', align: 'center', shadow: true },
     ).setDepth(3);
 
+    // legal corner — PRIVACY / TERMS visible on the main page itself (portal
+    // and AdSense reviewers look for these); zones give the tiny labels a
+    // fat, reliable hit target
+    const legal = (x: number, label: string, url: string): number => {
+      const t = new PixelText(this, x, H - 12, label, { scale: 1, color: 't', shadow: true }).setDepth(3);
+      const w = label.length * 5;
+      this.add.zone(x - 3, H - 17, w + 8, 16).setOrigin(0, 0)
+        .setInteractive({ useHandCursor: true })
+        .on('pointerover', () => t.setColor('O'))
+        .on('pointerout', () => t.setColor('t'))
+        .on('pointerup', () => Platform.openURL(`${window.location.origin}/${url}`));
+      return x + w + 14;
+    };
+    legal(legal(8, 'PRIVACY', 'privacy.html'), 'TERMS', 'terms.html');
+
     // one tap still starts the game (mobile-first) — anywhere outside the menu
     this.input.on('pointerup', (p: Phaser.Input.Pointer) => {
-      if (p.y > 132 && p.y < 288) return; // the plaques own this band
+      if (p.y > 132 && p.y < 292) return; // the plaques own this band
+      if (p.y > H - 22 && p.x < 110) return; // ...and the legal corner its own
       this.begin(false);
     });
     this.input.keyboard?.on('keydown-M', () => this.begin(true));
