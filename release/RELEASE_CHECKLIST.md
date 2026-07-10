@@ -14,7 +14,7 @@ _Status as of 2026-07-10. ✅ done · ☐ open · ⚠️ needs a real portal acc
 - ✅ Privacy Policy — `release/PRIVACY_POLICY.md`
 - ✅ Terms of Service — `release/TERMS_OF_SERVICE.md`
 - ✅ Asset & dependency license audit — `release/ASSET_LICENSES.md` (all original + Phaser/MIT; clean)
-- ⚠️ Cookie-consent banner — **only needed for the self-hosted emberwilds.fun build** (GA4 + AdSense in the EU). Portals run their own consent, so no banner is needed for portal builds. Add a lightweight CMP before advertising to EU traffic from our own domain.
+- ✅ Cookie-consent banner (`index.html`) — Google Consent Mode v2: analytics/ad cookies default to **denied** until the player accepts; the banner shows only on the self-hosted domain (portals govern their own). Verified present in the production build.
 - ☐ Replace `contact@emberwilds.fun` with a real monitored inbox in both legal docs
 
 ## Analytics
@@ -33,10 +33,10 @@ _Status as of 2026-07-10. ✅ done · ☐ open · ⚠️ needs a real portal acc
 ## Technical
 - ✅ Mobile: touch controls, responsive scaling, edge-to-edge (no black bars), landscape rotate hint
 - ✅ Save system: localStorage with migrations, backup, corruption fallback, **+ platform cloud mirror + fresh-device hydration** (`SaveManager.onSave`, wired in `main.ts` when the platform offers cloud save)
-- ✅ Performance: code-split bundle (Phaser vendor / gamedata / game), PWA offline shell
+- ✅ Performance: static audit done — `release/PERFORMANCE.md` (~458 KB gz cold load, JS-only, 3 cacheable chunks, pooled hot paths, PWA shell)
 - ✅ Dev-only handles (`__game`, `__platform`) and verbose logging gated behind `import.meta.env.DEV`
+- ☐ **[measure]** first-playable < 5s (3G throttle) + stable 60 FPS / flat heap on a mid-range phone — needs a profiling run on real hardware
 - ☐ Final cross-browser pass: Chrome, Safari, Firefox, Edge (desktop + iOS/Android) — needs real hardware
-- ☐ Confirm first-playable < 5s on a cold load over 3G-class throttling — needs a measured run
 
 ## Publishing
 - ✅ Screenshots — `store-assets/screenshots/` (10 × 1600×900), pointed to from `release/screenshots/`
