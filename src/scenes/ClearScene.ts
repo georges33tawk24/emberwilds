@@ -1,6 +1,7 @@
 /** Level-clear tally overlay — time, gems, tokens, then onward. */
 import Phaser from 'phaser';
 import { PixelText } from '../gfx/text';
+import { PixelButton } from '../gfx/ui';
 import { InputSystem } from '../systems/input';
 import { setTouchContext } from '../systems/touch';
 import { SaveManager } from '../systems/save';
@@ -48,6 +49,12 @@ export class ClearScene extends Phaser.Scene {
     this.layoutW = VIEW.w;
     this.inputSys = new InputSystem(this);
     this.grace = 0.6;
+    // Phaser reuses this scene INSTANCE across the whole session — these flags
+    // survive from the previous clear. Without the reset, advancing stays true
+    // after the first popup is left and every later popup ignores all input
+    // ("the buttons stop working"); a mid-flight share likewise strands sharing.
+    this.advancing = false;
+    this.sharing = false;
 
     const W = VIEW.w;
     const ui = uiScale();
@@ -118,16 +125,37 @@ export class ClearScene extends Phaser.Scene {
       this.time.delayedCall(1150, () => audio.sfx('token'));
     }
 
-    // no colons — the 4x6 font has no ':' glyph (renders as '?')
+    // real tappable buttons — a phone player must never have to decode "Z"/"X"
+    // keyboard prompts (those still work as shortcuts, handled in update())
     const hasNext = data.levelIndex + 1 < LEVELS.length;
     const nextIsNewWorld = hasNext && worldOf(data.levelIndex + 1).num !== worldOf(data.levelIndex).num;
-    const prompt = !hasNext
-      ? 'Z - ONWARD'
-      : nextIsNewWorld
-        ? `${worldOf(data.levelIndex + 1).label} AHEAD!  Z - ONWARD   X - MAP`
-        : 'Z - NEXT LEVEL   X - MAP';
-    const p = new PixelText(this, W / 2, H / 2 + (ui > 1 ? 104 : 66), prompt, { scale: ui, color: 'W', align: 'center', shadow: true });
-    this.tweens.add({ targets: p, alpha: { from: 0.4, to: 1 }, yoyo: true, repeat: -1, duration: 500 });
+    if (nextIsNewWorld) {
+      // the new-world beat keeps its callout, just above the buttons
+      new PixelText(this, W / 2, H / 2 + (ui > 1 ? 78 : 44), `${worldOf(data.levelIndex + 1).label} AHEAD!`, {
+        scale: ui, color: 'y', align: 'center', shadow: true,
+      });
+    }
+    const by = H / 2 + (ui > 1 ? 104 : 66);
+    const bw = ui > 1 ? 168 : 112;
+    const bh = ui > 1 ? 26 : 20;
+    const gap = ui > 1 ? 92 : 62;
+    if (hasNext) {
+      const next = new PixelButton(this, W / 2 + gap, by, {
+        w: bw, h: bh, label: 'NEXT LEVEL', scale: ui, face: 'green',
+        onTap: () => this.goNext(),
+      });
+      next.setLit(true); // the primary action carries the amber focus rim
+      new PixelButton(this, W / 2 - gap, by, {
+        w: bw, h: bh, label: 'WORLD MAP', scale: ui, face: 'wood',
+        onTap: () => this.goMap(),
+      });
+    } else {
+      // final boss down — one road: onward to the finale
+      new PixelButton(this, W / 2, by, {
+        w: bw, h: bh, label: 'ONWARD', scale: ui, face: 'green',
+        onTap: () => this.goNext(),
+      }).setLit(true);
+    }
 
     // share card — a tappable chip in the free band between tally and prompt
     // (mobile-first: every action needs a button), plus C on the keyboard
@@ -176,6 +204,25 @@ export class ClearScene extends Phaser.Scene {
     });
   }
 
+  /** Onward — the next level, or the finale after the last boss. */
+  private goNext(): void {
+    if (this.grace > 0 || this.advancing) return;
+    audio.sfx('menuSelect');
+    void this.advance(this.data2.levelIndex + 1 < LEVELS.length);
+  }
+
+  /** Back to the world map. */
+  private goMap(): void {
+    if (this.grace > 0 || this.advancing) return;
+    this.advancing = true;
+    audio.sfx('menuSelect');
+    audio.stopSong();
+    this.scene.stop('Game');
+    this.scene.stop('Hud');
+    this.scene.stop();
+    this.scene.start('WorldMap');
+  }
+
   update(_time: number, delta: number): void {
     // live width change (rotation, URL-bar collapse) — rebuild the layout
     if (VIEW.w !== this.layoutW) {
@@ -184,19 +231,10 @@ export class ClearScene extends Phaser.Scene {
     }
     this.grace -= delta / 1000;
     if (this.grace > 0 || this.advancing) return;
+    // keyboard/gamepad shortcuts — the buttons are the visible path
     const f = this.inputSys.sample();
-    const hasNext = this.data2.levelIndex + 1 < LEVELS.length;
-    if (f.jumpPressed) {
-      audio.sfx('menuSelect');
-      void this.advance(hasNext);
-    } else if (f.firePressed) {
-      audio.sfx('menuSelect');
-      audio.stopSong();
-      this.scene.stop('Game');
-      this.scene.stop('Hud');
-      this.scene.stop();
-      this.scene.start('WorldMap');
-    }
+    if (f.jumpPressed) this.goNext();
+    else if (f.firePressed) this.goMap();
   }
 
   /** Advance to the next level (or the finale), showing an interstitial at the
