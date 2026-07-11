@@ -119,7 +119,9 @@ export class ClearScene extends Phaser.Scene {
       const txt = earned.length === 1
         ? `ACHIEVEMENT - ${earned[0].toUpperCase()}`
         : `${earned.length} ACHIEVEMENTS UNLOCKED!`;
-      const y = H / 2 + (ui > 1 ? 56 : 34);
+      // lower-half bands (see the layout note above `by`): achievements sit
+      // directly under the tally
+      const y = H / 2 + (ui > 1 ? 44 : 34);
       const line = new PixelText(this, W / 2, y, txt, { scale: ui, color: 'O', align: 'center', shadow: true }).setAlpha(0);
       this.tweens.add({ targets: line, alpha: 1, y: { from: y + 6, to: y }, delay: 1150, duration: 300, ease: 'Back.easeOut' });
       this.time.delayedCall(1150, () => audio.sfx('token'));
@@ -130,12 +132,16 @@ export class ClearScene extends Phaser.Scene {
     const hasNext = data.levelIndex + 1 < LEVELS.length;
     const nextIsNewWorld = hasNext && worldOf(data.levelIndex + 1).num !== worldOf(data.levelIndex).num;
     if (nextIsNewWorld) {
-      // the new-world beat keeps its callout, just above the buttons
-      new PixelText(this, W / 2, H / 2 + (ui > 1 ? 78 : 44), `${worldOf(data.levelIndex + 1).label} AHEAD!`, {
-        scale: ui, color: 'y', align: 'center', shadow: true,
+      // the new-world beat — at the panel's foot, the one band nothing else
+      // uses (above the buttons it collides with the share chip at both scales)
+      new PixelText(this, W / 2, H / 2 + (ui > 1 ? 116 : 81), `${worldOf(data.levelIndex + 1).label} AHEAD!`, {
+        scale: 1, color: 'y', align: 'center', shadow: true,
       });
     }
-    const by = H / 2 + (ui > 1 ? 104 : 66);
+    // Lower-half vertical bands, measured so nothing touches (panel bottom is
+    // +125 / +89): achievements 44/34 → share chip 70/48 → buttons 100/68 →
+    // new-world callout 116/81. Keep all four in sync when moving any one.
+    const by = H / 2 + (ui > 1 ? 100 : 68);
     const bw = ui > 1 ? 168 : 112;
     const bh = ui > 1 ? 26 : 20;
     const gap = ui > 1 ? 92 : 62;
@@ -159,7 +165,7 @@ export class ClearScene extends Phaser.Scene {
 
     // share card — a tappable chip in the free band between tally and prompt
     // (mobile-first: every action needs a button), plus C on the keyboard
-    const shareY = H / 2 + (ui > 1 ? 84 : 50);
+    const shareY = H / 2 + (ui > 1 ? 70 : 48);
     const chipW = (ui > 1 ? 110 : 68);
     const chipH = (ui > 1 ? 20 : 13);
     this.add.rectangle(W / 2, shareY, chipW, chipH, 0x4a362b, 0.95).setStrokeStyle(1, 0xb58b5e);
