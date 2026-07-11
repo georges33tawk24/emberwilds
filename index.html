@@ -378,8 +378,12 @@
     <script>
       (function () {
         var h = location.hostname;
-        var mine = h === 'emberwilds.fun' || h === 'www.emberwilds.fun' || h === 'localhost' || h === '127.0.0.1';
-        if (!mine) return; // on a portal — its SDK handles consent
+        // native (Capacitor) app: no web cookies or ads run here, so the web
+        // cookie banner would be inaccurate — skip it. Consent Mode defaults to
+        // denied and the store privacy labels are the disclosure on native.
+        var native = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+        var mine = !native && (h === 'emberwilds.fun' || h === 'www.emberwilds.fun' || h === 'localhost' || h === '127.0.0.1');
+        if (!mine) return; // portal SDK or native app handles consent elsewhere
         try { if (localStorage.getItem('emberwilds.consent')) return; } catch (e) { return; }
 
         var bar = document.createElement('div');
