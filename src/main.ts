@@ -156,6 +156,9 @@ function refit(): void {
   coverCanvas();
   game.scale.updateBounds(); // input mapping must see the final canvas rect
   updateSafeInsets();
+  // every rotate/resize settle wave also re-checks the sleep state (defined
+  // below; hoisted) — one more safety net against a stuck-asleep loop
+  syncLoopToOrientation();
 }
 window.addEventListener('resize', refit);
 window.visualViewport?.addEventListener('resize', refit);
@@ -177,13 +180,28 @@ game.events.once(Phaser.Core.Events.READY, () => {
 
 // While a touch device is held in portrait the #rotate prompt (index.html)
 // covers the screen; sleep the game loop so no gameplay runs behind it and the
-// battery isn't spent rendering a hidden frame. Resumes the instant it's turned
-// back to landscape.
+// battery isn't spent rendering a hidden frame.
+//
+// RECONCILE, don't edge-trigger: mobile browsers drop matchMedia 'change'
+// events fired while the page is hidden/suspended (app switch, notification,
+// screen lock, rotating inside the switcher). With only the change listener,
+// a dropped portrait→landscape event left the loop PERMANENTLY asleep — the
+// game showed its last frame and every button went dead ("taps do nothing")
+// until the player happened to rotate to portrait and back. Phaser's own
+// visibility resume() can't help: sleep()/wake() is a separate, harder stop.
+// So on every signal that the world may have changed under us, re-derive the
+// correct state from portraitMq.matches (sleep()/wake() are idempotent).
 const portraitMq = window.matchMedia('(orientation: portrait) and (pointer: coarse)');
-portraitMq.addEventListener('change', (e) => {
-  if (e.matches) game.loop.sleep();
+function syncLoopToOrientation(): void {
+  if (portraitMq.matches) game.loop.sleep();
   else game.loop.wake();
+}
+portraitMq.addEventListener('change', syncLoopToOrientation);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) syncLoopToOrientation();
 });
+window.addEventListener('pageshow', syncLoopToOrientation);
+window.addEventListener('focus', syncLoopToOrientation);
 
 if (import.meta.env.DEV) {
   (window as unknown as { __game: Phaser.Game }).__game = game;

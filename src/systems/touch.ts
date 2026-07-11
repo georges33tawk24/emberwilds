@@ -340,6 +340,23 @@ function installInput(built: { def: BtnDef; cvs: HTMLCanvasElement; pressed: boo
   window.addEventListener('touchend', endHandler, { passive: false });
   window.addEventListener('touchcancel', endHandler, { passive: false });
 
+  // When the OS steals the touches (notification shade, control center, app
+  // switch, gesture nav) some browsers never deliver touchend OR touchcancel —
+  // a held button then sticks "down" forever, and the InputSystem's rising-edge
+  // detection (pressed = down && !prevDown) eats the player's next tap on it:
+  // "the button stopped working". Release everything whenever the page loses
+  // the foreground; real fingers still touching will re-press on the next event.
+  const releaseAll = (): void => {
+    fsTouches.clear();
+    if (fullscreenBtn) drawButton(fullscreenBtn.cvs, fullscreenBtn.def, false);
+    for (const b of holdKeys) setPressed(b, false);
+  };
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) releaseAll();
+  });
+  window.addEventListener('pagehide', releaseAll);
+  window.addEventListener('blur', releaseAll);
+
   // desktop mouse (also drives the preview harness): press/hold/release
   for (const b of holdKeys) {
     b.cvs.addEventListener('mousedown', (e) => { e.preventDefault(); setPressed(b, true); });
