@@ -109,9 +109,9 @@ Declare (matches what the app actually does):
 
 ### 5g. Store listing assets (already in `release/`)
 - **Icon:** generated (1024² source in `assets/icon.png`).
-- **Screenshots:** `release/screenshots/` — Play needs ≥2 (phone), Apple needs
-  6.5" + (optional) iPad. Use landscape shots.
-- **Feature graphic (Play):** 1024×500 — *create one* (not yet in the repo).
+- **Screenshots:** `store-assets/screenshots/` — 10 landscape 1920×1080 shots
+  re-taken on the Phase-3 maps (Play needs ≥2; Apple resizes from these).
+- **Feature graphic (Play):** `store-assets/feature-graphic-1024x500.png` ✓
 - **Descriptions:** `release/descriptions/`.
 
 ---
