@@ -53,7 +53,7 @@ export class LeaderboardScene extends Phaser.Scene {
     new PixelText(this, W / 2, ui > 1 ? 22 : 28, 'TOP 10', { scale: ui > 1 ? 4 : 3, color: 'O', align: 'center', shadow: true });
     new PixelText(this, W / 2, ui > 1 ? 50 : 54,
       `${LEVELS[this.levelIndex].name.toUpperCase()}  -  ${levelLabel(this.levelIndex)}`,
-      { scale: 1, color: 'c', align: 'center' });
+      { scale: ui, color: 'c', align: 'center' });
 
     this.status = new PixelText(this, W / 2, H / 2 - 20, 'FETCHING THE WILDS...', { scale: ui, color: 't', align: 'center' });
 
@@ -64,9 +64,9 @@ export class LeaderboardScene extends Phaser.Scene {
     }
 
     const myBest = this.save.data.bestTimes[this.levelIndex];
-    this.mine = new PixelText(this, W / 2, H - (ui > 1 ? 66 : 62),
+    this.mine = new PixelText(this, W / 2, H - (ui > 1 ? 72 : 62),
       myBest ? `YOUR BEST ${(myBest / 1000).toFixed(1)}s AS ${storedName()}` : 'NO CLEAR TIME YET - GO SET ONE',
-      { scale: 1, color: 'y', align: 'center', shadow: true });
+      { scale: ui, color: 'y', align: 'center', shadow: true });
 
     // SET NAME plaque
     this.nameBtn = new PixelButton(this, W / 2, H - (ui > 1 ? 42 : 40), {
@@ -74,8 +74,8 @@ export class LeaderboardScene extends Phaser.Scene {
       onTap: () => this.setName(),
     });
 
-    new PixelText(this, W / 2, H - (ui > 1 ? 16 : 18), ui > 1 ? 'TAP SET NAME     II  BACK' : 'N  SET NAME     ESC  BACK', {
-      scale: 1, color: 'W', align: 'center', shadow: true,
+    new PixelText(this, W / 2, H - (ui > 1 ? 16 : 18), ui > 1 ? 'TAP SET NAME     TAP  BACK' : 'N  SET NAME     ESC  BACK', {
+      scale: ui, color: 'W', align: 'center', shadow: true,
     });
 
     // BACK plaque — top-left corner (the DOM pause/fullscreen cluster owns the

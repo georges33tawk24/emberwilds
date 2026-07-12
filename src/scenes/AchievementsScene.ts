@@ -62,15 +62,15 @@ export class AchievementsScene extends Phaser.Scene {
     const s = this.save.data.stats;
     const mins = Math.floor(s.playtimeMs / 60000);
     const statLine = `CLEARED ${s.levelsCleared}   FOES ${s.enemiesDefeated}   FALLS ${s.deaths}   PLAYED ${mins}M`;
-    new PixelText(this, W / 2, ui > 1 ? 62 : 58, statLine, { scale: 1, color: 't', align: 'center' });
+    new PixelText(this, W / 2, ui > 1 ? 62 : 58, statLine, { scale: ui, color: 't', align: 'center' });
 
     // BACK plaque (top-left) — same carved-wood button as every other screen
     const bw = ui > 1 ? 88 : 64;
     new PixelButton(this, VIEW.insetL + 10 + bw / 2, ui > 1 ? 24 : 18, {
       w: bw, h: ui > 1 ? 26 : 20, label: 'BACK', scale: ui, face: 'wood', onTap: () => this.back(),
     });
-    new PixelText(this, W / 2, H - (ui > 1 ? 12 : 12), 'DRAG TO SCROLL     II / ESC  BACK', {
-      scale: 1, color: 'c', align: 'center', shadow: true,
+    new PixelText(this, W / 2, H - (ui > 1 ? 16 : 12), ui > 1 ? 'DRAG TO SCROLL     TAP  BACK' : 'SCROLL     ESC  BACK', {
+      scale: ui, color: 'c', align: 'center', shadow: true,
     });
 
     // the scrollable achievement rows
@@ -83,7 +83,7 @@ export class AchievementsScene extends Phaser.Scene {
       const name = new PixelText(this, left + 14 * ui, 0, a.name.toUpperCase(), {
         scale: ui, color: got ? 'W' : 's', shadow: got,
       });
-      const desc = new PixelText(this, left + 14 * ui, 0, a.desc, { scale: 1, color: got ? 't' : 'i' });
+      const desc = new PixelText(this, left + 14 * ui, 0, a.desc, { scale: ui, color: got ? 't' : 'i' });
       return { name, desc, mark };
     });
     this.layoutRows();

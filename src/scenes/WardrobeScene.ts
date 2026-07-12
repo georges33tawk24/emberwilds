@@ -88,7 +88,7 @@ export class WardrobeScene extends Phaser.Scene {
 
     this.add.rectangle(W / 2, H / 2, W, H, 0x14100d, 0.88);
     new PixelText(this, W / 2, ui > 1 ? 26 : 34, 'THE WARDROBE', { scale: ui > 1 ? 4 : 3, color: 'O', align: 'center', shadow: true });
-    new PixelText(this, W / 2, ui > 1 ? 54 : 62, 'WEAR THE WILDS - COSMETIC ONLY, GEMS ONLY', { scale: 1, color: 'c', align: 'center' });
+    new PixelText(this, W / 2, ui > 1 ? 54 : 62, 'WEAR THE WILDS - COSMETIC ONLY, GEMS ONLY', { scale: ui, color: 'c', align: 'center' });
 
     this.add.image(W / 2 - 40 * ui * 0.6, ui > 1 ? 74 : 80, 'pickups', 'gem.0').setScale(1.3);
     this.gemText = new PixelText(this, W / 2 - 28 * ui * 0.6, ui > 1 ? 70 : 76, '', { scale: 2, color: 'W', shadow: true });
@@ -112,7 +112,7 @@ export class WardrobeScene extends Phaser.Scene {
     for (const row of ROWS) {
       const cursor = new PixelText(this, W / 2 - (ui > 1 ? 208 : 172), 0, '', { scale: 2, color: 'O' });
       const name = new PixelText(this, W / 2 - (ui > 1 ? 192 : 152), 0, row.label, { scale: ui, color: 'W', shadow: true });
-      const desc = new PixelText(this, W / 2 - (ui > 1 ? 192 : 152), 0, row.desc, { scale: 1, color: 't' });
+      const desc = new PixelText(this, W / 2 - (ui > 1 ? 192 : 152), 0, row.desc, { scale: ui, color: 't' });
       const state = new PixelText(this, W / 2 + (ui > 1 ? 208 : 168), 0, '', { scale: ui, color: 'y', align: 'right', shadow: true });
       this.labels.push({ name, desc, state, cursor });
     }

@@ -73,7 +73,7 @@ export class ShopScene extends Phaser.Scene {
     void panel;
 
     new PixelText(this, W / 2, ui > 1 ? 32 : 44, 'THE GROVE', { scale: ui > 1 ? 4 : 3, color: 'O', align: 'center', shadow: true });
-    new PixelText(this, W / 2, ui > 1 ? 62 : 74, 'SPEND EMBER-GEMS ON LASTING GIFTS', { scale: 1, color: 'c', align: 'center' });
+    new PixelText(this, W / 2, ui > 1 ? 62 : 74, 'SPEND EMBER-GEMS ON LASTING GIFTS', { scale: ui, color: 'c', align: 'center' });
 
     this.add.image(W / 2 - 44 * ui * 0.7, ui > 1 ? 84 : 96, 'pickups', 'gem.0').setScale(1.4 * (ui > 1 ? 1.3 : 1));
     this.gemText = new PixelText(this, W / 2 - 30 * ui * 0.7, ui > 1 ? 80 : 92, '', { scale: 2, color: 'W', shadow: true });
@@ -82,7 +82,7 @@ export class ShopScene extends Phaser.Scene {
     SHOP_ITEMS.forEach((item) => {
       const cursor = new PixelText(this, W / 2 - (ui > 1 ? 216 : 180), 0, '', { scale: 2, color: 'O' });
       const name = new PixelText(this, W / 2 - (ui > 1 ? 200 : 160), 0, item.name, { scale: ui, color: 'W', shadow: true });
-      const desc = new PixelText(this, W / 2 - (ui > 1 ? 200 : 160), 0, item.desc, { scale: 1, color: 't' });
+      const desc = new PixelText(this, W / 2 - (ui > 1 ? 200 : 160), 0, item.desc, { scale: ui, color: 't' });
       const pips = this.add.graphics();
       const cost = new PixelText(this, W / 2 + (ui > 1 ? 216 : 172), 0, '', { scale: ui, color: 'y', align: 'right', shadow: true });
       this.rows.push({ name, desc, pips, cost, cursor });
@@ -103,8 +103,14 @@ export class ShopScene extends Phaser.Scene {
       });
     }
 
-    new PixelText(this, W / 2, H - (ui > 1 ? 22 : 30), ui > 1 ? 'TAP  CHOOSE / BUY     II  BACK' : 'up/down  CHOOSE     Z  BUY     ESC  BACK', {
+    new PixelText(this, W / 2, H - (ui > 1 ? 22 : 30), ui > 1 ? 'TAP  CHOOSE     TAP AGAIN  BUY' : 'up/down  CHOOSE     Z  BUY     ESC  BACK', {
       scale: ui > 1 ? 2 : 1, color: 'W', align: 'center', shadow: true,
+    });
+
+    // BACK plaque — top-left corner, same carved-wood button as every screen
+    const backW = ui > 1 ? 88 : 64;
+    new PixelButton(this, VIEW.insetL + 10 + backW / 2, ui > 1 ? 24 : 18, {
+      w: backW, h: ui > 1 ? 26 : 20, label: 'BACK', scale: ui, face: 'wood', onTap: () => this.goBack(),
     });
 
     // tap a row to select it, tap the selection to buy; drag/wheel scrolls
@@ -181,6 +187,14 @@ export class ShopScene extends Phaser.Scene {
     this.continueBtn?.setLit(this.sel === SHOP_ITEMS.length + 1);
   }
 
+  /** Leave the Grove back to wherever it was opened from. */
+  private goBack(): void {
+    audio.sfx('menuSelect');
+    setTouchContext(this.returnTo === 'WorldMap' ? 'map' : 'game');
+    this.scene.stop();
+    this.scene.resume(this.returnTo);
+  }
+
   /** Into the cosmetics shop. */
   private goWardrobe(): void {
     audio.sfx('menuSelect');
@@ -242,10 +256,7 @@ export class ShopScene extends Phaser.Scene {
       else if (this.sel === SHOP_ITEMS.length + 1) this.goContinue();
       else this.buy();
     } else if (f.pause) {
-      audio.sfx('menuSelect');
-      setTouchContext(this.returnTo === 'WorldMap' ? 'map' : 'game');
-      this.scene.stop();
-      this.scene.resume(this.returnTo);
+      this.goBack();
     }
   }
 }

@@ -120,7 +120,7 @@ export class WorldMapScene extends Phaser.Scene {
       mobile ? 'JUMP  ENTER      II  MENU'
         : lb ? 'Z  ENTER      FIRE  THE GROVE      L  TOP 10      ESC  MENU'
           : 'Z  ENTER      FIRE  THE GROVE      ESC  MENU', {
-        scale: 1, color: 'W', align: 'center', shadow: true,
+        scale: mobile ? 2 : 1, color: 'W', align: 'center', shadow: true,
       }).setScrollFactor(0).setDepth(31);
 
     this.camX = Phaser.Math.Clamp(n0.x - W / 2, 0, Math.max(0, this.mapWidth - W));

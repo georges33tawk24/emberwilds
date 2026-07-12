@@ -81,7 +81,7 @@ export class RunClearScene extends Phaser.Scene {
       data.mode === 'boss' ? 'ALL FIVE SHARDS, ONE RUN'
         : data.mode === 'time' ? 'THE WHOLE WILDS, ONE CLOCK'
           : win ? 'ONE LIFE. NOT A SCRATCH.' : 'ONE LIFE. THE WILDS TAKE THEIR DUE.';
-    new PixelText(this, W / 2, ui > 1 ? 76 : 74, sub, { scale: 1, color: 'c', align: 'center', shadow: true });
+    new PixelText(this, W / 2, ui > 1 ? 76 : 74, sub, { scale: ui, color: 'c', align: 'center', shadow: true });
 
     // headline: time for time-runs / a hardcore win; depth for a hardcore death
     if (timeRun || win) {
@@ -93,7 +93,7 @@ export class RunClearScene extends Phaser.Scene {
       new PixelText(this, W / 2, H / 2 - (ui > 1 ? 34 : 26), `REACHED ${reached}`, {
         scale: ui > 1 ? 3 : 2, color: 'W', align: 'center', shadow: true,
       });
-      new PixelText(this, W / 2, H / 2 - (ui > 1 ? 6 : 4), `${data.depth} / 28 BEACONS`, { scale: 1, color: 'c', align: 'center' });
+      new PixelText(this, W / 2, H / 2 - (ui > 1 ? 6 : 4), `${data.depth} / 28 BEACONS`, { scale: ui, color: 'c', align: 'center' });
     }
     if (isBest) {
       new PixelText(this, W / 2, H / 2 + (ui > 1 ? 8 : 6), timeRun || win ? 'NEW BEST!' : 'DEEPEST YET!', {
@@ -102,9 +102,9 @@ export class RunClearScene extends Phaser.Scene {
     }
 
     const rowY = H / 2 + (ui > 1 ? 44 : 34);
-    new PixelText(this, W / 2, rowY, `DEATHS  ${data.deaths}`, { scale: 1, color: 't', align: 'center' });
+    new PixelText(this, W / 2, rowY, `DEATHS  ${data.deaths}`, { scale: ui, color: 't', align: 'center' });
     const bestLabel = timeRun ? `BEST  ${fmt(runBest(data.mode))}` : `BEST DEPTH  ${runBest('hardcore')} / 28`;
-    new PixelText(this, W / 2, rowY + 12, bestLabel, { scale: 1, color: 'y', align: 'center' });
+    new PixelText(this, W / 2, rowY + (ui > 1 ? 16 : 12), bestLabel, { scale: ui, color: 'y', align: 'center' });
 
     const by = H - (ui > 1 ? 44 : 40);
     new PixelButton(this, W / 2 - (ui > 1 ? 92 : 66), by, {
@@ -113,7 +113,7 @@ export class RunClearScene extends Phaser.Scene {
     new PixelButton(this, W / 2 + (ui > 1 ? 92 : 66), by, {
       w: ui > 1 ? 168 : 120, h: ui > 1 ? 26 : 20, label: 'TITLE', scale: ui, face: 'wood', onTap: () => this.toTitle(),
     });
-    new PixelText(this, W / 2, H - (ui > 1 ? 16 : 16), 'Z  RUN AGAIN     X  TITLE', { scale: 1, color: 'W', align: 'center', shadow: true });
+    if (ui === 1) new PixelText(this, W / 2, H - 16, 'Z  RUN AGAIN     X  TITLE', { scale: 1, color: 'W', align: 'center', shadow: true });
   }
 
   private again(): void {
