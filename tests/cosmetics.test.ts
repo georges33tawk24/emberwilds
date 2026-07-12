@@ -39,7 +39,9 @@ describe('cosmetics', () => {
     expect(styled).toEqual(PLAYER_FRAMES);
   });
 
-  it('every character x scarf x hat combination bakes lint-legal frames', () => {
+  // exhaustive bake — ~4s alone, and it can cross vitest's 5s default under
+  // machine load (dev server + browser running), so give it explicit headroom
+  it('every character x scarf x hat combination bakes lint-legal frames', { timeout: 20_000 }, () => {
     const characters = [null, ...COSMETICS.filter((c) => c.kind === 'character').map((c) => c.id)];
     const scarves = [null, ...COSMETICS.filter((c) => c.kind === 'scarf').map((c) => c.id)];
     for (const character of characters) {
