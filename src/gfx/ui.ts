@@ -115,3 +115,54 @@ export class PixelButton extends Phaser.GameObjects.Container {
     return this;
   }
 }
+
+/**
+ * A chained-shut overlay for locked plaques: a horizontal iron chain across the
+ * middle with a small gold padlock at its center — the universal "not yet" in
+ * the game's own pixel language. Baked once per size and shared.
+ */
+export function lockedOverlay(scene: Phaser.Scene, x: number, y: number, w: number, h: number): Phaser.GameObjects.Image {
+  const key = `lock-chain-${w}x${h}`;
+  if (!scene.textures.exists(key)) {
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d')!;
+    const IRON = '#7c7a72';
+    const IRON_D = '#5a5450';
+    const GOLD = '#b58b5e';
+    const GOLD_H = '#e6c79a';
+    // the chain runs along the LOWER third so the plaque's label stays
+    // readable — the player must see WHAT is chained shut
+    const cy = h - 4;
+    for (let lx = -2; lx < w + 6; lx += 6) {
+      ctx.fillStyle = K; // link outline (8x6 oval, corners cut)
+      ctx.fillRect(lx + 1, cy - 3, 6, 6);
+      ctx.fillRect(lx, cy - 2, 8, 4);
+      ctx.fillStyle = IRON; // iron rim light
+      ctx.fillRect(lx + 1, cy - 2, 6, 1);
+      ctx.fillStyle = IRON_D;
+      ctx.fillRect(lx + 1, cy + 1, 6, 1);
+      ctx.clearRect(lx + 3, cy - 1, 2, 2); // the hole
+    }
+    // the gold padlock hangs at the chain's right end, clear of the label
+    const px = w - 17;
+    const py = cy - 9;
+    ctx.fillStyle = K; // shackle
+    ctx.fillRect(px + 2, py, 8, 2);
+    ctx.fillRect(px + 1, py + 1, 2, 5);
+    ctx.fillRect(px + 9, py + 1, 2, 5);
+    ctx.fillStyle = IRON;
+    ctx.fillRect(px + 3, py + 1, 6, 1);
+    ctx.fillStyle = K; // body outline
+    ctx.fillRect(px, py + 5, 12, 8);
+    ctx.fillStyle = GOLD; // gold face
+    ctx.fillRect(px + 1, py + 6, 10, 6);
+    ctx.fillStyle = GOLD_H; // top bevel light
+    ctx.fillRect(px + 1, py + 6, 10, 1);
+    ctx.fillStyle = K; // keyhole
+    ctx.fillRect(px + 5, py + 8, 2, 3);
+    scene.textures.addCanvas(key, canvas);
+  }
+  return scene.add.image(x, y, key);
+}

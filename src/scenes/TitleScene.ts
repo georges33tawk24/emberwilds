@@ -1,7 +1,7 @@
 /** Animated title / attract screen — routes to the world-map hub. */
 import Phaser from 'phaser';
 import { PLAYER_TEX } from '../systems/cosmetics';
-import { PixelButton } from '../gfx/ui';
+import { PixelButton, lockedOverlay } from '../gfx/ui';
 import { promptName, storedName } from '../systems/nameEntry';
 import { announceName } from '../systems/leaderboard';
 import { PixelText } from '../gfx/text';
@@ -45,6 +45,10 @@ export class TitleScene extends Phaser.Scene {
   create(): void {
     setTouchContext('ui');
     const W = VIEW.w;
+    const touch = isMobile();
+    // mobile readability: secondary lines double on touch devices (the 4x6
+    // font at scale 1 is ~6 CSS px tall on a phone — genuinely hard to read)
+    const big = touch ? 2 : 1;
     this.layoutW = W;
     this.save = this.registry.get('save') as SaveManager;
     this.input2 = new InputSystem(this);
@@ -63,14 +67,13 @@ export class TitleScene extends Phaser.Scene {
     this.logo = new PixelText(this, W / 2, 52, 'EMBERWILDS', {
       scale: 4, color: 'O', align: 'center', shadow: true,
     }).setDepth(3);
-    new PixelText(this, W / 2, 90, 'A WARM LITTLE ACTION PLATFORMER', {
-      scale: 1, color: 'c', align: 'center', shadow: true,
+    new PixelText(this, W / 2, touch ? 86 : 90, 'A WARM LITTLE ACTION PLATFORMER', {
+      scale: big, color: 'c', align: 'center', shadow: true,
     }).setDepth(3);
 
     const cleared = this.save.data.levelUnlocked;
-    const touch = isMobile();
-    this.tokenLabel = new PixelText(this, W / 2, 122, '', {
-      scale: 1, color: 'y', align: 'center', shadow: true,
+    this.tokenLabel = new PixelText(this, W / 2, touch ? 119 : 122, '', {
+      scale: big, color: 'y', align: 'center', shadow: true,
     }).setDepth(3);
     this.tokenLabel.setText(cleared > 0 ? `${cleared} BEACON${cleared === 1 ? '' : 'S'} RELIT` : 'THE WILDS AWAIT');
 
@@ -80,8 +83,8 @@ export class TitleScene extends Phaser.Scene {
       onTap: () => this.begin(false),
     }).setDepth(4);
     playBtn.setLit(true);
-    this.promptLabel = new PixelText(this, W / 2, 176, touch ? 'OR TAP ANYWHERE' : 'OR PRESS Z', {
-      scale: 1, color: 'c', align: 'center',
+    this.promptLabel = new PixelText(this, W / 2, touch ? 173 : 176, touch ? 'OR TAP ANYWHERE' : 'OR PRESS Z', {
+      scale: big, color: 'c', align: 'center',
     }).setDepth(3);
 
     const rowY = 200;
@@ -103,31 +106,33 @@ export class TitleScene extends Phaser.Scene {
       w: 116, h: 20, label: 'HOW TO PLAY', face: 'wood',
       onTap: () => this.openHowTo(),
     }).setDepth(4);
-    // the post-game challenge modes unlock once the campaign is beaten
-    if (cleared >= LEVELS.length) {
-      // label is top-anchored (bottom ≈ rowY+55 with shadow); buttons are
-      // centre-anchored h20 (+ press slack), so y must be ≥ rowY+70 to clear it
-      new PixelText(this, W / 2, rowY + 46, 'CHALLENGE THE WILDS', { scale: 1, color: 'y', align: 'center', shadow: true }).setDepth(3);
-      new PixelButton(this, W / 2 - 98, rowY + 72, {
-        w: 92, h: 20, label: 'BOSS RUSH', face: 'green', onTap: () => this.beginRun('boss'),
+    // the post-game challenge modes — always VISIBLE so players know what's
+    // waiting, chained shut until the campaign is beaten
+    const unlocked = cleared >= LEVELS.length;
+    // label is top-anchored (bottom ≈ rowY+55 with shadow); buttons are
+    // centre-anchored h20 (+ press slack), so y must be ≥ rowY+70 to clear it
+    new PixelText(this, W / 2, rowY + (touch ? 44 : 46), 'CHALLENGE THE WILDS', { scale: big, color: 'y', align: 'center', shadow: true }).setDepth(3);
+    const challenge = (dx: number, label: string, mode: 'boss' | 'time' | 'hardcore', face: 'green' | 'wood'): void => {
+      new PixelButton(this, W / 2 + dx, rowY + 72, {
+        w: 92, h: 20, label,
+        face: unlocked ? face : 'iron',
+        onTap: () => (unlocked ? this.beginRun(mode) : this.lockedNudge()),
       }).setDepth(4);
-      new PixelButton(this, W / 2, rowY + 72, {
-        w: 92, h: 20, label: 'TIME ATTACK', face: 'green', onTap: () => this.beginRun('time'),
-      }).setDepth(4);
-      new PixelButton(this, W / 2 + 98, rowY + 72, {
-        w: 92, h: 20, label: 'HARDCORE', face: 'wood', onTap: () => this.beginRun('hardcore'),
-      }).setDepth(4);
-      this.input.keyboard?.on('keydown-B', () => this.beginRun('boss'));
-      this.input.keyboard?.on('keydown-T', () => this.beginRun('time'));
-      this.input.keyboard?.on('keydown-K', () => this.beginRun('hardcore'));
-    }
+      if (!unlocked) lockedOverlay(this, W / 2 + dx, rowY + 72, 92, 20).setDepth(5);
+    };
+    challenge(-98, 'BOSS RUSH', 'boss', 'green');
+    challenge(0, 'TIME ATTACK', 'time', 'green');
+    challenge(98, 'HARDCORE', 'hardcore', 'wood');
+    this.input.keyboard?.on('keydown-B', () => (unlocked ? this.beginRun('boss') : this.lockedNudge()));
+    this.input.keyboard?.on('keydown-T', () => (unlocked ? this.beginRun('time') : this.lockedNudge()));
+    this.input.keyboard?.on('keydown-K', () => (unlocked ? this.beginRun('hardcore') : this.lockedNudge()));
 
     new PixelText(
       this, W / 2, 300,
       touch
         ? 'ROCKER MOVE   JUMP   FIRE   POUND'
         : 'ARROWS MOVE   Z JUMP   X SHOOT   C POUND   ESC PAUSE   F FULLSCREEN',
-      { scale: 1, color: 't', align: 'center', shadow: true },
+      { scale: big, color: 't', align: 'center', shadow: true },
     ).setDepth(3);
 
     // legal corner — PRIVACY / TERMS visible on the main page itself (portal
@@ -178,6 +183,25 @@ export class TitleScene extends Phaser.Scene {
     audio.sfx('menuSelect');
     this.scene.launch('Pause', { from: 'title' });
     this.scene.pause();
+  }
+
+  private lockToast: PixelText | null = null;
+
+  /** Tapping a chained challenge mode: tell the player how to unlock it. */
+  private lockedNudge(): void {
+    if (this.started) return;
+    audio.sfx('menuMove');
+    if (!this.lockToast) {
+      // in the free band between the challenge row (ends 282) and the controls
+      // hint (300)
+      this.lockToast = new PixelText(this, VIEW.w / 2, isMobile() ? 284 : 287, 'CLEAR THE CAMPAIGN TO UNLOCK', {
+        scale: isMobile() ? 2 : 1, color: 'O', align: 'center', shadow: true,
+      }).setDepth(6);
+    }
+    const t = this.lockToast;
+    this.tweens.killTweensOf(t);
+    t.setAlpha(1);
+    this.tweens.add({ targets: t, alpha: 0, delay: 1400, duration: 400 });
   }
 
   private beginRun(mode: 'boss' | 'time' | 'hardcore'): void {

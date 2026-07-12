@@ -64,7 +64,8 @@ export class HowToPlayScene extends Phaser.Scene {
     MOVES.forEach(([move, how], i) => {
       const y = this.rowTop + i * this.rowH;
       const name = new PixelText(this, ui > 1 ? 24 : 20, y, move, { scale: ui, color: 'O', shadow: true });
-      const desc = new PixelText(this, ui > 1 ? 24 : 20, y + (ui > 1 ? 16 : 11), how, { scale: 1, color: 'c' });
+      // mobile readability: the instructions themselves render at full ui scale
+      const desc = new PixelText(this, ui > 1 ? 24 : 20, y + (ui > 1 ? 16 : 11), how, { scale: ui, color: 'c' });
       this.rows.push(name, desc);
     });
     this.maxScroll = Math.max(0, this.rowTop + MOVES.length * this.rowH + 16 - (H - 20));
@@ -74,7 +75,7 @@ export class HowToPlayScene extends Phaser.Scene {
     new PixelButton(this, VIEW.insetL + 10 + bw / 2, ui > 1 ? 24 : 18, {
       w: bw, h: ui > 1 ? 26 : 20, label: 'BACK', scale: ui, face: 'wood', onTap: () => this.leave(),
     });
-    new PixelText(this, W / 2, H - (ui > 1 ? 14 : 16), 'ESC / TAP BACK', { scale: 1, color: 'W', align: 'center', shadow: true });
+    new PixelText(this, W / 2, H - (ui > 1 ? 14 : 16), 'ESC / TAP BACK', { scale: ui, color: 'W', align: 'center', shadow: true });
 
     attachMenuTouch(this, {
       rowAt: () => null, // no selectable rows, just scroll
