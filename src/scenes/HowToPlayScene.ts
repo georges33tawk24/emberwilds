@@ -61,11 +61,15 @@ export class HowToPlayScene extends Phaser.Scene {
 
     this.rowTop = ui > 1 ? 78 : 66;
     this.rowH = ui > 1 ? 40 : 30;
+    // mobile readability: the instructions render at full ui scale — but only
+    // when the internal width has room for the longest line. Narrow (4:3)
+    // screens render at a much higher zoom (e.g. iPad: 480 units over 1024 CSS
+    // px), so scale-1 text is already as readable there as 2x is on a phone.
+    const dscale = ui > 1 && W >= 640 ? ui : 1;
     MOVES.forEach(([move, how], i) => {
       const y = this.rowTop + i * this.rowH;
       const name = new PixelText(this, ui > 1 ? 24 : 20, y, move, { scale: ui, color: 'O', shadow: true });
-      // mobile readability: the instructions themselves render at full ui scale
-      const desc = new PixelText(this, ui > 1 ? 24 : 20, y + (ui > 1 ? 16 : 11), how, { scale: ui, color: 'c' });
+      const desc = new PixelText(this, ui > 1 ? 24 : 20, y + (ui > 1 ? 16 : 11), how, { scale: dscale, color: 'c' });
       this.rows.push(name, desc);
     });
     this.maxScroll = Math.max(0, this.rowTop + MOVES.length * this.rowH + 16 - (H - 20));
