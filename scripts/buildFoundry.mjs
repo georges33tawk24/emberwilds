@@ -283,15 +283,22 @@ function trials() {
 
   // ---- TRIAL OF THE WOOD (x26-52): a caged grove — oneway boughs (mid lane),
   // a spring, an owl, and a SKY bough over it -------------------------------
+  // every bough-to-bough hop obeys the law: 4-up climbs allow only 3 across,
+  // so the boughs overlap columns (26-29 -> 32-35 -> 38-41)
   c.oneway(26, 35, 4);
-  c.oneway(33, 31, 4);
-  c.oneway(40, 27, 4);
-  c.set(42, 26, 'M');               // TOKEN — the high bough (route mastery)
+  c.oneway(32, 31, 4);
+  c.oneway(38, 27, 4);
   c.gems(27, 33, 2, 1);
   c.gems(34, 29, 2, 1);
+  c.set(41, 26, 'M');               // TOKEN — the high bough (route mastery)
   c.onFloor(30, 'S');
+  // the grove is the gantry's on-ramp: spring the high bough onto the sky
+  // bough, then the sky bough onto the trophy gantry — a real spring chain
+  // (each hop lifts 8 from the STAND cell, catch within 3 columns)
+  c.set(39, 26, 'S');               // high bough -> sky bough
   c.oneway(36, 21, 4);              // the sky bough
   c.gems(37, 19, 2, 1);
+  c.set(37, 20, 'S');               // sky bough -> the trophy gantry (row 15)
   c.set(38, 22, 'O');
   c.onFloor(48, 'T');
 
@@ -337,7 +344,10 @@ function trials() {
   c.oneway(170, 33, 4);            // a mid ledge over the ice gap
   c.onFloor(188, 'A');
 
-  // ---- SKY LANE: the trophy gantry — a return belt over the whole gauntlet --
+  // ---- SKY LANE: the trophy gantry — a return belt over the whole gauntlet.
+  // Board it via the grove's spring chain; the '<' belt fights you the whole
+  // way east (walk against the drag past the drones), then step off the east
+  // end and fall to the frost trial. A genuine third lane, not a ceiling. ----
   c.run(30, 15, 130, '<');          // a long west return belt, x30..159
   c.gems(40, 13, 4, 3);
   c.gems(90, 13, 4, 3);
@@ -369,7 +379,9 @@ SETPIECE THE GAUNTLET — every mechanic the wilds taught, tested in sequence
 PACING   gate gap -> grove -> belt sprint -> checkpoint -> coolant duct ->
          vent chain -> ice slide -> wardens key + the last door.
 ROUTES   low: the trial floors (belts, pits, ice, water). mid: bough/ledge
-         one-ways bailing each trial. high: the trophy-gantry return belt.
+         one-ways bailing each trial. high: the trophy-gantry return belt —
+         boarded by the grove spring chain (x30 -> x40 -> x37), walked EAST
+         against its drag, exited off the east end onto the frost trial.
          secret: swim UNDER the grated crust of the coolant duct.
 TOKENS   grove high bough (x42, route mastery) / coolant duct (x94, nerve) /
          vent flight (x148, glide) / frost gap (x176, nerve at speed).`,
@@ -432,8 +444,18 @@ function lastMarch() {
   c.onFloor(150, 'A');
   c.set(154, 37, 'B');
 
-  // ---- SKY LANE: THE RETURN GANTRY — an east belt over the whole march ------
-  c.onFloor(104, 'S');              // a checkpoint spring feeds the gantry
+  // ---- SKY LANE: THE RETURN GANTRY — an east belt over the whole march.
+  // TWO real boarding chains (a floor spring alone lifts 8 -> row 29, eight
+  // rows short of the gantry's stand row 21 — the old single-spring claim was
+  // decorative): channel safe-slot pad -> jump to a rung -> spring to the
+  // gantry; and checkpoint spring -> mid pad -> spring to the gantry. Ride
+  // the '>' belt east over the drone pits, step off at x159 onto the piston
+  // stair. --------------------------------------------------------------------
+  c.oneway(76, 29, 3);              // rung above the safe-slot pad (jump 4 up)
+  c.set(77, 28, 'S');               // rung -> gantry (28 - 8 = 20, catch at 21)
+  c.onFloor(104, 'S');              // checkpoint spring -> the mid pad
+  c.oneway(102, 30, 3);             // the mid pad it lands on (stand 29)
+  c.set(103, 29, 'S');              // mid pad -> gantry (29 - 8 = 21, exact)
   c.run(60, 22, 100, '>');          // the return gantry: an EAST belt, x60..159
   c.gems(70, 20, 4, 3);
   c.gems(110, 20, 4, 3);
@@ -488,7 +510,9 @@ SETPIECE THE BARONS DOOR — the final arch. Beyond it, the Foundry Heart.
 PACING   backward belt + ice march -> grate channel -> drone sprint + return
          gantry -> piston stair -> key vault -> the Barons Door.
 ROUTES   low: the backward belt / ice deck with lethal pits. mid: the grate
-         channel over spikes; the piston stair. high: the east return gantry.
+         channel over spikes; the piston stair. high: the east return gantry —
+         board via the safe-slot rung (x77) or the checkpoint chain (x104),
+         ride east over the drone pits, step off at x159 onto the stair.
          secret: pound the grate into the key vault at x184.
 TOKENS   grate channel safe slot (x79, nerve) / return gantry over the drone
          pits (x132, glide) / key vault (x186, pound) / door parapet (x221).`,
