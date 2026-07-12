@@ -12,6 +12,7 @@ import { SaveManager } from '../systems/save';
 import { announceName, fetchTop, type LeaderboardEntry } from '../systems/leaderboard';
 import { promptName, storedName } from '../systems/nameEntry';
 import { LEVELS, levelLabel } from '../data/levels';
+import { RUN_LB_LEVEL, RUN_TITLE, runBest, type RunMode } from '../systems/runs';
 import { audio } from '../audio/engine';
 import { TUNING } from '../data/tuning';
 import { VIEW } from '../gfx/viewport';
@@ -20,6 +21,19 @@ import { PixelButton } from '../gfx/ui';
 
 const H = TUNING.view.height;
 const SHOW_N = 10;
+
+/** Which run mode a board slot belongs to (40/41/42), or null for a level. */
+function runModeOf(levelIndex: number): RunMode | null {
+  const hit = (Object.entries(RUN_LB_LEVEL) as [RunMode, number][]).find(([, v]) => v === levelIndex);
+  return hit ? hit[0] : null;
+}
+
+/** Run times are minutes long — format like the run-results screen. */
+function fmtRun(ms: number): string {
+  const sec = ms / 1000;
+  const m = Math.floor(sec / 60);
+  return m > 0 ? `${m}M ${(sec % 60).toFixed(1).padStart(4, '0')}S` : `${sec.toFixed(1)}S`;
+}
 
 export class LeaderboardScene extends Phaser.Scene {
   private inputSys!: InputSystem;
@@ -32,17 +46,19 @@ export class LeaderboardScene extends Phaser.Scene {
   private mine!: PixelText;
   private nameBtn!: PixelButton;
   private busy = false;
+  private returnTo = 'WorldMap';
 
   constructor() {
     super('Leaderboard');
   }
 
-  create(data: { levelIndex?: number }): void {
+  create(data: { levelIndex?: number; returnTo?: string }): void {
     setTouchContext('ui');
     const W = VIEW.w;
     const ui = uiScale();
     this.layoutW = W;
     this.levelIndex = data.levelIndex ?? 0;
+    this.returnTo = data.returnTo ?? 'WorldMap';
     this.save = this.registry.get('save') as SaveManager;
     this.inputSys = new InputSystem(this);
     this.grace = 0.25;
@@ -51,8 +67,11 @@ export class LeaderboardScene extends Phaser.Scene {
 
     this.add.rectangle(W / 2, H / 2, W, H, 0x14100d, 0.88);
     new PixelText(this, W / 2, ui > 1 ? 22 : 28, 'TOP 10', { scale: ui > 1 ? 4 : 3, color: 'O', align: 'center', shadow: true });
+    const mode = runModeOf(this.levelIndex);
     new PixelText(this, W / 2, ui > 1 ? 50 : 54,
-      `${LEVELS[this.levelIndex].name.toUpperCase()}  -  ${levelLabel(this.levelIndex)}`,
+      mode
+        ? `${RUN_TITLE[mode]}  -  THE WHOLE WILDS`
+        : `${LEVELS[this.levelIndex].name.toUpperCase()}  -  ${levelLabel(this.levelIndex)}`,
       { scale: ui, color: 'c', align: 'center' });
 
     this.status = new PixelText(this, W / 2, H / 2 - 20, 'FETCHING THE WILDS...', { scale: ui, color: 't', align: 'center' });
@@ -63,9 +82,12 @@ export class LeaderboardScene extends Phaser.Scene {
       this.rowsText.push(new PixelText(this, W / 2, top + i * rowH, '', { scale: ui > 1 ? 2 : 1, color: 'W', align: 'center', shadow: true }));
     }
 
-    const myBest = this.save.data.bestTimes[this.levelIndex];
+    const myBest = mode ? runBest(mode) : this.save.data.bestTimes[this.levelIndex];
+    const fmtMine = (ms: number): string => (mode ? fmtRun(ms) : `${(ms / 1000).toFixed(1)}s`);
     this.mine = new PixelText(this, W / 2, H - (ui > 1 ? 72 : 62),
-      myBest ? `YOUR BEST ${(myBest / 1000).toFixed(1)}s AS ${storedName()}` : 'NO CLEAR TIME YET - GO SET ONE',
+      myBest ? `YOUR BEST ${fmtMine(myBest)} AS ${storedName()}` : mode && mode === 'hardcore'
+        ? 'NO COMPLETED RUN YET - SURVIVE ONE'
+        : mode ? 'NO COMPLETED RUN YET - GO SET ONE' : 'NO CLEAR TIME YET - GO SET ONE',
       { scale: ui, color: 'y', align: 'center', shadow: true });
 
     // SET NAME plaque
@@ -107,10 +129,12 @@ export class LeaderboardScene extends Phaser.Scene {
       return;
     }
     this.status.setText('');
+    const mode = runModeOf(this.levelIndex);
     entries.slice(0, SHOW_N).forEach((e, i) => {
       const rank = `${i + 1}`.padStart(2, ' ');
       const name = e.name.padEnd(12, ' ');
-      this.rowsText[i].setText(`${rank}  ${name}  ${(e.timeMs / 1000).toFixed(1)}s`);
+      const t = mode ? fmtRun(e.timeMs) : `${(e.timeMs / 1000).toFixed(1)}s`;
+      this.rowsText[i].setText(`${rank}  ${name}  ${t}`);
       this.rowsText[i].setColor(i === 0 ? 'O' : i < 3 ? 'y' : 'W');
     });
   }
@@ -126,8 +150,12 @@ export class LeaderboardScene extends Phaser.Scene {
       this.time.delayedCall(1400, () => this.nameBtn.setLabel('SET NAME').setLit(false));
       const myBest = this.save.data.bestTimes[this.levelIndex];
       this.mine.setText(myBest ? `YOUR BEST ${(myBest / 1000).toFixed(1)}s AS ${name}` : 'NO CLEAR TIME YET - GO SET ONE');
-      // sweep the rename across every board this device sits on, then refetch
+      // sweep the rename across every board this device sits on — levels AND
+      // any run boards it has a completed run on — then refetch
       const levels = Object.keys(this.save.data.bestTimes).map(Number);
+      for (const [m, slot] of Object.entries(RUN_LB_LEVEL) as [RunMode, number][]) {
+        if (runBest(m) > 0) levels.push(slot);
+      }
       await announceName(levels);
       if (this.scene.isActive()) void this.refresh();
     });
@@ -135,14 +163,14 @@ export class LeaderboardScene extends Phaser.Scene {
 
   private leave(): void {
     audio.sfx('menuSelect');
-    setTouchContext('map');
+    setTouchContext(this.returnTo === 'WorldMap' ? 'map' : 'ui');
     this.scene.stop();
-    this.scene.resume('WorldMap');
+    this.scene.resume(this.returnTo);
   }
 
   update(_time: number, delta: number): void {
     if (VIEW.w !== this.layoutW) {
-      this.scene.restart({ levelIndex: this.levelIndex });
+      this.scene.restart({ levelIndex: this.levelIndex, returnTo: this.returnTo });
       return;
     }
     this.grace -= delta / 1000;

@@ -10,7 +10,7 @@ import { PixelButton } from '../gfx/ui';
 import { InputSystem } from '../systems/input';
 import { setTouchContext } from '../systems/touch';
 import { audio } from '../audio/engine';
-import { submitScore } from '../systems/leaderboard';
+import { leaderboardEnabled, submitScore } from '../systems/leaderboard';
 import { RUN_LB_LEVEL, RUN_TITLE, runBest, runSeq, setRunBest, type RunMode } from '../systems/runs';
 import { levelLabel } from '../data/levels';
 import { TUNING } from '../data/tuning';
@@ -107,13 +107,29 @@ export class RunClearScene extends Phaser.Scene {
     new PixelText(this, W / 2, rowY + (ui > 1 ? 16 : 12), bestLabel, { scale: ui, color: 'y', align: 'center' });
 
     const by = H - (ui > 1 ? 44 : 40);
-    new PixelButton(this, W / 2 - (ui > 1 ? 92 : 66), by, {
-      w: ui > 1 ? 168 : 120, h: ui > 1 ? 26 : 20, label: 'RUN AGAIN', scale: ui, face: 'green', onTap: () => this.again(),
+    const lb = leaderboardEnabled();
+    const bw = lb ? (ui > 1 ? 136 : 100) : (ui > 1 ? 168 : 120);
+    const dx = lb ? (ui > 1 ? 150 : 108) : (ui > 1 ? 92 : 66);
+    new PixelButton(this, W / 2 - dx, by, {
+      w: bw, h: ui > 1 ? 26 : 20, label: 'RUN AGAIN', scale: ui, face: 'green', onTap: () => this.again(),
     });
-    new PixelButton(this, W / 2 + (ui > 1 ? 92 : 66), by, {
-      w: ui > 1 ? 168 : 120, h: ui > 1 ? 26 : 20, label: 'TITLE', scale: ui, face: 'wood', onTap: () => this.toTitle(),
+    if (lb) {
+      // the mode's global board — every run submits to its own slot
+      new PixelButton(this, W / 2, by, {
+        w: bw, h: ui > 1 ? 26 : 20, label: 'TOP 10', scale: ui, face: 'wood', onTap: () => this.openBoard(),
+      });
+    }
+    new PixelButton(this, W / 2 + dx, by, {
+      w: bw, h: ui > 1 ? 26 : 20, label: 'TITLE', scale: ui, face: 'wood', onTap: () => this.toTitle(),
     });
     if (ui === 1) new PixelText(this, W / 2, H - 16, 'Z  RUN AGAIN     X  TITLE', { scale: 1, color: 'W', align: 'center', shadow: true });
+  }
+
+  /** The global board for this run mode (slots 40-42 on the worker). */
+  private openBoard(): void {
+    audio.sfx('menuSelect');
+    this.scene.pause();
+    this.scene.launch('Leaderboard', { levelIndex: RUN_LB_LEVEL[this.data2.mode], returnTo: 'RunClear' });
   }
 
   private again(): void {
