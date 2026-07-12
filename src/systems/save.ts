@@ -191,6 +191,48 @@ export function migrate(d: SaveData): SaveData {
   return cur;
 }
 
+// ---- transfer codes ---------------------------------------------------------
+// A save travels as one pasteable string: EMBR1.<base64 json>.<fnv1a>. The
+// checksum catches truncated/typo'd pastes; import validates + migrates like a
+// normal load, so codes from older builds keep working. This is how a browser
+// player rescues progress from localStorage — and carries it into the app.
+
+/** FNV-1a 32-bit, hex — a cheap tamper/typo check (not cryptographic). */
+function fnv1a(str: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(16).padStart(8, '0');
+}
+
+export function exportCode(d: SaveData): string {
+  const bytes = new TextEncoder().encode(JSON.stringify(d));
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  const b64 = btoa(bin);
+  return `EMBR1.${b64}.${fnv1a(b64)}`;
+}
+
+/** Parse a transfer code. Returns the migrated save, or null for anything
+ *  malformed, tampered, or from a NEWER build than this one. */
+export function importCode(code: string): SaveData | null {
+  const m = /^EMBR1\.([A-Za-z0-9+/=]+)\.([0-9a-f]{8})$/.exec(code.trim());
+  if (!m) return null;
+  if (fnv1a(m[1]) !== m[2]) return null;
+  try {
+    const bin = atob(m[1]);
+    const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+    const d: unknown = JSON.parse(new TextDecoder().decode(bytes));
+    if (!isValid(d)) return null;
+    if (d.version > SAVE_VERSION) return null;
+    return migrate(d);
+  } catch {
+    return null;
+  }
+}
+
 export interface StorageLike {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;

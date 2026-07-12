@@ -16,8 +16,24 @@ import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { StatusBar } from '@capacitor/status-bar';
 import { SplashScreen } from '@capacitor/splash-screen';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 export const isNative = (): boolean => Capacitor.isNativePlatform();
+
+const IMPACT = {
+  light: ImpactStyle.Light,
+  medium: ImpactStyle.Medium,
+  heavy: ImpactStyle.Heavy,
+} as const;
+
+/** A short haptic tap on the native apps (stomps, hits, boss slams). No-op on
+ *  the web — and fire-and-forget, so a missing vibrator can never throw. */
+export function buzz(style: keyof typeof IMPACT): void {
+  if (!isNative()) return;
+  void Haptics.impact({ style: IMPACT[style] }).catch(() => {
+    /* no vibrator / permission — silently fine */
+  });
+}
 
 export async function initNative(): Promise<void> {
   if (!isNative()) return;

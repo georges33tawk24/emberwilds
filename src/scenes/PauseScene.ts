@@ -11,6 +11,8 @@ import { VIEW } from '../gfx/viewport';
 import { uiScale } from '../systems/platform';
 import { attachMenuTouch } from '../systems/menuTouch';
 import { promptName } from '../systems/nameEntry';
+import { promptSaveCode } from '../systems/saveCode';
+import { exportCode } from '../systems/save';
 import { announceName } from '../systems/leaderboard';
 
 const H = TUNING.view.height;
@@ -73,7 +75,14 @@ export class PauseScene extends Phaser.Scene {
       { kind: 'toggle', label: 'ASSIST MODE', get: () => s.assistMode, set: (v) => { s.assistMode = v; this.apply(); } },
     ];
     this.items = this.from === 'title'
-      ? [{ kind: 'action', label: 'BACK', act: () => this.resume() }, ...settings]
+      ? [
+        { kind: 'action', label: 'BACK', act: () => this.resume() },
+        ...settings,
+        // progress lives in localStorage — these two let a player rescue it
+        // (cleared browser data) or carry it into the mobile app
+        { kind: 'action', label: 'COPY SAVE CODE', act: () => this.copySaveCode() },
+        { kind: 'action', label: 'LOAD SAVE CODE', act: () => this.loadSaveCode() },
+      ]
       : this.from === 'map'
       ? [
         { kind: 'action', label: 'BACK TO MAP', act: () => this.resume() },
@@ -173,6 +182,54 @@ export class PauseScene extends Phaser.Scene {
       label.setVisible(label.y > this.menuTop - this.rowH && label.y < H);
       label.setText(selected ? `> ${text} <` : text);
       label.setColor(selected ? 'O' : 'W');
+    });
+  }
+
+  /** Copy the whole save as a pasteable transfer code; flash the row label. */
+  private copySaveCode(): void {
+    const code = exportCode(this.save.data);
+    const copied = (): void => {
+      const row = this.items.find((i) => i.kind === 'action' && i.label.startsWith('COPY SAVE'));
+      if (row) {
+        row.label = 'COPIED - KEEP IT SAFE!';
+        this.redraw();
+        this.time.delayedCall(2200, () => {
+          row.label = 'COPY SAVE CODE';
+          if (this.scene.isActive()) this.redraw();
+        });
+      }
+      audio.sfx('token');
+    };
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(code).then(copied, () => this.copyFallback(code, copied));
+    } else {
+      this.copyFallback(code, copied);
+    }
+  }
+
+  /** execCommand fallback for contexts without the async clipboard API. */
+  private copyFallback(code: string, done: () => void): void {
+    const ta = document.createElement('textarea');
+    ta.value = code;
+    ta.style.cssText = 'position:fixed;left:0;top:0;opacity:0.01;';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      done();
+    } catch {
+      audio.sfx('pause');
+    }
+    ta.remove();
+  }
+
+  /** Paste a transfer code; on success rebuild the title over the new save. */
+  private loadSaveCode(): void {
+    void promptSaveCode(this).then((applied) => {
+      if (!applied) return;
+      this.scene.stop();
+      this.scene.stop('Title');
+      this.scene.start('Title');
     });
   }
 

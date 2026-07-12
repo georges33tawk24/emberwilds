@@ -20,6 +20,7 @@ import { bodiesOverlap } from '../systems/physics';
 import { InputSystem } from '../systems/input';
 import { SaveManager } from '../systems/save';
 import { isMobile, uiScale } from '../systems/platform';
+import { buzz } from '../systems/native';
 import { setTouchContext } from '../systems/touch';
 import { bakeTerrain } from '../gfx/terrain';
 import { buildParallax, type ParallaxLayers, type ThemeKey } from '../gfx/parallax';
@@ -692,12 +693,14 @@ export class GameScene extends Phaser.Scene {
     });
     b.on('player:stomp', () => {
       audio.sfx('stomp');
+      buzz('light');
       this.addHitstop(T.feel.hitstopMs.stomp);
       this.addTrauma(T.feel.traumaStomp);
       this.save.bumpStat('stomps');
     });
     b.on('player:pound', ({ x, y }) => {
       audio.sfx('pound');
+      buzz('light');
       this.addHitstop(T.feel.hitstopMs.pound);
       this.addTrauma(T.feel.traumaPound);
       this.particles.dust(x, y, 10, 60);
@@ -711,6 +714,7 @@ export class GameScene extends Phaser.Scene {
     b.on('player:spring', () => audio.sfx('spring'));
     b.on('player:hurt', () => {
       audio.sfx('hurt');
+      buzz('medium');
       this.addHitstop(T.feel.hitstopMs.hurt);
       this.addTrauma(T.feel.traumaHurt);
       this.flashVignette();
@@ -718,6 +722,7 @@ export class GameScene extends Phaser.Scene {
     });
     b.on('player:died', () => {
       audio.sfx('die');
+      buzz('heavy');
       this.respawnTimer = 1.1;
       this.damagedThisLevel = true;
       this.save.bumpStat('deaths');
@@ -957,6 +962,7 @@ export class GameScene extends Phaser.Scene {
     if (boss.alive) {
       boss.step(this.player.x, this.player.y);
       if (boss.slammed) {
+        buzz('heavy');
         this.addTrauma(0.4);
         this.addHitstop(60);
         this.particles.dust(boss.body.x, boss.body.y, 8, 60);

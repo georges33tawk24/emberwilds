@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SaveManager, SAVE_VERSION, defaultSave, type StorageLike } from '../src/systems/save';
+import { SaveManager, SAVE_VERSION, defaultSave, type StorageLike, exportCode, importCode } from '../src/systems/save';
 
 function memStorage(initial: Record<string, string> = {}): StorageLike & { map: Map<string, string> } {
   const map = new Map(Object.entries(initial));
@@ -150,5 +150,43 @@ describe('SaveManager', () => {
     expect(a.data.bestTimes[1]).toBe(50000);
     a.clearLevel(1, 30000, 0);
     expect(a.data.bestTimes[1]).toBe(30000);
+  });
+});
+
+describe('save transfer codes', () => {
+  it('round-trips a mid-campaign save exactly', () => {
+    const d = defaultSave();
+    d.levelUnlocked = 17;
+    d.gems = 341;
+    d.bestTimes = { 0: 61234, 7: 88000 };
+    d.achievements = ['pathfinder'];
+    const back = importCode(exportCode(d));
+    expect(back).toEqual(d);
+  });
+
+  it('rejects tampered, truncated, and garbage codes', () => {
+    const code = exportCode(defaultSave());
+    expect(importCode(code.slice(0, -4))).toBeNull(); // checksum mismatch
+    expect(importCode(code.replace(/\.([0-9a-f]{8})$/, '.deadbeef'))).toBeNull();
+    expect(importCode('EMBR1.not-base64.00000000')).toBeNull();
+    expect(importCode('hello world')).toBeNull();
+    expect(importCode('')).toBeNull();
+  });
+
+  it('migrates a code exported by an older save version', () => {
+    const old = { ...defaultSave(), version: 4 } as Record<string, unknown>;
+    delete old.style;
+    delete old.relics;
+    delete old.flawless;
+    const back = importCode(exportCode(old as never));
+    expect(back).not.toBeNull();
+    expect(back?.version).toBe(7);
+    expect(back?.relics).toEqual([]);
+    expect(back?.style.owned).toEqual([]);
+  });
+
+  it('refuses codes from a newer build than this one', () => {
+    const future = { ...defaultSave(), version: 99 };
+    expect(importCode(exportCode(future))).toBeNull();
   });
 });
