@@ -80,17 +80,20 @@ export class WorldMapScene extends Phaser.Scene {
     this.fox = this.add.sprite(n0.x, n0.y - 16, PLAYER_TEX, 'idle.0').setOrigin(0.5, 1).setDepth(20);
 
     // fixed header + prompts
-    this.add.rectangle(W / 2, 16, W, 32, 0x2a1f1b, 0.55).setScrollFactor(0).setDepth(30);
-    this.headerTitle = new PixelText(this, 12, 7, '', { scale: 2, color: 'O', shadow: true }).setScrollFactor(0).setDepth(31);
-    this.headerSub = new PixelText(this, 12, 23, '', { scale: 1, color: 'c', shadow: true }).setScrollFactor(0).setDepth(31);
-    this.headerWorld = new PixelText(this, 12, 33, '', { scale: 1, color: 'y', shadow: true }).setScrollFactor(0).setDepth(31);
     const mobile = isMobile();
+    // mobile: a deeper bar + doubled sub-lines, so the best-time and world-best
+    // rows are actually readable on a phone
+    const barTall = mobile ? 52 : 32;
+    this.add.rectangle(W / 2, barTall / 2, W, barTall, 0x2a1f1b, 0.55).setScrollFactor(0).setDepth(30);
+    this.headerTitle = new PixelText(this, 12, 7, '', { scale: 2, color: 'O', shadow: true }).setScrollFactor(0).setDepth(31);
+    this.headerSub = new PixelText(this, 12, 23, '', { scale: mobile ? 2 : 1, color: 'c', shadow: true }).setScrollFactor(0).setDepth(31);
+    this.headerWorld = new PixelText(this, 12, mobile ? 39 : 33, '', { scale: mobile ? 2 : 1, color: 'y', shadow: true }).setScrollFactor(0).setDepth(31);
     const lb = leaderboardEnabled();
     // the gem tally stays clear of the plaques on desktop and clear of the DOM
     // pause/fullscreen cluster (top-right, CSS-positioned) on mobile
     const gemX = mobile ? W - 195 : lb ? W - 210 : W - 150;
     this.add.image(gemX, 15, 'pickups', 'gem.0').setScrollFactor(0).setDepth(31);
-    this.gemText = new PixelText(this, gemX + 8, 11, '', { scale: 1, color: 'W', shadow: true }).setScrollFactor(0).setDepth(31);
+    this.gemText = new PixelText(this, gemX + 8, 11, '', { scale: mobile ? 2 : 1, color: 'W', shadow: true }).setScrollFactor(0).setDepth(31);
 
     // carved-wood plaques, GROVE + TOP 10 side by side — top-right on desktop;
     // bottom-centre on mobile, because the DOM pause/fullscreen buttons own the
@@ -200,7 +203,7 @@ export class WorldMapScene extends Phaser.Scene {
         disc.fillStyle(0xf7e6c4, 1).fillCircle(mx - 1, my - 1.2, 0.9);
       }
 
-      const label = new PixelText(this, p.x, p.y - 3, '', { scale: 1, color: available ? 'K' : 's', align: 'center' }).setDepth(7);
+      const label = new PixelText(this, p.x, p.y - (isMobile() ? 6 : 3), '', { scale: isMobile() ? 2 : 1, color: available ? 'K' : 's', align: 'center' }).setDepth(7);
       label.setText(isBoss ? '!' : String(worldLevelNum(i)));
 
       const pips = this.add.graphics().setDepth(7);

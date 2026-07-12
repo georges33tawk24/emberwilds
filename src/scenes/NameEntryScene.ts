@@ -59,7 +59,7 @@ export class NameEntryScene extends Phaser.Scene {
       scale: ui > 1 ? 3 : 2, color: 'O', align: 'center', shadow: true,
     });
     new PixelText(this, cx, cy - ph / 2 + (ui > 1 ? 42 : 34), 'SHOWN ON THE WORLD LEADERBOARDS', {
-      scale: 1, color: 'c', align: 'center',
+      scale: ui, color: 'c', align: 'center',
     });
 
     // the field box

@@ -1249,7 +1249,7 @@ export class GameScene extends Phaser.Scene {
           this.particles.sparks(p.x, p.y, 12);
           const label = POWER_TOAST[p.type];
           const toast = new PixelText(this, VIEW.w / 2, H / 2 - 60, label, {
-            scale: 1, color: POWER_COLOR[power], align: 'center', shadow: true,
+            scale: isMobile() ? 2 : 1, color: POWER_COLOR[power], align: 'center', shadow: true,
           }).setScrollFactor(0).setDepth(95);
           this.tweens.add({
             targets: toast, alpha: 0, delay: 1700, duration: 350,
@@ -1264,9 +1264,10 @@ export class GameScene extends Phaser.Scene {
           this.particles.sparks(p.x, p.y, 14);
           track('relic_found', { level_index: this.levelIndex, level: levelLabel(this.levelIndex) });
           const lines = ['A KEEPERS LANTERN', ...(TALES[this.levelIndex] ?? [])];
+          const taleBig = isMobile(); // the fireside tale must be readable on a phone
           lines.forEach((line, i) => {
-            const tale = new PixelText(this, VIEW.w / 2, H / 2 - 70 + i * 12, line, {
-              scale: 1, color: i === 0 ? 'O' : 'c', align: 'center', shadow: true,
+            const tale = new PixelText(this, VIEW.w / 2, H / 2 - (taleBig ? 84 : 70) + i * (taleBig ? 16 : 12), line, {
+              scale: taleBig ? 2 : 1, color: i === 0 ? 'O' : 'c', align: 'center', shadow: true,
             }).setScrollFactor(0).setDepth(95).setAlpha(0);
             this.tweens.add({ targets: tale, alpha: 1, delay: i * 220, duration: 260 });
             this.tweens.add({
